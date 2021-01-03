@@ -1,7 +1,7 @@
 use num;
 use crate::ledger::Currency;
 use std::collections::HashMap;
-use std::ops::Add;
+use std::ops::{Add, Mul};
 use num::rational::Rational64;
 use num::Zero;
 
@@ -57,6 +57,17 @@ impl<'a> PartialEq for Money<'a> {
 impl Money<'_> {
     pub fn new() -> Self {
         Money::Zero
+    }
+}
+
+impl<'a> Mul<Rational64> for Money<'a> {
+    type Output = Money<'a>;
+
+    fn mul(self, rhs: Rational64) -> Self::Output {
+        match self {
+            Money::Zero => Money::new(),
+            Money::Money { amount, currency } => Money::from((currency, amount * rhs)),
+        }
     }
 }
 
