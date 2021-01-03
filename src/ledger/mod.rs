@@ -1,7 +1,6 @@
-use std::collections::{HashSet, HashMap};
 pub use currency::{Currency, CurrencyList};
-
-pub mod money;
+pub use money::{Money, Balance, Price};
+mod money;
 mod currency;
 
 /// A ledger has (journal) entries. Each of those entries has postings

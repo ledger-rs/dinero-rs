@@ -1,4 +1,3 @@
-use std::ops::Index;
 use std::collections::{HashSet, HashMap};
 use crate::Error;
 
@@ -54,8 +53,8 @@ pub struct CurrencyList<'a> {
 
 impl<'a> CurrencyList<'a> {
     pub fn new() -> Self {
-        let mut aliases: HashMap<&str, &Currency> = HashMap::new();
-        let mut list: HashSet<&Currency> = HashSet::new();
+        let aliases: HashMap<&str, &Currency> = HashMap::new();
+        let list: HashSet<&Currency> = HashSet::new();
         CurrencyList { aliases, list }
     }
     pub fn add_element(&mut self, currency: &'a Currency) {
