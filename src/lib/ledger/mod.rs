@@ -12,3 +12,6 @@ mod transaction;
 /// Commodities can change price over time
 struct Ledger;
 pub struct Account;
+pub struct JournalComment {
+    pub comment: String,
+}
