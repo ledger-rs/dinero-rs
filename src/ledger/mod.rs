@@ -1,7 +1,9 @@
 pub use currency::{Currency, CurrencyList};
 pub use money::{Money, Balance, Price};
+pub use transaction::{Transaction, Posting};
 mod money;
 mod currency;
+mod transaction;
 
 /// A ledger has (journal) entries. Each of those entries has postings
 /// ledger > entry > posting
@@ -9,3 +11,4 @@ mod currency;
 /// Each entry has to be balanced
 /// Commodities can change price over time
 struct Ledger;
+pub struct Account;

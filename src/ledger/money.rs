@@ -1,16 +1,15 @@
 use num;
 use crate::ledger::Currency;
 use std::collections::HashMap;
-use std::ops::{Add, Mul};
+use std::ops::{Add, Mul, Neg};
 use num::rational::Rational64;
-use num::Zero;
+use num::{Zero, Signed};
 
 /// Money representation: an amount and a currency
 /// It is important that calculations are not done with floats but with Rational numbers so that
 /// everything adds up correctly
 ///
 /// Money can be added, in which case it returns a balance, as it can have several currencies
-
 /// ```rust
 /// use dinero::ledger::{Money, Balance};
 /// use dinero::ledger::Currency;
@@ -134,6 +133,82 @@ impl<'a> Add for Balance<'a> {
             }
         }
         Balance { balance: total }
+    }
+}
+
+impl<'a> Balance<'a> {
+    pub fn new() -> Balance<'a> {
+        Balance { balance: HashMap::new() }
+    }
+    pub fn is_zero(&self) -> bool {
+        match self.balance.is_empty() {
+            true => true,
+            false => {
+                for (_, money) in self.balance.iter() {
+                    if !money.is_zero() { return false; }
+                }
+                true
+            }
+        }
+    }
+    pub fn can_be_zero(&self) -> bool {
+        if self.is_zero() { return true; }
+        let mut positive = false;
+        let mut negative = false;
+        for (_, m) in self.balance.iter() {
+            if positive & negative { return true; }
+            positive = m.is_positive() | positive;
+            negative = m.is_negative() | negative;
+        }
+        false
+    }
+}
+
+impl<'a> Money<'a> {
+    pub fn is_zero(&self) -> bool {
+        match self {
+            Money::Zero => true,
+            Money::Money { amount, .. } => amount.is_zero()
+        }
+    }
+    pub fn is_positive(&self) -> bool {
+        match self {
+            Money::Zero => true,
+            Money::Money { amount, .. } => amount.is_positive()
+        }
+    }
+    pub fn is_negative(&self) -> bool {
+        match self {
+            Money::Zero => true,
+            Money::Money { amount, .. } => amount.is_negative()
+        }
+    }
+}
+
+impl<'a> Neg for Money<'a> {
+    type Output = Money<'a>;
+
+    fn neg(self) -> Self::Output {
+        match self {
+            Money::Zero => Money::Zero,
+            Money::Money { currency, amount } =>
+                Money::Money {
+                    currency,
+                    amount: -amount,
+                }
+        }
+    }
+}
+
+impl<'a> Neg for Balance<'a> {
+    type Output = Balance<'a>;
+
+    fn neg(self) -> Self::Output {
+        let mut balance: HashMap<Option<&Currency>, Money> = HashMap::new();
+        for (k, v) in self.balance.iter() {
+            balance.insert(*k, -*v);
+        }
+        Balance { balance }
     }
 }
 
