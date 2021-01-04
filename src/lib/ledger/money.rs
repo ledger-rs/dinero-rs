@@ -6,26 +6,32 @@ use num::rational::Rational64;
 use num::{Zero, Signed};
 
 /// Money representation: an amount and a currency
+///
 /// It is important that calculations are not done with floats but with Rational numbers so that
 /// everything adds up correctly
 ///
 /// Money can be added, in which case it returns a balance, as it can have several currencies
+/// # Examples
 /// ```rust
-/// use dinero::ledger::{Money, Balance};
-/// use dinero::ledger::Currency;
-/// use num::rational::Rational64;
-///
+/// # use dinero::ledger::{Money, Balance, Currency};
+/// # use num::rational::Rational64;
+/// #
 /// let usd = Currency::from("usd");
 /// let eur = Currency::from("eur");
 ///
 /// let zero = Money::new();
 /// let m1 = Money::from((&eur, Rational64::new(100,1)));
 /// let m2 = Money::from((&eur, Rational64::new(200,1)));
-/// let m3 = Money::from((&eur, Rational64::new(300,1)));
-/// let b1 = m1 + m2;
-/// assert_eq!(*b1.balance.get(&Some(&eur)).unwrap(), m3);
+/// # let m3 = Money::from((&eur, Rational64::new(300,1)));
+/// let b1 = m1 + m2; // 300 euros
+/// # assert_eq!(*b1.balance.get(&Some(&eur)).unwrap(), m3);
 ///
-///
+/// // Multicurrency works as well
+/// let d1 = Money::from((&usd, Rational64::new(50,1)));
+/// let b2 = d1 + m1; // 100 euros and 50 usd
+/// # assert_eq!(b2.balance.len(), 2);
+/// # assert_eq!(*b2.balance.get(&Some(&eur)).unwrap(), m1);
+/// # assert_eq!(*b2.balance.get(&Some(&usd)).unwrap(), d1);
 /// ```
 #[derive(Copy, Clone, Debug)]
 pub enum Money<'a> {

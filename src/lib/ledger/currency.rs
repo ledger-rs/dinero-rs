@@ -1,11 +1,14 @@
 use std::collections::{HashSet, HashMap};
 use crate::Error;
 
+/// Currency representation
+///
 /// A currency has a name and a list of aliases, we have to make sure that when two commodities are
 /// created, they are the same, like so:
+///
+/// # Examples
 /// ```rust
-/// use crate::dinero::ledger::Currency;
-/// use dinero::ledger::CurrencyList;
+/// use dinero::ledger::{Currency, CurrencyList};
 ///
 /// let usd1 = Currency::from("usd");
 /// let usd2 = Currency::from("usd");
