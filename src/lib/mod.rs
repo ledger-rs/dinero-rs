@@ -1,5 +1,5 @@
 pub mod ledger;
-mod parser;
+pub mod parser;
 
 #[derive(Debug)]
 pub enum Error {
