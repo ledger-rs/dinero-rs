@@ -2,5 +2,8 @@ pub mod ledger;
 
 #[derive(Debug)]
 pub enum Error {
-    CommodityNotInList
+    CommodityNotInList,
+    TooManyEmptyPostings(usize),
+    TransactionIsNotBalanced,
+    EmptyPostingShouldBeLast,
 }
