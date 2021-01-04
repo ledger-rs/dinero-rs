@@ -1,0 +1,15 @@
+[package]
+name = "dinero-rs"
+version = "0.1.0"
+authors = ["Claudio Noguera <claudio.noguera@gmail.com>"]
+edition = "2018"
+readme = "README.md"
+description = "A command line lib.ledger tool"
+keywords = ["lib.ledger"]
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "dinero"
+path = "src/lib/mod.rs"
+
+[dependencies]
+num = "0.3.1"
