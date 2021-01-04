@@ -62,8 +62,9 @@ impl<'a> From<&'a Path> for Tokenizer<'a> {
 impl<'a> Tokenizer<'a> {
     fn parse(&'a mut self) -> Result<Vec<Item>, Error> {
         let mut items:Vec<Item> = Vec::new();
-        while self.position < self.content.len() {
-            let mut item = match chars::consume_whitespaces(self) {
+        let len = self.content.len();
+        while self.position < len {
+            let  item = match chars::consume_whitespaces(self) {
                 LineType::Blank => match self.get_char() {
                     ';' | '!' | '*' | '%' | '#' => comment::parse(self),
                     _ => panic!("Unexpected char")
@@ -89,6 +90,18 @@ mod tests {
         let content = "; This is a comment\n".to_string();
         let mut tokenizer = Tokenizer::from(content);
         let items = tokenizer.parse().unwrap();
-        assert_eq!(items.len(), 1, "Should have parsed one item")
+        assert_eq!(items.len(), 1, "Should have parsed one item");
+        let comment = match items.get(0).unwrap() {
+            Item::Comment(JournalComment{comment}) => comment,
+            _ => panic!("It should be a comment")
+        };
+        assert_eq!(*comment, "This is a comment".to_string());
+    }
+    #[test]
+    fn test_two_comments() {
+        let content = "; This is a comment\n\n\n; This is another comment\n".to_string();
+        let mut tokenizer = Tokenizer::from(content);
+        let items = tokenizer.parse().unwrap();
+        assert_eq!(items.len(), 2, "Should have parsed two comments")
     }
 }

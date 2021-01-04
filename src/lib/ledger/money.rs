@@ -121,7 +121,7 @@ impl<'a> Add for Balance<'a> {
         let balances = vec![self, rhs];
         for bal in balances.iter() {
             for (cur, money) in bal.balance.iter() {
-                match total.get(cur) {
+                match total.to_owned().get(cur) {
                     None => total.insert(*cur, money.clone()),
                     Some(total_money) => match total_money {
                         Money::Zero => total.insert(*cur, money.clone()),
@@ -130,7 +130,7 @@ impl<'a> Add for Balance<'a> {
                             Money::Money { amount, .. } => total.insert(
                                 *cur, Money::from((
                                     cur.unwrap(),
-                                    amount + already
+                                    amount + already.to_owned()
                                 )),
                             )
                         }
