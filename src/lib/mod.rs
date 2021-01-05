@@ -1,3 +1,5 @@
+use std::path::{Path, PathBuf};
+
 pub mod ledger;
 pub mod parser;
 
@@ -9,4 +11,6 @@ pub enum Error {
     EmptyPostingShouldBeLast,
     CannotReadFile { message: String },
     ParserError,
+    UnexpectedInput,
+    IncludeLoop(PathBuf)
 }
