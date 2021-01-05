@@ -1,5 +1,5 @@
 use crate::ledger::{Account, Money, Balance};
-use crate::Error;
+use crate::ErrorType;
 
 pub struct Transaction<'a> {
     status: TransactionStatus,
@@ -70,22 +70,22 @@ impl<'a> Transaction<'a> {
             .filter(|p| p.amount.is_none())
             .collect::<Vec<&Posting>>().len()
     }
-    pub fn balance(&'a mut self) -> Result<(), Error> {
+    pub fn balance(&'a mut self) -> Result<(), ErrorType> {
         let empties = self.num_empty_postings();
         if empties > 1 {
-            Err(Error::TooManyEmptyPostings(empties))
+            Err(ErrorType::TooManyEmptyPostings(empties))
         } else if empties == 0 {
             match self.is_balanced() {
                 true => {
                     self.status = TransactionStatus::InternallyBalanced;
                     Ok(())
                 },
-                false => Err(Error::TransactionIsNotBalanced)
+                false => Err(ErrorType::TransactionIsNotBalanced)
             }
         } else {
             // Delete the empty posting
             match self.postings.last().unwrap().amount {
-                None => Err(Error::EmptyPostingShouldBeLast),
+                None => Err(ErrorType::EmptyPostingShouldBeLast),
                 Some(_) => {
                     let account = self.postings.pop().unwrap().account;
                     let extra_postings = self.balance_postings(account);

@@ -1,5 +1,5 @@
 use super::Tokenizer;
-use crate::Error;
+use crate::{Error, ErrorType};
 
 pub(super) enum LineType {
     Blank,
@@ -26,7 +26,7 @@ pub(super) fn consume_whitespaces(tokenizer: &mut Tokenizer) -> LineType {
     LineType::Blank
 }
 
-pub(super) fn consume_str(tokenizer: &mut Tokenizer, string: &String) -> Result<(), Error> {
+pub(super) fn consume_str<'a>(tokenizer: &'a mut Tokenizer, string: &'a String) -> Result<(), Error> {
     let chars = string.chars().collect::<Vec<char>>();
     let content = tokenizer.content.chars().collect::<Vec<char>>();
     for input in chars.iter() {
@@ -40,8 +40,8 @@ pub(super) fn consume_str(tokenizer: &mut Tokenizer, string: &String) -> Result<
                     tokenizer.line_position = 0;
                 }
             }
-            None => return Err(Error::ParserError),
-            Some(c) => return Err(Error::UnexpectedInput),
+            None => return Err(tokenizer.error(ErrorType::ParserError)),
+            Some(c) => return Err(tokenizer.error(ErrorType::UnexpectedInput)),
         }
     }
     Ok(())

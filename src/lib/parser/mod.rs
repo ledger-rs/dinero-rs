@@ -5,12 +5,13 @@ mod comment;
 mod include;
 mod transaction;
 
-use crate::Error;
+use crate::{ErrorType, Error};
 use std::path::{Path, PathBuf};
 use std::fs::read_to_string;
 use crate::parser::chars::LineType;
 use crate::ledger::JournalComment;
 use std::collections::{HashSet, HashMap};
+use colored::{ColoredString, Colorize};
 
 pub enum Item {
     Comment(JournalComment),
@@ -18,6 +19,7 @@ pub enum Item {
     Directive,
 }
 
+#[derive(Debug, Clone)]
 pub struct Tokenizer<'a> {
     file: Option<&'a PathBuf>,
     content: String,
@@ -61,7 +63,7 @@ impl<'a> From<&'a PathBuf> for Tokenizer<'a> {
                     seen_files,
                 }
             }
-            Err(err) => { panic!(Error::CannotReadFile { message: err.to_string() }) }
+            Err(err) => { panic!(ErrorType::CannotReadFile(err.to_string())) }
         }
     }
 }
@@ -76,7 +78,7 @@ impl<'a> Tokenizer<'a> {
                 LineType::Blank => match self.get_char() {
                     Some(c) => match c {
                         ';' | '!' | '*' | '%' | '#' => items.push(comment::parse(self)),
-                        c if c.is_numeric() => items.push(transaction::parse(self)),
+                        c if c.is_numeric() => items.push(transaction::parse(self)?),
                         'i' => {
                             // This is the special case
                             let mut new_items = include::parse(self)?;
@@ -87,7 +89,7 @@ impl<'a> Tokenizer<'a> {
                     }
                     None => continue,
                 },
-                LineType::Indented => { return Err(Error::ParserError); }
+                LineType::Indented => { return Err(self.error(ErrorType::ParserError)); }
             };
         }
         Ok(items)
@@ -98,8 +100,27 @@ impl<'a> Tokenizer<'a> {
             None => None
         }
     }
+    fn error(&self, err: ErrorType) -> Error {
+        let mut message = vec![ColoredString::from("\n")];
+        // TODO not the fastest
+        for (i, line) in self.content.lines().enumerate() {
+            if i < self.line_index - 1 { continue; };
+            if i > self.line_index { break; };
+            message.push(ColoredString::from(line));
+        }
+        let mut line = message.pop().unwrap().cyan();
+        message.push(line.clone());
+        message.push(ColoredString::from("\n"));
+        for i in 0..line.len().to_owned() {
+            message.push(if i == self.line_position { "^".bold() } else { "-".bold() });
+        }
+        //message.push(ColoredString::from("\n"));
+        Error {
+            message,
+            error_type: err,
+        }
+    }
 }
-
 
 #[cfg(test)]
 mod tests {
