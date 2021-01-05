@@ -1,5 +1,42 @@
-fn main() {
-    println!("There is a lot of work to do...");
+enum Command {
+    Print,
+    Balance,
+    Register,
+    Accounts,
+    Codes,
+    Payees,
+    Prices,
+    Commodities,
+}
+use clap::{Arg, App, SubCommand};
+use dinero::commands::check;
+use dinero::Error;
+
+fn main() ->Result<(), Error>{
+    let matches = App::new("dinero")
+        .version(env!("CARGO_PKG_VERSION"))
+        .author(env!("CARGO_PKG_AUTHORS"))
+        .about("the command line accounting tool")
+        .arg(Arg::with_name("file")
+            .short("f")
+            .long("file")
+            .value_name("FILE")
+            .help("Ledger file to read")
+            .takes_value(true)
+            .required(true))
+        .subcommand(SubCommand::with_name("check")
+            .about("checks the ledger file"))
+        .get_matches();
+
+    // Gets a value for config if supplied by user, or defaults to "default.conf"
+    let file = matches.value_of("file").unwrap();
+
+    match matches.subcommand_name() {
+        Some("check") => check::execute(file)?,
+        None => println!("No subcommand was used"),
+        _ => unreachable!(), // Assuming you've listed all direct children above, this is unreachable
+    }
+    Ok(())
 }
 /*
 use std::env;

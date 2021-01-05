@@ -3,6 +3,7 @@
 mod chars;
 mod comment;
 mod include;
+mod transaction;
 
 use crate::Error;
 use std::path::{Path, PathBuf};
@@ -75,6 +76,7 @@ impl<'a> Tokenizer<'a> {
                 LineType::Blank => match self.get_char() {
                     Some(c) => match c {
                         ';' | '!' | '*' | '%' | '#' => items.push(comment::parse(self)),
+                        c if c.is_numeric() => items.push(transaction::parse(self)),
                         'i' => {
                             // This is the special case
                             let mut new_items = include::parse(self)?;
