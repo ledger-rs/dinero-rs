@@ -13,3 +13,4 @@ path = "src/lib/mod.rs"
 
 [dependencies]
 num = "0.3.1"
+glob = "0.3.0"

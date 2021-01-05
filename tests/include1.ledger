@@ -1,0 +1,3 @@
+; this file just includes the other file
+include include2.ledger
+; and has more comments

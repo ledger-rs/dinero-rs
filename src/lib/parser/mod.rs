@@ -2,12 +2,14 @@
 
 mod chars;
 mod comment;
+mod include;
 
 use crate::Error;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::fs::read_to_string;
 use crate::parser::chars::LineType;
 use crate::ledger::JournalComment;
+use std::collections::{HashSet, HashMap};
 
 pub enum Item {
     Comment(JournalComment),
@@ -16,13 +18,14 @@ pub enum Item {
 }
 
 pub struct Tokenizer<'a> {
-    file: Option<&'a Path>,
+    file: Option<&'a PathBuf>,
     content: String,
     line_index: usize,
     line_position: usize,
     line_string: &'a str,
     line_characters: Vec<char>,
     position: usize,
+    seen_files: HashSet<&'a PathBuf>,
 }
 
 impl From<String> for Tokenizer<'_> {
@@ -35,14 +38,17 @@ impl From<String> for Tokenizer<'_> {
             line_string: "",
             line_characters: Vec::new(),
             position: 0,
+            seen_files: HashSet::new(),
         }
     }
 }
 
-impl<'a> From<&'a Path> for Tokenizer<'a> {
-    fn from(file: &'a Path) -> Self {
+impl<'a> From<&'a PathBuf> for Tokenizer<'a> {
+    fn from(file: &'a PathBuf) -> Self {
         match read_to_string(file) {
             Ok(content) => {
+                let mut seen_files: HashSet<&PathBuf> = HashSet::new();
+                seen_files.insert(file);
                 Tokenizer {
                     file: Some(file),
                     content,
@@ -51,6 +57,7 @@ impl<'a> From<&'a Path> for Tokenizer<'a> {
                     line_string: "",
                     line_characters: vec![],
                     position: 0,
+                    seen_files,
                 }
             }
             Err(err) => { panic!(Error::CannotReadFile { message: err.to_string() }) }
@@ -64,17 +71,22 @@ impl<'a> Tokenizer<'a> {
         let mut items: Vec<Item> = Vec::new();
         let len = self.content.len();
         while self.position < len {
-            let item = match chars::consume_whitespaces(self) {
+            match chars::consume_whitespaces(self) {
                 LineType::Blank => match self.get_char() {
                     Some(c) => match c {
-                        ';' | '!' | '*' | '%' | '#' => comment::parse(self),
-                        _ => panic!("Unexpected char"),
+                        ';' | '!' | '*' | '%' | '#' => items.push(comment::parse(self)),
+                        'i' => {
+                            // This is the special case
+                            let mut new_items = include::parse(self)?;
+                            items.append(&mut new_items);
+                        }
+                        _ => // TODO Change by an Error
+                            panic!("Unexpected char '{}'", c),
                     }
                     None => continue,
                 },
                 LineType::Indented => { return Err(Error::ParserError); }
             };
-            items.push(item);
         }
         Ok(items)
     }
