@@ -8,11 +8,12 @@ enum Command {
     Prices,
     Commodities,
 }
+
 use clap::{Arg, App, SubCommand};
 use dinero::commands::check;
 use dinero::Error;
 
-fn main() ->Result<(), Error>{
+fn main()  {
     let matches = App::new("dinero")
         .version(env!("CARGO_PKG_VERSION"))
         .author(env!("CARGO_PKG_AUTHORS"))
@@ -31,12 +32,13 @@ fn main() ->Result<(), Error>{
     // Gets a value for config if supplied by user, or defaults to "default.conf"
     let file = matches.value_of("file").unwrap();
 
-    match matches.subcommand_name() {
-        Some("check") => check::execute(file)?,
-        None => println!("No subcommand was used"),
+    if let Err(e) = match matches.subcommand_name() {
+        Some("check") => check::execute(file),
+        None => todo!("No subcommand was used"),
         _ => unreachable!(), // Assuming you've listed all direct children above, this is unreachable
+    } {
+        eprintln!("{}", e);
     }
-    Ok(())
 }
 /*
 use std::env;

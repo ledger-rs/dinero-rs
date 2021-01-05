@@ -1,5 +1,5 @@
 use std::collections::{HashSet, HashMap};
-use crate::Error;
+use crate::ErrorType;
 
 /// Currency representation
 ///
@@ -74,9 +74,9 @@ impl<'a> CurrencyList<'a> {
             Some(_) => true,
         }
     }
-    pub fn get(&self, index: &str) -> Result<&Currency, Error> {
+    pub fn get(&self, index: &str) -> Result<&Currency, ErrorType> {
         match self.aliases.get(index) {
-            None => Err(Error::CommodityNotInList),
+            None => Err(ErrorType::CommodityNotInList),
             Some(x) => Ok(x)
         }
     }

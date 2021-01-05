@@ -2,10 +2,10 @@ use crate::parser::{chars, Tokenizer, Item};
 use crate::ledger::JournalComment;
 use glob::glob;
 use std::path::PathBuf;
-use crate::Error;
+use crate::{ErrorType, Error};
 
 /// Handles include directive
-pub(super) fn parse(tokenizer: &mut Tokenizer) -> Result<Vec<Item>,Error>{
+pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<Vec<Item>, Error>{
     chars::consume_str(tokenizer, &"include ".to_string())?;
     let pattern = chars::consume_line(tokenizer);
     let mut files : Vec<PathBuf> = Vec::new();
@@ -14,7 +14,7 @@ pub(super) fn parse(tokenizer: &mut Tokenizer) -> Result<Vec<Item>,Error>{
             Ok(path) => {
                 files.push(path.clone());
                 match tokenizer.seen_files.get(&path) {
-                    Some(_) => return Err(Error::IncludeLoop(path.clone())),
+                    Some(_) => return Err(tokenizer.error(ErrorType::IncludeLoop)),
                     None => (),
                 }
             },
