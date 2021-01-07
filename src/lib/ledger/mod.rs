@@ -1,9 +1,10 @@
 pub use currency::{Currency, CurrencyList};
-pub use money::{Money, Balance, Price};
-pub use transaction::{Transaction, Posting};
+pub use money::{Money, Balance, Price,CostType};
+pub use transaction::{Transaction, Posting, Cleared};
+
 mod money;
 mod currency;
-mod transaction;
+pub(crate) mod transaction;
 
 /// A lib.ledger has (journal) entries. Each of those entries has postings
 /// lib.ledger > entry > posting
@@ -11,7 +12,11 @@ mod transaction;
 /// Each entry has to be balanced
 /// Commodities can change price over time
 struct Ledger;
+
+#[derive(Debug)]
 pub struct Account;
-pub struct JournalComment {
+
+#[derive(Debug)]
+pub struct Comment {
     pub comment: String,
 }

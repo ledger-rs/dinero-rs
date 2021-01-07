@@ -1,44 +1,79 @@
-use crate::ledger::{Account, Money, Balance};
+use crate::ledger::{Account, Money, Balance, Comment};
 use crate::ErrorType;
+use chrono::NaiveDate;
 
-pub struct Transaction<'a> {
+#[derive(Debug)]
+pub struct Transaction<PostingType> {
     status: TransactionStatus,
-    postings: Vec::<Posting<'a>>,
-    virtual_postings: Vec::<Posting<'a>>,
+    pub date: Option<NaiveDate>,
+    pub effective_date: Option<NaiveDate>,
+    pub cleared: Cleared,
+    pub code: Option<String>,
+    pub description: String,
+    pub note: Option<String>,
+    pub postings: Vec<PostingType>,
+    pub virtual_postings: Vec<PostingType>,
+    pub comments: Vec<Comment>,
 }
 
+#[derive(Debug)]
 enum TransactionStatus {
     NotChecked,
     InternallyBalanced,
     Correct,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug)]
+pub enum Cleared {
+    Unknown,
+    NotCleared,
+    Cleared,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum PostingType {
+    Real,
+    VirtualMustBalance,
+    Virtual,
+}
+
+#[derive(Debug, Clone, Copy)]
 pub struct Posting<'a> {
     account: &'a Account,
     amount: Option<Money<'a>>,
     cost: Option<Cost<'a>>,
 }
-
 impl<'a> Posting<'a> {
     fn set_amount(&mut self, money: Money<'a>) {
         self.amount = Some(money)
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 enum Cost<'a> {
     Total { amount: Money<'a> },
     PerUnit { amount: Money<'a> },
 }
 
-impl<'a> From<Vec<Posting<'a>>> for Transaction<'a> {
-    fn from(postings: Vec<Posting<'a>>) -> Self {
-        Transaction { status: TransactionStatus::NotChecked, postings, virtual_postings: vec![] }
+
+impl<'a, PostingType> Transaction<PostingType> {
+    pub fn new() -> Transaction<PostingType> {
+        Transaction {
+            status: TransactionStatus::NotChecked,
+            date: None,
+            effective_date: None,
+            cleared: Cleared::Unknown,
+            code: None,
+            description: "".to_string(),
+            note: None,
+            postings: vec![],
+            virtual_postings: vec![],
+            comments: vec![],
+        }
     }
 }
 
-impl<'a> Transaction<'a> {
+impl<'a> Transaction<Posting<'a>> {
     fn total_balance(&self) -> Balance {
         let bal = Balance::new();
         self.postings.iter()
@@ -48,7 +83,7 @@ impl<'a> Transaction<'a> {
     fn is_balanced(&self) -> bool {
         self.total_balance().can_be_zero()
     }
-    fn balance_postings(& self, account: &'a Account) -> Vec<Posting> {
+    fn balance_postings(&self, account: &'a Account) -> Vec<Posting> {
         self.total_balance().balance.iter()
             .map(|(_, v)| Posting {
                 account,
@@ -79,7 +114,7 @@ impl<'a> Transaction<'a> {
                 true => {
                     self.status = TransactionStatus::InternallyBalanced;
                     Ok(())
-                },
+                }
                 false => Err(ErrorType::TransactionIsNotBalanced)
             }
         } else {
