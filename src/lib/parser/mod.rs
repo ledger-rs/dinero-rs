@@ -5,17 +5,19 @@ mod comment;
 mod include;
 mod transaction;
 
-use crate::{ErrorType, Error};
+use crate::{ErrorType, Error, parser};
 use std::path::{Path, PathBuf};
 use std::fs::read_to_string;
 use crate::parser::chars::LineType;
-use crate::ledger::JournalComment;
+use crate::ledger::{Comment, Transaction};
 use std::collections::{HashSet, HashMap};
 use colored::{ColoredString, Colorize};
+use chrono::NaiveDate;
+use std::str::FromStr;
 
 pub enum Item {
-    Comment(JournalComment),
-    Transaction,
+    Comment(Comment),
+    Transaction(Transaction<parser::transaction::Posting>),
     Directive,
 }
 
@@ -31,7 +33,22 @@ pub struct Tokenizer<'a> {
     seen_files: HashSet<&'a PathBuf>,
 }
 
-impl From<String> for Tokenizer<'_> {
+impl<'a> From<&'a str> for Tokenizer<'a> {
+    fn from(content: &'a str) -> Self {
+        Tokenizer {
+            file: None,
+            content: String::from(content),
+            line_index: 0,
+            line_position: 0,
+            line_string: "",
+            line_characters: Vec::new(),
+            position: 0,
+            seen_files: HashSet::new(),
+        }
+    }
+}
+
+impl<'a> From<String> for Tokenizer<'a> {
     fn from(content: String) -> Self {
         Tokenizer {
             file: None,
@@ -54,7 +71,7 @@ impl<'a> From<&'a PathBuf> for Tokenizer<'a> {
                 seen_files.insert(file);
                 Tokenizer {
                     file: Some(file),
-                    content,
+                    content: content,
                     line_index: 0,
                     line_position: 0,
                     line_string: "",
@@ -74,11 +91,11 @@ impl<'a> Tokenizer<'a> {
         let mut items: Vec<Item> = Vec::new();
         let len = self.content.len();
         while self.position < len {
-            match chars::consume_whitespaces(self) {
+            match chars::consume_whitespaces_and_lines(self) {
                 LineType::Blank => match self.get_char() {
                     Some(c) => match c {
-                        ';' | '!' | '*' | '%' | '#' => items.push(comment::parse(self)),
-                        c if c.is_numeric() => items.push(transaction::parse(self)?),
+                        ';' | '!' | '*' | '%' | '#' => items.push(Item::Comment(comment::parse(self))),
+                        c if c.is_numeric() => items.push(Item::Transaction(transaction::parse(self)?)),
                         'i' => {
                             // This is the special case
                             let mut new_items = include::parse(self)?;
@@ -109,6 +126,7 @@ impl<'a> Tokenizer<'a> {
             message.push(ColoredString::from(line));
         }
         let mut line = message.pop().unwrap().cyan();
+        message.push(ColoredString::from("\n"));
         message.push(line.clone());
         message.push(ColoredString::from("\n"));
         for i in 0..line.len().to_owned() {
@@ -119,6 +137,19 @@ impl<'a> Tokenizer<'a> {
             message,
             error_type: err,
         }
+    }
+
+    pub fn next(&mut self) -> char {
+        let c: char = self.content.chars().collect::<Vec<char>>()[self.position];
+        match c {
+            '\n' => {
+                self.line_position = 0;
+                self.line_index += 1;
+            }
+            _ => { self.line_position += 1; }
+        }
+        self.position += 1;
+        c
     }
 }
 

@@ -1,5 +1,5 @@
 use crate::parser::{chars, Tokenizer, Item};
-use crate::ledger::JournalComment;
+use crate::ledger::Comment;
 use glob::glob;
 use std::path::PathBuf;
 use crate::{ErrorType, Error};
@@ -7,7 +7,7 @@ use crate::{ErrorType, Error};
 /// Handles include directive
 pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<Vec<Item>, Error>{
     chars::consume_str(tokenizer, &"include ".to_string())?;
-    let pattern = chars::consume_line(tokenizer);
+    let pattern = chars::get_line(tokenizer);
     let mut files : Vec<PathBuf> = Vec::new();
     for entry in glob(&pattern).expect("Failed to read glob pattern") {
         match entry {

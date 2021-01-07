@@ -1,5 +1,3 @@
-use std::path::{Path, PathBuf};
-use std::io;
 use std::fmt;
 use crate::parser::Tokenizer;
 use colored::{Colorize, ColoredString};

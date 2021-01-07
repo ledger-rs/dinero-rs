@@ -224,3 +224,8 @@ pub struct Price<'a> {
     pub commodity: Money<'a>,
     pub price: Money<'a>,
 }
+#[derive(Debug)]
+pub enum CostType {
+    Total,
+    PerUnit
+}
