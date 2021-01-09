@@ -1,15 +1,12 @@
-use crate::parser::{Tokenizer, Item, chars, comment};
+use crate::parser::{Tokenizer, chars, comment};
 use crate::{ErrorType, Error};
 use crate::ledger::{Cleared, Transaction, Comment, CostType};
-use crate::ledger;
 use regex::Regex;
 use lazy_static::lazy_static;
 use chrono::NaiveDate;
 use std::str::FromStr;
 use num::rational::Rational64;
 use crate::parser::chars::LineType;
-use crate::ledger::transaction::PostingType;
-use std::num::ParseIntError;
 
 
 pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<Transaction<Posting>, Error> {
@@ -24,7 +21,7 @@ pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<Transaction<Post
         ).as_str()).unwrap();
     }
     let mystr = chars::get_line(tokenizer);
-    let mut caps = RE.captures(mystr.as_str()).unwrap();
+    let caps = RE.captures(mystr.as_str()).unwrap();
 
     let mut transaction = Transaction::<Posting>::new();
 
@@ -70,6 +67,7 @@ pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<Transaction<Post
             }
         }
     }
+
     Ok(transaction)
 }
 
@@ -151,14 +149,13 @@ fn parse_posting(tokenizer: &mut Tokenizer) -> Result<Posting, Error> {
             }
         }
         chars::consume_whitespaces(tokenizer);
-
     }
     Ok(posting)
 }
 
 fn parse_money(tokenizer: &mut Tokenizer) -> Result<(Rational64, String), Error> {
-    let mut currency = String::new();
-    let mut amount: Rational64;
+    let currency: String;
+    let amount: Rational64;
 
     match tokenizer.get_char() {
         Some(c) if c.is_numeric() | (c == '.') | (c == '-') => {

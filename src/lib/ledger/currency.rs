@@ -1,5 +1,5 @@
-use std::collections::{HashSet, HashMap};
 use crate::ErrorType;
+use crate::list::HasName;
 
 /// Currency representation
 ///
@@ -8,7 +8,8 @@ use crate::ErrorType;
 ///
 /// # Examples
 /// ```rust
-/// use dinero::ledger::{Currency, CurrencyList};
+/// use dinero::ledger::{Currency};
+/// use dinero::List;
 ///
 /// let usd1 = Currency::from("usd");
 /// let usd2 = Currency::from("usd");
@@ -20,7 +21,7 @@ use crate::ErrorType;
 /// let mut eur2 =  Currency::from("eur");
 /// assert_eq!(eur1, eur2);
 ///
-/// let mut currencies = CurrencyList::new();
+/// let mut currencies = List::<Currency>::new();
 /// currencies.add_element(&eur1);
 /// currencies.add_element(&eur2);
 /// currencies.add_element(&usd1);
@@ -36,7 +37,11 @@ use crate::ErrorType;
 pub struct Currency<'a> {
     name: &'a str,
 }
-
+impl HasName for Currency<'_> {
+    fn get_name(&self) -> &str {
+        self.name
+    }
+}
 impl<'a> From<&'a str> for Currency<'a> {
     fn from(name: &'a str) -> Self {
         Currency { name }
@@ -46,52 +51,5 @@ impl<'a> From<&'a str> for Currency<'a> {
 impl PartialEq for Currency<'_> {
     fn eq(&self, other: &Self) -> bool {
         self.name == other.name
-    }
-}
-
-pub struct CurrencyList<'a> {
-    aliases: HashMap<&'a str, &'a Currency<'a>>,
-    list: HashSet<&'a Currency<'a>>,
-}
-
-impl<'a> CurrencyList<'a> {
-    pub fn new() -> Self {
-        let aliases: HashMap<&str, &Currency> = HashMap::new();
-        let list: HashSet<&Currency> = HashSet::new();
-        CurrencyList { aliases, list }
-    }
-    pub fn add_element(&mut self, currency: &'a Currency) {
-        self.list.insert(currency);
-        self.aliases.insert(currency.name, currency);
-    }
-    pub fn add_alias(&mut self, alias: &'a str, for_currency: &'a Currency) {
-        self.aliases.insert(alias, for_currency);
-        self.list.insert(for_currency);
-    }
-    pub fn element_in_list(self, element: &Currency) -> bool {
-        match self.list.get(element) {
-            None => false,
-            Some(_) => true,
-        }
-    }
-    pub fn get(&self, index: &str) -> Result<&Currency, ErrorType> {
-        match self.aliases.get(index) {
-            None => Err(ErrorType::CommodityNotInList),
-            Some(x) => Ok(x)
-        }
-    }
-    pub fn len(&self) -> usize {
-        self.list.len()
-    }
-    pub fn len_alias(&self) -> usize {
-        self.aliases.len()
-    }
-}
-
-impl<'a> From<&'a Currency<'a>> for CurrencyList<'a> {
-    fn from(currency: &'a Currency<'a>) -> Self {
-        let mut cl = CurrencyList::new();
-        cl.add_element(currency);
-        cl
     }
 }
