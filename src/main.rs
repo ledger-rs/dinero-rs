@@ -11,7 +11,6 @@ enum Command {
 
 use clap::{Arg, App, SubCommand};
 use dinero::commands::check;
-use dinero::Error;
 
 fn main()  {
     let matches = App::new("dinero")

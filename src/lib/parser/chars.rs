@@ -54,7 +54,7 @@ pub(super) fn consume_str<'a>(
                 }
             }
             None => return Err(tokenizer.error(ErrorType::ParserError)),
-            Some(c) => return Err(tokenizer.error(ErrorType::UnexpectedInput)),
+            Some(_) => return Err(tokenizer.error(ErrorType::UnexpectedInput)),
         }
     }
     Ok(())

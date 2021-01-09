@@ -6,14 +6,12 @@ mod include;
 mod transaction;
 
 use crate::{ErrorType, Error, parser};
-use std::path::{Path, PathBuf};
+use std::path::{PathBuf};
 use std::fs::read_to_string;
 use crate::parser::chars::LineType;
 use crate::ledger::{Comment, Transaction};
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashSet};
 use colored::{ColoredString, Colorize};
-use chrono::NaiveDate;
-use std::str::FromStr;
 
 pub enum Item {
     Comment(Comment),
@@ -125,7 +123,7 @@ impl<'a> Tokenizer<'a> {
             if i > self.line_index { break; };
             message.push(ColoredString::from(line));
         }
-        let mut line = message.pop().unwrap().cyan();
+        let line = message.pop().unwrap().cyan();
         message.push(ColoredString::from("\n"));
         message.push(line.clone());
         message.push(ColoredString::from("\n"));
