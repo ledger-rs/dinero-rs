@@ -86,6 +86,7 @@ impl<'a> From<(&'a Currency<'a>, Rational64)> for Money<'a> {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Balance<'a> {
     pub balance: HashMap<Option<&'a Currency<'a>>, Money<'a>>,
 }
@@ -224,8 +225,9 @@ pub struct Price<'a> {
     pub commodity: Money<'a>,
     pub price: Money<'a>,
 }
+
 #[derive(Debug)]
 pub enum CostType {
     Total,
-    PerUnit
+    PerUnit,
 }

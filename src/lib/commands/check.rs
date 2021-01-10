@@ -7,7 +7,8 @@ use crate::ledger::Ledger;
 pub fn execute(file: &str) -> Result<(), Error> {
     let path = PathBuf::from(file);
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
-    let res = Ledger::new(tokenizer.parse()?);
+    let mut items = tokenizer.parse()?;
+    let res = Ledger::new(&items);
     match res {
         Ok(_) => println!("Input file {} is {}", file.bold(), "OK".bright_green().bold()),
         Err(e) => {
