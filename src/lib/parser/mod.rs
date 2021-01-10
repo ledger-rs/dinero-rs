@@ -3,7 +3,7 @@
 mod chars;
 mod comment;
 mod include;
-mod transaction;
+pub(crate) mod transaction;
 
 use crate::{ErrorType, Error, parser};
 use std::path::{PathBuf};

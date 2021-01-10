@@ -1,10 +1,11 @@
-use crate::ledger::{Account, Money, Balance, Comment};
-use crate::ErrorType;
+use crate::ledger::{Account, Money, Balance, Comment, Currency};
+use crate::{ErrorType, parser, List};
 use chrono::NaiveDate;
+use num::rational::Ratio;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Transaction<PostingType> {
-    status: TransactionStatus,
+    pub status: TransactionStatus,
     pub date: Option<NaiveDate>,
     pub effective_date: Option<NaiveDate>,
     pub cleared: Cleared,
@@ -16,14 +17,14 @@ pub struct Transaction<PostingType> {
     pub comments: Vec<Comment>,
 }
 
-#[derive(Debug)]
-enum TransactionStatus {
+#[derive(Debug, Copy, Clone)]
+pub enum TransactionStatus {
     NotChecked,
     InternallyBalanced,
     Correct,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum Cleared {
     Unknown,
     NotCleared,
@@ -39,18 +40,28 @@ pub enum PostingType {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Posting<'a> {
-    account: &'a Account,
-    amount: Option<Money<'a>>,
-    cost: Option<Cost<'a>>,
+    pub(crate) account: &'a Account<'a>,
+    pub amount: Option<Money<'a>>,
+    pub balance: Option<Money<'a>>,
+    pub cost: Option<Cost<'a>>,
 }
+
 impl<'a> Posting<'a> {
+    pub fn new(account: &'a Account<'a>) -> Posting<'a> {
+        Posting {
+            account,
+            amount: None,
+            balance: None,
+            cost: None,
+        }
+    }
     fn set_amount(&mut self, money: Money<'a>) {
         self.amount = Some(money)
     }
 }
 
 #[derive(Debug, Clone, Copy)]
-enum Cost<'a> {
+pub enum Cost<'a> {
     Total { amount: Money<'a> },
     PerUnit { amount: Money<'a> },
 }
@@ -74,30 +85,82 @@ impl<'a, PostingType> Transaction<PostingType> {
 }
 
 impl<'a> Transaction<Posting<'a>> {
+    fn new_from(
+        other: &'a mut Transaction<parser::transaction::Posting>,
+        accounts: &'a mut List<Account>,
+        currencies: &'a mut List<Currency<'a>>) -> Self {
+        let mut t = Transaction::<Posting>::new();
+        t.status = other.status;
+        t.date = other.date;
+        t.effective_date = other.effective_date;
+        t.cleared = other.cleared;
+        t.code = match &other.code {
+            None => None,
+            Some(x) => Some(x.clone())
+        };
+        t.description = other.description.clone();
+
+        t.note = match &other.note {
+            None => None,
+            Some(x) => Some(x.clone())
+        };
+        t.comments = Vec::new();
+        t.comments.append(&mut other.comments);
+        // for p in other.postings.iter() {
+        //     let mut account = match accounts.get(p.account.as_str()) {
+        //         None => {
+        //             let account = Account::from(p.account);
+        //             accounts.add_element(&account);
+        //             &account
+        //         }
+        //         Some(x) => x
+        //     };
+        //
+        //     let amount =
+        //         match p.money_amount {
+        //             None => None,
+        //             Some(amount) => {
+        //                 let mut currency = currencies.get(p.money_currency.unwrap().as_str())
+        //                     .unwrap_or(&Currency::from(p.money_currency.unwrap().as_str()));
+        //                 currencies.add_element(currency);
+        //                 Some(Money::from((currency, amount)))
+        //             }
+        //         };
+        //
+        //     t.postings.push(Posting {
+        //         account: &account,
+        //         amount,
+        //         cost: None,
+        //     })
+        // }
+        t
+    }
     fn total_balance(&self) -> Balance {
         let bal = Balance::new();
         self.postings.iter()
             .map(|p| Balance::from(p.amount.unwrap()))
             .fold(bal, |acc, cur| acc + cur)
     }
-    fn is_balanced(&self) -> bool {
+    pub fn is_balanced(&self) -> bool {
         self.total_balance().can_be_zero()
     }
-    fn balance_postings(&self, account: &'a Account) -> Vec<Posting> {
+    fn balance_postings(&'a self, account: &'a Account<'a>) -> Vec<Posting> {
         self.total_balance().balance.iter()
             .map(|(_, v)| Posting {
                 account,
                 amount: Some(-*v),
                 cost: None,
+                balance: None,
             })
             .collect::<Vec<Posting>>()
             .clone()
     }
-    pub fn add_empty_posting(&mut self, account: &'a Account) {
+    pub fn add_empty_posting(&mut self, account: &'a Account<'a>) {
         self.postings.push(Posting {
             account,
             amount: None,
             cost: None,
+            balance: None,
         })
     }
     fn num_empty_postings(&self) -> usize {

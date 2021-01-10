@@ -73,15 +73,15 @@ pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<Transaction<Post
 
 #[derive(Debug)]
 pub struct Posting {
-    account: String,
-    money_amount: Option<Rational64>,
-    money_currency: Option<String>,
-    cost_amount: Option<Rational64>,
-    cost_currency: Option<String>,
-    cost_type: Option<CostType>,
-    balance_amount: Option<Rational64>,
-    balance_currency: Option<String>,
-    comments: Vec<Comment>,
+    pub account: String,
+    pub money_amount: Option<Rational64>,
+    pub money_currency: Option<String>,
+    pub cost_amount: Option<Rational64>,
+    pub cost_currency: Option<String>,
+    pub cost_type: Option<CostType>,
+    pub balance_amount: Option<Rational64>,
+    pub balance_currency: Option<String>,
+    pub comments: Vec<Comment>,
 }
 
 fn parse_posting(tokenizer: &mut Tokenizer) -> Result<Posting, Error> {

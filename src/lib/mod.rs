@@ -49,3 +49,4 @@ impl Debug for Error {
         write!(f, "{}", ColoredStrings(&self.message))
     }
 }
+
