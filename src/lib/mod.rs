@@ -50,3 +50,11 @@ impl Debug for Error {
     }
 }
 
+impl From<ErrorType> for Error {
+    fn from(error: ErrorType) -> Self {
+        Error {
+            error_type: error,
+            message: vec![]
+        }
+    }
+}
