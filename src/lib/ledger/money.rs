@@ -1,9 +1,14 @@
 use num;
-use crate::ledger::Currency;
+use crate::ledger::{Currency, HasName};
 use std::collections::HashMap;
-use std::ops::{Add, Mul, Neg};
+use std::ops::{Add, Mul, Neg, Sub};
 use num::rational::Rational64;
 use num::{Zero, Signed};
+use std::borrow::Borrow;
+use crate::{Error, ErrorType};
+use colored::Colorize;
+use std::fmt::{Display, Formatter};
+use std::fmt;
 
 /// Money representation: an amount and a currency
 ///
@@ -40,6 +45,20 @@ pub enum Money<'a> {
         amount: num::rational::Rational64,
         currency: &'a Currency<'a>,
     },
+}
+
+impl Display for Money<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Money::Zero => write!(f, "{}", "0"),
+            Money::Money { amount, currency } => {
+                let value = amount.numer().clone() as f64 / amount.denom().clone() as f64;
+                write!(f, "{}{}",
+                       value,
+                       currency.get_name())
+            }
+        }
+    }
 }
 
 impl Eq for Money<'_> {}
@@ -104,6 +123,19 @@ impl<'a> From<Money<'a>> for Balance<'a> {
     }
 }
 
+impl PartialEq for Balance<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        for (k, v) in self.balance.iter() {
+            let other_money = other.balance.get(k);
+            match other_money {
+                None => if !v.is_zero() { return false; }
+                Some(money) => if money != v { return false; }
+            }
+        }
+        true
+    }
+}
+
 impl<'a> Add for Money<'a> {
     type Output = Balance<'a>;
 
@@ -143,9 +175,27 @@ impl<'a> Add for Balance<'a> {
     }
 }
 
+impl<'a> Sub for Balance<'a> {
+    type Output = Balance<'a>;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        let negative = -rhs;
+        self + negative
+    }
+}
+
 impl<'a> Balance<'a> {
     pub fn new() -> Balance<'a> {
         Balance { balance: HashMap::new() }
+    }
+
+    pub fn to_money(&self) -> Result<Money<'a>, ErrorType> {
+        let vec = self.balance.values().filter(|x| !x.is_zero()).collect::<Vec<&Money>>();
+        match vec.len() {
+            0 => Ok(Money::Zero),
+            1 => Ok(vec[0].clone()),
+            _ => Err(ErrorType::TransactionIsNotBalanced)
+        }
     }
     pub fn is_zero(&self) -> bool {
         match self.balance.is_empty() {

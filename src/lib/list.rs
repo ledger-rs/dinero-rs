@@ -40,13 +40,13 @@ impl<'a, T: Eq + Hash + HasName + Clone + FromDirective> List<'a, T> {
         ()
         // self.list.insert(for_element.clone());
     }
-    pub fn element_in_list(self, element: &T) -> bool {
+    pub fn element_in_list(&self, element: &T) -> bool {
         match self.aliases.get(element.get_name()) {
             None => false,
             Some(_) => true,
         }
     }
-    pub fn get(&self, index: &str) -> Result<&T, Error> {
+    pub fn get(&self, index: &str) -> Result<& T, Error> {
         match self.list.get(index) {
             None => match self.aliases.get(index) {
                 None => Err(Error{
@@ -54,7 +54,7 @@ impl<'a, T: Eq + Hash + HasName + Clone + FromDirective> List<'a, T> {
                     message: vec![
                         format!("{:?} not found", index).as_str().bold()
                     ] }),
-                Some(x) => Ok(x.to_owned())
+                Some(x) => Ok(x)
             }
             Some(x) => Ok(x)
         }

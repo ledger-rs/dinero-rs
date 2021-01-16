@@ -1,7 +1,6 @@
 ; A simple demo file with comments
 ! Comments can also be like this
 # or like this
-
 2021-01-01 * Groceries
     Expenses:Groceries   $100
     Assets:Checking account
