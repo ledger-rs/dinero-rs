@@ -2,13 +2,20 @@ use crate::ledger::{Origin, FromDirective, HasName, Balance, Money};
 use std::hash::{Hash, Hasher};
 use num::rational::Rational64;
 use crate::List;
+use std::fmt::{Display, Formatter};
+use std::fmt;
 
 #[derive(Debug, Clone)]
 pub struct Account<'a> {
     name: String,
     origin: Origin,
     parent: Option<&'a Account<'a>>,
-    balance: Balance<'a>,
+}
+
+impl Display for Account<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name)
+    }
 }
 
 impl PartialEq for Account<'_> {
@@ -31,7 +38,6 @@ impl From<String> for Account<'_> {
             name,
             origin: Origin::Other,
             parent: None,
-            balance: Balance::new(),
         }
     }
 }
@@ -52,10 +58,6 @@ impl HasName for Account<'_> {
 }
 
 impl<'a> Account<'a> {
-    pub fn add_balance(&mut self, money: &'a Money) {
-        self.balance = self.balance.clone() + Balance::from(money.clone());
-    }
-
     /// Depth of the account, useful for filters and other
     fn depth(&self) -> usize {
         self.name.chars().filter(|c| *c == ':').collect::<Vec<char>>().len() + 1
@@ -85,8 +87,10 @@ impl<'a> Account<'a> {
                 let split = self.name.split(":").collect::<Vec<&str>>();
                 match split.split_last() {
                     None => panic!("Could not get parent of {}", self.name),
-                    Some((last, elements)) => {
-                        Some(elements.iter().fold("".to_string(), |acc, a| acc + a))
+                    Some((_, elements)) => {
+                        Some(elements.iter()
+                            .map(|x| x.to_string()).collect::<Vec<String>>()
+                            .join(":"))
                     }
                 }
             }
