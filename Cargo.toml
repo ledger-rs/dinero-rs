@@ -6,6 +6,9 @@ edition = "2018"
 readme = "README.md"
 description = "A command line ledger tool"
 keywords = ["ledger"]
+license = "MIT"
+homepage = "https://github.com/frosklis/dinero-rs"
+repository = "https://github.com/frosklis/dinero-rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 name = "dinero"
