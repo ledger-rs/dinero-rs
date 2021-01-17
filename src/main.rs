@@ -10,7 +10,7 @@ enum Command {
 }
 
 use clap::{Arg, App, SubCommand};
-use dinero::commands::check;
+use dinero::commands::{check, accounts, commodities};
 
 fn main()  {
     let matches = App::new("dinero")
@@ -26,6 +26,11 @@ fn main()  {
             .required(true))
         .subcommand(SubCommand::with_name("check")
             .about("checks the ledger file"))
+        .subcommand(SubCommand::with_name("accounts")
+            .about("prints the accounts"))
+        .subcommand(SubCommand::with_name("commodities")
+            .about("prints the accounts")
+            .alias("currencies"))
         .get_matches();
 
     // Gets a value for config if supplied by user, or defaults to "default.conf"
@@ -33,6 +38,8 @@ fn main()  {
 
     if let Err(e) = match matches.subcommand_name() {
         Some("check") => check::execute(file),
+        Some("accounts") => accounts::execute(file),
+        Some("commodities") => commodities::execute(file),
         None => todo!("No subcommand was used"),
         _ => unreachable!(), // Assuming you've listed all direct children above, this is unreachable
     } {

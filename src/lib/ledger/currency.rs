@@ -1,6 +1,8 @@
 use crate::ErrorType;
 use crate::ledger::{Origin, HasName, FromDirective};
 use std::hash::{Hash, Hasher};
+use std::fmt::{Display, Formatter};
+use std::fmt;
 
 /// Currency representation
 ///
@@ -45,6 +47,12 @@ use std::hash::{Hash, Hasher};
 pub struct Currency<'a> {
     name: &'a str,
     origin: Origin,
+}
+
+impl Display for Currency<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name)
+    }
 }
 
 impl HasName for Currency<'_> {
