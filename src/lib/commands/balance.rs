@@ -30,12 +30,12 @@ pub fn execute(file: &str) -> Result<(), Error> {
     vec_balances.sort_by(|a, b| a.0.get_name().cmp(b.0.get_name()));
     for (account, bal) in vec_balances.iter() {
         for (_, money) in bal.balance.iter() {
-            print!("\n{:>20}", format!("{}", money));
+            print!("{:>20}", format!("{}", money));
         }
         total_balance = total_balance + bal.to_owned();
-        print!("  {}", account.get_name().blue());
+        println!("  {}", account.get_name().blue());
     }
-    print!("\n--------------------");
+    print!("{}", "--------------------");
 
     if total_balance.is_zero() {
         print!("\n{:>20}", "0");
