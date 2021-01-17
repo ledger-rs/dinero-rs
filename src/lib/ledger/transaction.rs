@@ -168,7 +168,39 @@ impl<'a> Transaction<Posting<'a>> {
                     }
                 }
                 balances.insert(p.account, expected_balance);
-                transaction_balance = transaction_balance + p.amount.unwrap().into();
+                transaction_balance = transaction_balance +
+                    match p.cost {
+                        None => Balance::from(p.amount.unwrap()),
+                        Some(cost) => match cost {
+                            Cost::Total { amount } =>
+                                if p.amount.unwrap().is_negative() {
+                                    Balance::from(-amount)
+                                } else {
+                                    Balance::from(amount)
+                                },
+                            Cost::PerUnit { amount } => {
+                                let currency =
+                                    match amount {
+                                        Money::Zero => panic!("Cost has no currency"),
+                                        Money::Money { currency, .. } => currency,
+                                    };
+                                let units = match amount {
+                                    Money::Zero => Rational64::new(0, 1),
+                                    Money::Money { amount, .. } => amount
+                                } * match p.amount.unwrap() {
+                                    Money::Zero => Rational64::new(0, 1),
+                                    Money::Money { amount, .. } => amount
+                                };
+                                let money = Money::Money {
+                                    amount: units * (if p.amount.unwrap().is_negative() { -1 } else { 1 }),
+                                    currency: currency,
+                                };
+                                Balance::from(money)
+                            }
+                        }
+                    };
+
+
                 postings.push(Posting {
                     account: p.account,
                     amount: p.amount,
