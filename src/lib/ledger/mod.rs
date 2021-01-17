@@ -9,6 +9,8 @@ use std::collections::{HashSet, HashMap};
 use std::hash::{Hash, Hasher};
 use crate::ledger::transaction::Cost;
 use colored::Colorize;
+use std::mem;
+use std::collections::hash_map::RandomState;
 
 mod money;
 mod currency;
@@ -143,7 +145,6 @@ pub fn populate_transactions<'a>(items: &Vec<Item>, elements: &'a LedgerElements
 
     Ok((transactions, balances))
 }
-
 
 #[derive(Debug, Clone)]
 pub struct Comment {

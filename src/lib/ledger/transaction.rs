@@ -39,7 +39,7 @@ pub enum PostingType {
     Virtual,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Posting<'a> {
     pub(crate) account: &'a Account<'a>,
     pub amount: Option<Money<'a>>,
@@ -85,27 +85,29 @@ impl<'a, PostingType> Transaction<PostingType> {
     }
 }
 
+fn total_balance<'a>(postings: &'a Vec<Posting>) -> Balance<'a> {
+    let bal = Balance::new();
+    postings.iter()
+        .filter(|p| p.amount.is_some())
+        .map(|p| Balance::from(p.amount.unwrap()))
+        .fold(bal, |acc, cur| acc + cur)
+}
+
+fn balance_postings<'a>(postings: &'a Vec<Posting>, account: &'a Account<'a>) -> Vec<Posting<'a>> {
+    let extra_postings = total_balance(postings).balance.iter()
+        .map(|(_, v)| Posting {
+            account,
+            amount: Some(-*v),
+            cost: None,
+            balance: None,
+        })
+        .collect::<Vec<Posting>>();
+    extra_postings
+}
+
 impl<'a> Transaction<Posting<'a>> {
-    fn total_balance(&'a self) -> Balance {
-        let bal = Balance::new();
-        self.postings.iter()
-            .filter(|p| p.amount.is_some())
-            .map(|p| Balance::from(p.amount.unwrap()))
-            .fold(bal, |acc, cur| acc + cur)
-    }
     pub fn is_balanced(&self) -> bool {
-        self.total_balance().can_be_zero()
-    }
-    fn balance_postings(&mut self, account: &Account) {
-        let extra_postings = self.total_balance().balance.iter()
-            .map(|(_, v)| Posting {
-                account,
-                amount: Some(-*v),
-                cost: None,
-                balance: None,
-            })
-            .collect::<Vec<Posting>>();
-        self.postings.to_owned().extend(extra_postings)
+        total_balance(self.postings.as_ref()).can_be_zero()
     }
     pub fn add_empty_posting(&mut self, account: &'a Account<'a>) {
         self.postings.push(Posting {
@@ -120,8 +122,10 @@ impl<'a> Transaction<Posting<'a>> {
             .filter(|p| p.amount.is_none() & p.balance.is_none())
             .collect::<Vec<&Posting>>().len()
     }
+
     /// Balances the transaction
-    pub fn balance(&'a mut self, balances: &mut HashMap<&Account<'a>, Balance<'a>>) -> Result<(), ErrorType> {
+    pub fn balance(&mut self, balances: &mut HashMap<&Account<'a>, Balance<'a>>) -> Result<(), ErrorType> {
+        let mut transaction_balance = Balance::new();
         // 1. update the amount of every posting if it has a balance
         let mut postings: Vec<Posting> = Vec::new();
         for p in self.postings.iter() {
@@ -134,6 +138,7 @@ impl<'a> Transaction<Posting<'a>> {
                     }
                 }
                 balances.insert(p.account, expected_balance);
+                transaction_balance = transaction_balance + p.amount.unwrap().into();
                 postings.push(Posting {
                     account: p.account,
                     amount: p.amount,
@@ -145,6 +150,7 @@ impl<'a> Transaction<Posting<'a>> {
                 let account_bal = balances.get(p.account).unwrap().clone();
                 let amount_bal = Balance::from(balance) - account_bal;
                 let money = amount_bal.to_money()?;
+                transaction_balance = transaction_balance + money.into();
                 postings.push(Posting {
                     account: p.account,
                     amount: Some(money),
@@ -158,10 +164,9 @@ impl<'a> Transaction<Posting<'a>> {
         if empties > 1 {
             Err(ErrorType::TooManyEmptyPostings(empties))
         } else if empties == 0 {
-            self.postings = postings;
-            match self.is_balanced() {
+            match transaction_balance.can_be_zero() {
                 true => {
-                    self.status = TransactionStatus::InternallyBalanced;
+                    self.postings = postings;
                     Ok(())
                 }
                 false => Err(ErrorType::TransactionIsNotBalanced)
@@ -169,13 +174,17 @@ impl<'a> Transaction<Posting<'a>> {
         } else {
             // Delete the empty posting
             match self.postings.last().unwrap().amount {
-                None => Err(ErrorType::EmptyPostingShouldBeLast),
-                Some(_) => {
-                    let account = self.postings.pop().unwrap().account;
-                    self.status = TransactionStatus::InternallyBalanced;
+                Some(_) => Err(ErrorType::EmptyPostingShouldBeLast),
+                None => {
+                    let account = self.postings.last().unwrap().account;
+                    let money = -transaction_balance.to_money()?;
+                    postings.push(Posting {
+                        account: account,
+                        amount: Some(money),
+                        balance: None,
+                        cost: None,
+                    });
                     self.postings = postings;
-                    self.balance_postings(account);
-
                     Ok(())
                 }
             }

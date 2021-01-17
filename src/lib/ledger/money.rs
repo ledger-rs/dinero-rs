@@ -53,7 +53,7 @@ impl Display for Money<'_> {
             Money::Zero => write!(f, "{}", "0"),
             Money::Money { amount, currency } => {
                 let value = amount.numer().clone() as f64 / amount.denom().clone() as f64;
-                write!(f, "{}{}",
+                write!(f, "{} {}",
                        value,
                        currency.get_name())
             }
@@ -213,9 +213,9 @@ impl<'a> Balance<'a> {
         let mut positive = false;
         let mut negative = false;
         for (_, m) in self.balance.iter() {
-            if positive & negative { return true; }
             positive = m.is_positive() | positive;
             negative = m.is_negative() | negative;
+            if positive & negative { return true; }
         }
         false
     }
