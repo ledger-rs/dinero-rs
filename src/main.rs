@@ -10,8 +10,7 @@ enum Command {
 }
 
 use clap::{Arg, App, SubCommand};
-use dinero::commands::{check, accounts, commodities};
-use dinero::commands::{check, balance};
+use dinero::commands::{check, balance, accounts, commodities};
 
 fn main() {
     let matches = App::new("dinero")
