@@ -21,26 +21,25 @@ mod account;
 /// Each entry has to be balanced
 /// Commodities can change price over time
 #[derive(Debug, Clone)]
-pub struct Ledger<'a> {
-    transactions: Vec<Transaction<Posting<'a>>>,
-    currencies: List<'a, Currency<'a>>,
-    accounts: List<'a, Account<'a>>,
+pub struct LedgerElements<'a> {
+    // pub transactions: Vec<Transaction<Posting<'a>>>,
+    pub currencies: List<'a, Currency<'a>>,
+    pub accounts: List<'a, Account<'a>>,
 }
 
-impl<'a> Ledger<'a> {
-    pub fn new() -> Ledger <'a>{
-        Ledger {
-            transactions: vec![],
+impl<'a> LedgerElements<'a> {
+    pub fn new() -> LedgerElements<'a> {
+        LedgerElements {
+            //transactions: vec![],
             currencies: List::<Currency>::new(),
             accounts: List::<Account>::new(),
         }
     }
 }
 
-pub fn build_ledger<'a>(items: &'a Vec<Item>, ledger: &'a mut Ledger<'a>) -> Result<(), Error> {
-    let mut currencies = &mut ledger.currencies;
-    let mut accounts = &mut ledger.accounts;
-    let mut transactions = &mut ledger.transactions;
+pub fn build_ledger(items: &Vec<Item>) -> Result<LedgerElements, Error> {
+    let mut currencies = List::<Currency>::new();
+    let mut accounts = List::<Account>::new();
     let mut prices: Vec<Price> = Vec::new();
 
 
@@ -72,6 +71,17 @@ pub fn build_ledger<'a>(items: &'a Vec<Item>, ledger: &'a mut Ledger<'a>) -> Res
     }
 
 
+    return Ok(LedgerElements {
+        currencies,
+        accounts,
+    });
+}
+
+
+pub fn populate_transactions<'a>(items: &Vec<Item>, elements: &'a LedgerElements<'a>) -> Result<(Vec<Transaction<Posting<'a>>>, HashMap<&'a Account<'a>, Balance<'a>>), Error> {
+    let mut transactions = vec![];
+    let accounts = &elements.accounts;
+    let currencies = &elements.currencies;
     // 2. Get the right postings
     for item in items.iter() {
         match item {
@@ -131,13 +141,7 @@ pub fn build_ledger<'a>(items: &'a Vec<Item>, ledger: &'a mut Ledger<'a>) -> Res
         balances.insert(account, Balance::new());
     }
 
-    // println!("Balances populated");
-
-    for t in transactions.to_owned().iter_mut() {
-        t.balance(&mut balances);
-    }
-
-    return Ok(());
+    Ok((transactions, balances))
 }
 
 
