@@ -24,7 +24,11 @@ pub fn execute(file: &str) -> Result<(), Error> {
     }
 
     let mut total_balance = Balance::new();
-    for (account, bal) in balances.iter() {
+    let mut vec_balances: Vec<(&Account, Balance)> = balances.iter()
+        .map(|x| (*x.0, x.1.clone()))
+        .collect();
+    vec_balances.sort_by(|a, b| a.0.get_name().cmp(b.0.get_name()));
+    for (account, bal) in vec_balances.iter() {
         for (_, money) in bal.balance.iter() {
             print!("\n{:>20}", format!("{}", money));
         }
@@ -33,7 +37,7 @@ pub fn execute(file: &str) -> Result<(), Error> {
     }
     print!("\n--------------------");
 
-    
+
     for (_, money) in total_balance.balance.iter() {
         print!("\n{:>20}", format!("{}", money));
     }
