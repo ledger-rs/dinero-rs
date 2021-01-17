@@ -13,27 +13,29 @@ use clap::{Arg, App, SubCommand};
 use dinero::commands::{check, balance, accounts, commodities};
 
 fn main() {
+    let file_arg =Arg::with_name("file")
+        .short("f")
+        .long("file")
+        .value_name("FILE")
+        .help("Ledger file to read")
+        .takes_value(true)
+        .required(false);
     let matches = App::new("dinero")
         .version(env!("CARGO_PKG_VERSION"))
         .author(env!("CARGO_PKG_AUTHORS"))
         .about("the command line accounting tool")
-        .arg(Arg::with_name("file")
-            .short("f")
-            .long("file")
-            .value_name("FILE")
-            .help("Ledger file to read")
-            .takes_value(true)
-            .required(true))
         .subcommand(SubCommand::with_name("check")
             .about("checks the ledger file"))
         .subcommand(SubCommand::with_name("balance")
             .about("prints a balance report")
-            .alias("bal"))
+            .alias("bal")
+            .arg(file_arg.clone()))
         .subcommand(SubCommand::with_name("accounts")
             .about("prints the accounts"))
         .subcommand(SubCommand::with_name("commodities")
             .about("prints the accounts")
             .alias("currencies"))
+        .arg(file_arg)
         .get_matches();
 
     // Gets a value for config if supplied by user, or defaults to "default.conf"

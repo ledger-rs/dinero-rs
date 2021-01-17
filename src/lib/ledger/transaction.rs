@@ -1,7 +1,7 @@
 use crate::ledger::{Account, Money, Balance, Comment, Currency};
 use crate::{ErrorType, parser, List, Error};
 use chrono::NaiveDate;
-use num::rational::Ratio;
+use num::rational::{Ratio, Rational64};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
@@ -89,7 +89,37 @@ fn total_balance<'a>(postings: &'a Vec<Posting>) -> Balance<'a> {
     let bal = Balance::new();
     postings.iter()
         .filter(|p| p.amount.is_some())
-        .map(|p| Balance::from(p.amount.unwrap()))
+        .map(|p| match p.cost {
+            None => Balance::from(p.amount.unwrap()),
+            Some(cost) => match cost {
+                Cost::Total { amount } =>
+                    if p.amount.unwrap().is_negative() {
+                        Balance::from(-amount)
+                    } else {
+                        Balance::from(amount)
+                    },
+                Cost::PerUnit { amount } => {
+                    let currency =
+                        match amount {
+                            Money::Zero => panic!("Cost has no currency"),
+                            Money::Money { currency, .. } => currency,
+                        };
+                    let units = match amount {
+                        Money::Zero => Rational64::new(0, 1),
+                        Money::Money { amount, .. } => amount
+                    } * match p.amount.unwrap() {
+                        Money::Zero => Rational64::new(0, 1),
+                        Money::Money { amount, .. } => amount
+                    };
+                    let money = Money::Money {
+                        amount: units * (if p.amount.unwrap().is_negative() { -1 } else { 1 }),
+                        currency: currency,
+                    };
+                    Balance::from(money)
+                }
+            }
+        }
+        )
         .fold(bal, |acc, cur| acc + cur)
 }
 

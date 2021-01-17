@@ -23,20 +23,20 @@ pub fn execute(file: &str) -> Result<(), Error> {
         }
     }
 
+    let mut total_balance = Balance::new();
     for (account, bal) in balances.iter() {
         for (_, money) in bal.balance.iter() {
             print!("\n{:>20}", format!("{}", money));
         }
-        print!("  {} {}", account.get_name(), account.parent_name().unwrap());
+        total_balance = total_balance + bal.to_owned();
+        print!("  {}", account.get_name().blue());
     }
-    println!("\n---------------------");
+    print!("\n--------------------");
 
-    let bal = Balance::new();
-    /*postings.iter()
-        .filter(|p| p.amount.is_some())
-        .map(|p| Balance::from(p.amount.unwrap()))
-        .fold(bal, |acc, cur| acc + cur);
-    */
-    println!("---------------------");
+    
+    for (_, money) in total_balance.balance.iter() {
+        print!("\n{:>20}", format!("{}", money));
+    }
+    println!("");
     Ok(())
 }
