@@ -37,9 +37,12 @@ pub fn execute(file: &str) -> Result<(), Error> {
     }
     print!("\n--------------------");
 
-
-    for (_, money) in total_balance.balance.iter() {
-        print!("\n{:>20}", format!("{}", money));
+    if total_balance.is_zero() {
+        print!("\n{:>20}", "0");
+    } else {
+        for (_, money) in total_balance.balance.iter() {
+            print!("\n{:>20}", format!("{}", money));
+        }
     }
     println!("");
     Ok(())
