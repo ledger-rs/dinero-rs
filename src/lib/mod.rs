@@ -3,7 +3,7 @@ use colored::{ColoredString};
 use std::fmt::Debug;
 pub use list::List;
 
-pub mod ledger;
+ pub mod ledger;
 pub mod parser;
 pub mod commands;
 mod list;

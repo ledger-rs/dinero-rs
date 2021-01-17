@@ -11,8 +11,9 @@ enum Command {
 
 use clap::{Arg, App, SubCommand};
 use dinero::commands::{check, accounts, commodities};
+use dinero::commands::{check, balance};
 
-fn main()  {
+fn main() {
     let matches = App::new("dinero")
         .version(env!("CARGO_PKG_VERSION"))
         .author(env!("CARGO_PKG_AUTHORS"))
@@ -26,6 +27,9 @@ fn main()  {
             .required(true))
         .subcommand(SubCommand::with_name("check")
             .about("checks the ledger file"))
+        .subcommand(SubCommand::with_name("balance")
+            .about("prints a balance report")
+            .alias("bal"))
         .subcommand(SubCommand::with_name("accounts")
             .about("prints the accounts"))
         .subcommand(SubCommand::with_name("commodities")
@@ -40,6 +44,7 @@ fn main()  {
         Some("check") => check::execute(file),
         Some("accounts") => accounts::execute(file),
         Some("commodities") => commodities::execute(file),
+        Some("balance") => balance::execute(file),
         None => todo!("No subcommand was used"),
         _ => unreachable!(), // Assuming you've listed all direct children above, this is unreachable
     } {
