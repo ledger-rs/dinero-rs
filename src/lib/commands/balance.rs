@@ -8,7 +8,7 @@ use std::collections::{HashMap, HashSet};
 use std::collections::hash_map::RandomState;
 
 /// Balance report
-pub fn execute(path: PathBuf, flat: bool, show_total: bool) -> Result<(), Error> {
+pub fn execute(path: PathBuf, flat: bool, show_total: bool, depth: Option<usize>) -> Result<(), Error> {
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
     let mut items = tokenizer.parse()?;
     let mut ledgerelements = ledger::build_ledger(&items)?;
@@ -63,18 +63,31 @@ pub fn execute(path: PathBuf, flat: bool, show_total: bool) -> Result<(), Error>
             .collect();
     }
 
+
+    // Print the balances by account
+
     vec_balances.sort_by(|a, b| a.0.cmp(b.0));
     for (account, bal) in vec_balances.iter() {
+        if let Some(depth) = depth {
+            if account.split(":").count() > depth {
+                continue;
+            }
+        }
+
         let mut first = true;
+
+
         for (_, money) in bal.balance.iter() {
-            if !first {println!();}
+            if !first { println!(); }
             first = false;
             print!("{:>20}", format!("{}", money));
         }
-        if flat {println!("  {}", account.blue());} else {
+        if flat {
+            println!("  {}", account.blue());
+        } else {
             let n = account.split(":").count();
             let text = account.split(":").last().unwrap();
-            for _ in 0..n {print!("  ");}
+            for _ in 0..n { print!("  "); }
             println!("{}", text.blue());
         }
     }
