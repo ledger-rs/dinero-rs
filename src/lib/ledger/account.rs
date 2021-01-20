@@ -1,9 +1,8 @@
-use crate::ledger::{Origin, FromDirective, HasName, Balance, Money};
-use std::hash::{Hash, Hasher};
-use num::rational::Rational64;
+use crate::ledger::{FromDirective, HasName, Origin};
 use crate::List;
-use std::fmt::{Display, Formatter};
 use std::fmt;
+use std::fmt::{Display, Formatter};
+use std::hash::{Hash, Hasher};
 
 #[derive(Debug, Clone)]
 pub struct Account<'a> {
@@ -46,7 +45,7 @@ impl FromDirective for Account<'_> {
     fn is_from_directive(&self) -> bool {
         match self.origin {
             Origin::FromDirective => true,
-            _ => false
+            _ => false,
         }
     }
 }
@@ -60,7 +59,12 @@ impl HasName for Account<'_> {
 impl<'a> Account<'a> {
     /// Depth of the account, useful for filters and other
     pub fn depth(&self) -> usize {
-        self.name.chars().filter(|c| *c == ':').collect::<Vec<char>>().len() + 1
+        self.name
+            .chars()
+            .filter(|c| *c == ':')
+            .collect::<Vec<char>>()
+            .len()
+            + 1
     }
 
     pub fn set_parent(&mut self, parent: &'a Account<'a>) {
@@ -93,11 +97,13 @@ impl<'a> Account<'a> {
                 let split = self.name.split(":").collect::<Vec<&str>>();
                 match split.split_last() {
                     None => panic!("Could not get parent of {}", self.name),
-                    Some((_, elements)) => {
-                        Some(elements.iter()
-                            .map(|x| x.to_string()).collect::<Vec<String>>()
-                            .join(":"))
-                    }
+                    Some((_, elements)) => Some(
+                        elements
+                            .iter()
+                            .map(|x| x.to_string())
+                            .collect::<Vec<String>>()
+                            .join(":"),
+                    ),
                 }
             }
         }
@@ -110,7 +116,7 @@ impl<'a> List<'a, Account<'a>> {
         let mut finished = false;
         while !finished {
             let mut new_accounts = Vec::<Account>::new();
-            for (k, a) in self.list.clone().iter_mut() {
+            for (_, a) in self.list.clone().iter_mut() {
                 if a.depth() > 1 {
                     let parent_name = a.parent_name().unwrap();
                     match self.list.get(&parent_name) {
@@ -124,9 +130,13 @@ impl<'a> List<'a, Account<'a>> {
             for acc in new_accounts {
                 self.push(acc);
             }
-            finished = self.list.values()
+            finished = self
+                .list
+                .values()
                 .filter(|x| x.parent.is_none() & (x.depth() > 1))
-                .collect::<Vec<&Account>>().len() == 0;
+                .collect::<Vec<&Account>>()
+                .len()
+                == 0;
         }
     }
 }

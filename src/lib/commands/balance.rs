@@ -1,24 +1,35 @@
-use crate::parser::{Tokenizer};
-use crate::Error;
-use std::path::PathBuf;
-use colored::Colorize;
-use crate::ledger;
-use crate::ledger::{LedgerElements, Account, Balance, HasName};
 use std::collections::{HashMap, HashSet};
-use std::collections::hash_map::RandomState;
+use std::path::PathBuf;
+
+use colored::Colorize;
+
+use crate::ledger;
+use crate::ledger::{Account, Balance, HasName};
+use crate::parser::Tokenizer;
+use crate::Error;
 
 /// Balance report
-pub fn execute(path: PathBuf, flat: bool, show_total: bool, depth: Option<usize>) -> Result<(), Error> {
+pub fn execute(
+    path: PathBuf,
+    flat: bool,
+    show_total: bool,
+    depth: Option<usize>,
+) -> Result<(), Error> {
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
-    let mut items = tokenizer.parse()?;
-    let mut ledgerelements = ledger::build_ledger(&items)?;
+    let items = tokenizer.parse()?;
+    let ledgerelements = ledger::build_ledger(&items)?;
     let (mut transactions, mut balances) = ledger::populate_transactions(&items, &ledgerelements)?;
-    transactions.iter_mut().for_each(|t| t.balance(&mut balances).unwrap());
+    transactions
+        .iter_mut()
+        .for_each(|t| t.balance(&mut balances).unwrap());
     let mut balances: HashMap<&Account, Balance> = HashMap::new();
 
     for t in transactions.iter() {
         for p in t.postings.iter() {
-            let mut cur_bal = balances.get(p.account).unwrap_or(&Balance::new()).to_owned();
+            let mut cur_bal = balances
+                .get(p.account)
+                .unwrap_or(&Balance::new())
+                .to_owned();
             cur_bal = cur_bal + p.amount.unwrap().into();
             balances.insert(p.account, cur_bal.to_owned());
         }
@@ -49,20 +60,22 @@ pub fn execute(path: PathBuf, flat: bool, show_total: bool, depth: Option<usize>
         vec.sort_by(|a, b| a.matches(":").count().cmp(&b.matches(":").count()));
 
         for account in vec.iter() {
-            let balance = new_balances.iter()
+            let balance = new_balances
+                .iter()
                 .filter(|x| x.0.starts_with(account.as_str()))
                 .fold(Balance::new(), |acc, new| acc + new.1.clone());
             new_balances.insert(account.as_str().clone(), balance);
         }
-        vec_balances = new_balances.iter()
+        vec_balances = new_balances
+            .iter()
             .map(|x| (x.0.clone(), x.1.clone()))
             .collect()
     } else {
-        vec_balances = balances.iter()
+        vec_balances = balances
+            .iter()
             .map(|x| (x.0.get_name(), x.1.clone()))
             .collect();
     }
-
 
     // Print the balances by account
 
@@ -76,9 +89,10 @@ pub fn execute(path: PathBuf, flat: bool, show_total: bool, depth: Option<usize>
 
         let mut first = true;
 
-
         for (_, money) in bal.balance.iter() {
-            if !first { println!(); }
+            if !first {
+                println!();
+            }
             first = false;
             print!("{:>20}", format!("{}", money));
         }
@@ -87,7 +101,9 @@ pub fn execute(path: PathBuf, flat: bool, show_total: bool, depth: Option<usize>
         } else {
             let n = account.split(":").count();
             let text = account.split(":").last().unwrap();
-            for _ in 0..n { print!("  "); }
+            for _ in 0..n {
+                print!("  ");
+            }
             println!("{}", text.blue());
         }
     }
@@ -95,7 +111,8 @@ pub fn execute(path: PathBuf, flat: bool, show_total: bool, depth: Option<usize>
     // Print the total
     if show_total {
         // Calculate it
-        let mut total_balance = balances.iter()
+        let total_balance = balances
+            .iter()
             .fold(Balance::new(), |acc, x| acc + x.1.to_owned());
         print!("{}", "--------------------");
 
@@ -112,5 +129,3 @@ pub fn execute(path: PathBuf, flat: bool, show_total: bool, depth: Option<usize>
     // We're done :)
     Ok(())
 }
-
-

@@ -1,13 +1,12 @@
-use crate::parser::{Tokenizer, chars, comment};
-use crate::{ErrorType, Error};
-use crate::ledger::{Cleared, Transaction, Comment, CostType};
-use regex::Regex;
-use lazy_static::lazy_static;
-use chrono::NaiveDate;
-use std::str::FromStr;
-use num::rational::Rational64;
+use crate::ledger::{Cleared, Comment, CostType, Transaction};
 use crate::parser::chars::LineType;
-
+use crate::parser::{chars, comment, Tokenizer};
+use crate::{Error, ErrorType};
+use chrono::NaiveDate;
+use lazy_static::lazy_static;
+use num::rational::Rational64;
+use regex::Regex;
+use std::str::FromStr;
 
 pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<Transaction<Posting>, Error> {
     lazy_static! {
@@ -29,26 +28,44 @@ pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<Transaction<Post
         match cap {
             Some(m) => {
                 match i {
-                    1 => // date
-                        transaction.date = Some(parse_date(m.as_str())),
-                    2 => // effective date
-                        transaction.effective_date = Some(parse_date(m.as_str())),
-                    3 => // cleared
+                    1 =>
+                    // date
+                    {
+                        transaction.date = Some(parse_date(m.as_str()))
+                    }
+                    2 =>
+                    // effective date
+                    {
+                        transaction.effective_date = Some(parse_date(m.as_str()))
+                    }
+                    3 =>
+                    // cleared
+                    {
                         transaction.cleared = match m.as_str() {
                             "*" => Cleared::Cleared,
                             "!" => Cleared::NotCleared,
-                            _ => return Err(tokenizer.error(ErrorType::ParserError))
-                        },
-                    4 => // code
-                        transaction.code = Some(m.as_str().to_string()),
-                    5 => // description
-                        transaction.description = m.as_str().to_string(),
-                    6 => // note
-                        transaction.code = Some(m.as_str().to_string()),
+                            _ => return Err(tokenizer.error(ErrorType::ParserError)),
+                        }
+                    }
+                    4 =>
+                    // code
+                    {
+                        transaction.code = Some(m.as_str().to_string())
+                    }
+                    5 =>
+                    // description
+                    {
+                        transaction.description = m.as_str().to_string()
+                    }
+                    6 =>
+                    // note
+                    {
+                        transaction.code = Some(m.as_str().to_string())
+                    }
                     _ => (),
                 }
             }
-            None => ()
+            None => (),
         }
     }
 
@@ -57,14 +74,12 @@ pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<Transaction<Post
             ';' => transaction.comments.push(comment::parse(tokenizer)),
             c if c.is_numeric() => return Err(tokenizer.error(ErrorType::UnexpectedInput)),
             _ => match parse_posting(tokenizer) {
-                Ok(posting) => {
-                    transaction.postings.push(posting)
-                }
+                Ok(posting) => transaction.postings.push(posting),
                 Err(e) => {
                     eprintln!("Error while parsing posting.");
                     return Err(e);
                 }
-            }
+            },
         }
     }
 
@@ -90,9 +105,15 @@ fn parse_posting(tokenizer: &mut Tokenizer) -> Result<Posting, Error> {
     let mut account = String::new();
     loop {
         let c = tokenizer.next();
-        if !c.is_whitespace() { account.push(c); } else if (c == '\t') | (c == '\n') | (c == '\r') { break; } else {
+        if !c.is_whitespace() {
+            account.push(c);
+        } else if (c == '\t') | (c == '\n') | (c == '\r') {
+            break;
+        } else {
             let d = tokenizer.next();
-            if d.is_whitespace() | (c == '\n') | (c == '\r') { break; } else {
+            if d.is_whitespace() | (c == '\n') | (c == '\r') {
+                break;
+            } else {
                 account.push(c);
                 account.push(d);
             }
@@ -127,7 +148,9 @@ fn parse_posting(tokenizer: &mut Tokenizer) -> Result<Posting, Error> {
                 posting.balance_currency = Some(money.1);
             }
             Some('@') => {
-                if posting.money_amount.is_none() { return Err(tokenizer.error(ErrorType::ParserError)); }
+                if posting.money_amount.is_none() {
+                    return Err(tokenizer.error(ErrorType::ParserError));
+                }
 
                 tokenizer.position += 1;
                 tokenizer.line_position += 1;
@@ -166,8 +189,7 @@ fn parse_money(tokenizer: &mut Tokenizer) -> Result<(Rational64, String), Error>
             currency = chars::get_string(tokenizer);
             amount = parse_amount(tokenizer)?;
         }
-        None =>
-            return Err(tokenizer.error(ErrorType::ParserError))
+        None => return Err(tokenizer.error(ErrorType::ParserError)),
     }
     Ok((amount, currency))
 }
@@ -178,12 +200,18 @@ fn parse_amount(tokenizer: &mut Tokenizer) -> Result<Rational64, Error> {
     let mut decimal = false;
     loop {
         match tokenizer.get_char() {
-            Some('.') => if decimal {
-                return Err(tokenizer.error(ErrorType::ParserError));
-            } else { decimal = true },
+            Some('.') => {
+                if decimal {
+                    return Err(tokenizer.error(ErrorType::ParserError));
+                } else {
+                    decimal = true
+                }
+            }
             Some(c) if (c == '-') | c.is_numeric() => {
                 num.push(c);
-                if decimal { den.push('0') };
+                if decimal {
+                    den.push('0')
+                };
             }
             _ => break,
         }
@@ -193,11 +221,11 @@ fn parse_amount(tokenizer: &mut Tokenizer) -> Result<Rational64, Error> {
     Ok(Rational64::new(
         match i64::from_str(num.as_str()) {
             Ok(n) => n,
-            Err(_) => return Err(tokenizer.error(ErrorType::ParserError))
+            Err(_) => return Err(tokenizer.error(ErrorType::ParserError)),
         },
         match i64::from_str(den.as_str()) {
             Ok(d) => d,
-            Err(_) => return Err(tokenizer.error(ErrorType::ParserError))
+            Err(_) => return Err(tokenizer.error(ErrorType::ParserError)),
         },
     ))
 }
@@ -205,7 +233,11 @@ fn parse_amount(tokenizer: &mut Tokenizer) -> Result<Rational64, Error> {
 fn parse_date(date_str: &str) -> NaiveDate {
     // yyyy-mm-dd is 10 characters
     assert!(date_str.len() == 10);
-    assert_eq!(date_str.chars().nth(4), date_str.chars().nth(7), "Separators mismatch");
+    assert_eq!(
+        date_str.chars().nth(4),
+        date_str.chars().nth(7),
+        "Separators mismatch"
+    );
     let sep = date_str.chars().nth(4).unwrap();
     let mut parts = date_str.split(sep);
     let year = i32::from_str(parts.next().unwrap()).unwrap();

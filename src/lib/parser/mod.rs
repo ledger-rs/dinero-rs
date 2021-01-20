@@ -5,13 +5,13 @@ mod comment;
 mod include;
 pub(crate) mod transaction;
 
-use crate::{ErrorType, Error, parser};
-use std::path::{PathBuf};
-use std::fs::read_to_string;
-use crate::parser::chars::LineType;
 use crate::ledger::{Comment, Transaction};
-use std::collections::{HashSet};
+use crate::parser::chars::LineType;
+use crate::{parser, Error, ErrorType};
 use colored::{ColoredString, Colorize};
+use std::collections::HashSet;
+use std::fs::read_to_string;
+use std::path::PathBuf;
 
 pub enum Item {
     Comment(Comment),
@@ -78,7 +78,9 @@ impl<'a> From<&'a PathBuf> for Tokenizer<'a> {
                     seen_files,
                 }
             }
-            Err(err) => { panic!(ErrorType::CannotReadFile(err.to_string())) }
+            Err(err) => {
+                panic!(ErrorType::CannotReadFile(err.to_string()))
+            }
         }
     }
 }
@@ -92,35 +94,53 @@ impl<'a> Tokenizer<'a> {
             match chars::consume_whitespaces_and_lines(self) {
                 LineType::Blank => match self.get_char() {
                     Some(c) => match c {
-                        ';' | '!' | '*' | '%' | '#' => items.push(Item::Comment(comment::parse(self))),
-                        c if c.is_numeric() => items.push(Item::Transaction(transaction::parse(self)?)),
+                        ';' | '!' | '*' | '%' | '#' => {
+                            items.push(Item::Comment(comment::parse(self)))
+                        }
+                        c if c.is_numeric() => {
+                            items.push(Item::Transaction(transaction::parse(self)?))
+                        }
                         'i' => {
                             // This is the special case
                             let mut new_items = include::parse(self)?;
                             items.append(&mut new_items);
                         }
-                        _ => // TODO Change by an Error
-                            panic!("Unexpected char '{}'", c),
-                    }
+                        _ =>
+                        // TODO Change by an Error
+                        {
+                            panic!("Unexpected char '{}'", c)
+                        }
+                    },
                     None => continue,
                 },
-                LineType::Indented => { return Err(self.error(ErrorType::ParserError)); }
+                LineType::Indented => {
+                    return Err(self.error(ErrorType::ParserError));
+                }
             };
         }
         Ok(items)
     }
     fn get_char(&self) -> Option<char> {
-        match self.content.chars().collect::<Vec<char>>().get(self.position) {
+        match self
+            .content
+            .chars()
+            .collect::<Vec<char>>()
+            .get(self.position)
+        {
             Some(c) => Some(*c),
-            None => None
+            None => None,
         }
     }
     fn error(&self, err: ErrorType) -> Error {
         let mut message = vec![ColoredString::from("\n")];
         // TODO not the fastest
         for (i, line) in self.content.lines().enumerate() {
-            if i < self.line_index - 1 { continue; };
-            if i > self.line_index { break; };
+            if i < self.line_index - 1 {
+                continue;
+            };
+            if i > self.line_index {
+                break;
+            };
             message.push(ColoredString::from(line));
         }
         let line = message.pop().unwrap().cyan();
@@ -128,7 +148,11 @@ impl<'a> Tokenizer<'a> {
         message.push(line.clone());
         message.push(ColoredString::from("\n"));
         for i in 0..line.len().to_owned() {
-            message.push(if i == self.line_position { "^".bold() } else { "-".bold() });
+            message.push(if i == self.line_position {
+                "^".bold()
+            } else {
+                "-".bold()
+            });
         }
         //message.push(ColoredString::from("\n"));
         Error {
@@ -144,7 +168,9 @@ impl<'a> Tokenizer<'a> {
                 self.line_position = 0;
                 self.line_index += 1;
             }
-            _ => { self.line_position += 1; }
+            _ => {
+                self.line_position += 1;
+            }
         }
         self.position += 1;
         c

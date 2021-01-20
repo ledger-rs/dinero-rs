@@ -1,8 +1,8 @@
-use crate::parser::{chars, Tokenizer, Item};
+use crate::parser::{chars, Item, Tokenizer};
 
+use crate::{Error, ErrorType};
 use glob::glob;
 use std::path::PathBuf;
-use crate::{ErrorType, Error};
 
 /// Handles include directive
 pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<Vec<Item>, Error> {

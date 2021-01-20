@@ -1,8 +1,7 @@
-use crate::ErrorType;
-use crate::ledger::{Origin, HasName, FromDirective};
-use std::hash::{Hash, Hasher};
-use std::fmt::{Display, Formatter};
+use crate::ledger::{FromDirective, HasName, Origin};
 use std::fmt;
+use std::fmt::{Display, Formatter};
+use std::hash::{Hash, Hasher};
 
 /// Currency representation
 ///
@@ -63,7 +62,10 @@ impl HasName for Currency<'_> {
 
 impl<'a> From<&'a str> for Currency<'a> {
     fn from(name: &'a str) -> Self {
-        Currency { name, origin: Origin::Other }
+        Currency {
+            name,
+            origin: Origin::Other,
+        }
     }
 }
 

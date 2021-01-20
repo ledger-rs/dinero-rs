@@ -1,8 +1,10 @@
-use crate::ledger::{Account, Money, Balance, Comment, Currency};
-use crate::{ErrorType, parser, List, Error};
-use chrono::NaiveDate;
-use num::rational::{Ratio, Rational64};
 use std::collections::HashMap;
+
+use chrono::NaiveDate;
+use num::rational::Rational64;
+
+use crate::ledger::{Account, Balance, Comment, Money};
+use crate::ErrorType;
 
 #[derive(Debug, Clone)]
 pub struct Transaction<PostingType> {
@@ -34,9 +36,9 @@ pub enum Cleared {
 
 #[derive(Debug, Clone, Copy)]
 pub enum PostingType {
-    Real,
-    VirtualMustBalance,
-    Virtual,
+    // todo Real,
+    // todo VirtualMustBalance,
+    // todo Virtual,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -67,7 +69,6 @@ pub enum Cost<'a> {
     PerUnit { amount: Money<'a> },
 }
 
-
 impl<'a, PostingType> Transaction<PostingType> {
     pub fn new() -> Transaction<PostingType> {
         Transaction {
@@ -87,53 +88,47 @@ impl<'a, PostingType> Transaction<PostingType> {
 
 fn total_balance<'a>(postings: &'a Vec<Posting>) -> Balance<'a> {
     let bal = Balance::new();
-    postings.iter()
+    postings
+        .iter()
         .filter(|p| p.amount.is_some())
         .map(|p| match p.cost {
             None => Balance::from(p.amount.unwrap()),
             Some(cost) => match cost {
-                Cost::Total { amount } =>
+                Cost::Total { amount } => {
                     if p.amount.unwrap().is_negative() {
                         Balance::from(-amount)
                     } else {
                         Balance::from(amount)
-                    },
+                    }
+                }
                 Cost::PerUnit { amount } => {
-                    let currency =
-                        match amount {
-                            Money::Zero => panic!("Cost has no currency"),
-                            Money::Money { currency, .. } => currency,
-                        };
+                    let currency = match amount {
+                        Money::Zero => panic!("Cost has no currency"),
+                        Money::Money { currency, .. } => currency,
+                    };
                     let units = match amount {
                         Money::Zero => Rational64::new(0, 1),
-                        Money::Money { amount, .. } => amount
+                        Money::Money { amount, .. } => amount,
                     } * match p.amount.unwrap() {
                         Money::Zero => Rational64::new(0, 1),
-                        Money::Money { amount, .. } => amount
+                        Money::Money { amount, .. } => amount,
                     };
                     let money = Money::Money {
-                        amount: units * (if p.amount.unwrap().is_negative() { -1 } else { 1 }),
+                        amount: units
+                            * (if p.amount.unwrap().is_negative() {
+                            -1
+                        } else {
+                            1
+                        }),
                         currency: currency,
                     };
                     Balance::from(money)
                 }
-            }
-        }
-        )
+            },
+        })
         .fold(bal, |acc, cur| acc + cur)
 }
 
-fn balance_postings<'a>(postings: &'a Vec<Posting>, account: &'a Account<'a>) -> Vec<Posting<'a>> {
-    let extra_postings = total_balance(postings).balance.iter()
-        .map(|(_, v)| Posting {
-            account,
-            amount: Some(-*v),
-            cost: None,
-            balance: None,
-        })
-        .collect::<Vec<Posting>>();
-    extra_postings
-}
 
 impl<'a> Transaction<Posting<'a>> {
     pub fn is_balanced(&self) -> bool {
@@ -148,58 +143,68 @@ impl<'a> Transaction<Posting<'a>> {
         })
     }
     pub fn num_empty_postings(&self) -> usize {
-        self.postings.iter()
+        self.postings
+            .iter()
             .filter(|p| p.amount.is_none() & p.balance.is_none())
-            .collect::<Vec<&Posting>>().len()
+            .collect::<Vec<&Posting>>()
+            .len()
     }
 
     /// Balances the transaction
-    pub fn balance(&mut self, balances: &mut HashMap<&Account<'a>, Balance<'a>>) -> Result<(), ErrorType> {
+    pub fn balance(
+        &mut self,
+        balances: &mut HashMap<&Account<'a>, Balance<'a>>,
+    ) -> Result<(), ErrorType> {
         let mut transaction_balance = Balance::new();
         // 1. update the amount of every posting if it has a balance
         let mut postings: Vec<Posting> = Vec::new();
         for p in self.postings.iter() {
             // If it has money, update the balance
             if let Some(money) = p.amount {
-                let expected_balance = balances.get(p.account).unwrap().clone() + Balance::from(money);
+                let expected_balance =
+                    balances.get(p.account).unwrap().clone() + Balance::from(money);
                 if let Some(balance) = p.balance {
                     if Balance::from(balance) != expected_balance {
                         return Err(ErrorType::TransactionIsNotBalanced);
                     }
                 }
                 balances.insert(p.account, expected_balance);
-                transaction_balance = transaction_balance +
-                    match p.cost {
-                        None => Balance::from(p.amount.unwrap()),
-                        Some(cost) => match cost {
-                            Cost::Total { amount } =>
-                                if p.amount.unwrap().is_negative() {
-                                    Balance::from(-amount)
-                                } else {
-                                    Balance::from(amount)
-                                },
-                            Cost::PerUnit { amount } => {
-                                let currency =
-                                    match amount {
-                                        Money::Zero => panic!("Cost has no currency"),
-                                        Money::Money { currency, .. } => currency,
-                                    };
-                                let units = match amount {
-                                    Money::Zero => Rational64::new(0, 1),
-                                    Money::Money { amount, .. } => amount
-                                } * match p.amount.unwrap() {
-                                    Money::Zero => Rational64::new(0, 1),
-                                    Money::Money { amount, .. } => amount
-                                };
-                                let money = Money::Money {
-                                    amount: units * (if p.amount.unwrap().is_negative() { -1 } else { 1 }),
-                                    currency: currency,
-                                };
-                                Balance::from(money)
+                transaction_balance = transaction_balance
+                    + match p.cost {
+                    None => Balance::from(p.amount.unwrap()),
+                    Some(cost) => match cost {
+                        Cost::Total { amount } => {
+                            if p.amount.unwrap().is_negative() {
+                                Balance::from(-amount)
+                            } else {
+                                Balance::from(amount)
                             }
                         }
-                    };
-
+                        Cost::PerUnit { amount } => {
+                            let currency = match amount {
+                                Money::Zero => panic!("Cost has no currency"),
+                                Money::Money { currency, .. } => currency,
+                            };
+                            let units = match amount {
+                                Money::Zero => Rational64::new(0, 1),
+                                Money::Money { amount, .. } => amount,
+                            } * match p.amount.unwrap() {
+                                Money::Zero => Rational64::new(0, 1),
+                                Money::Money { amount, .. } => amount,
+                            };
+                            let money = Money::Money {
+                                amount: units
+                                    * (if p.amount.unwrap().is_negative() {
+                                    -1
+                                } else {
+                                    1
+                                }),
+                                currency: currency,
+                            };
+                            Balance::from(money)
+                        }
+                    },
+                };
 
                 postings.push(Posting {
                     account: p.account,
@@ -231,7 +236,7 @@ impl<'a> Transaction<Posting<'a>> {
                     self.postings = postings;
                     Ok(())
                 }
-                false => Err(ErrorType::TransactionIsNotBalanced)
+                false => Err(ErrorType::TransactionIsNotBalanced),
             }
         } else {
             // Delete the empty posting
