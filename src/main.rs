@@ -49,7 +49,11 @@ struct Opt {
 struct CommonOpts {
     /// Input file
     #[structopt(name = "FILE", short = "f", long = "file", parse(from_os_str))]
-    input: PathBuf,
+    input_file: PathBuf,
+
+    /// Depth
+    #[structopt(short = "d", long = "depth")]
+    depth: Option<usize>,
 
     /// The pattern to look for
     pattern: Option<String>,
@@ -61,10 +65,10 @@ fn main() {
 
     if let Err(e) = match opt.cmd {
         Command::Balance { options, flat, no_total } => {
-            balance::execute(options.input, flat, !no_total)
+            balance::execute(options.input_file, flat, !no_total, options.depth)
         }
-        Command::Accounts(options) => { accounts::execute(options.input) }
-        Command::Commodities(options) => { commodities::execute(options.input) }
+        Command::Accounts(options) => { accounts::execute(options.input_file) }
+        Command::Commodities(options) => { commodities::execute(options.input_file) }
         Command::Check { input } => { check::execute(input) }
     } {
         eprintln!("{}", e);
