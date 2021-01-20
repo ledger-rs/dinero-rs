@@ -59,10 +59,16 @@ impl HasName for Account<'_> {
 
 impl<'a> Account<'a> {
     /// Depth of the account, useful for filters and other
-    fn depth(&self) -> usize {
+    pub fn depth(&self) -> usize {
         self.name.chars().filter(|c| *c == ':').collect::<Vec<char>>().len() + 1
     }
 
+    pub fn set_parent(&mut self, parent: &'a Account<'a>) {
+        self.parent = Some(parent)
+    }
+    pub fn get_parent(&self) -> Option<&'a Account<'a>> {
+        self.parent
+    }
     /// Parent name
     ///
     /// Returns the name of the parent account should have

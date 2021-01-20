@@ -8,7 +8,16 @@ enum Command {
     // Print,
     /// Balance report
     #[structopt(alias = "bal")]
-    Balance(CommonOpts),
+    Balance {
+        #[structopt(flatten)]
+        options: CommonOpts,
+        /// Flat account names rather than tree
+        #[structopt(long)]
+        flat: bool,
+        /// Do not show total
+        #[structopt(long = "--no-total")]
+        no_total: bool,
+    },
     // Register,
     /// List the accounts
     Accounts(CommonOpts),
@@ -51,10 +60,12 @@ fn main() {
     // println!("{:?}", opt);
 
     if let Err(e) = match opt.cmd {
-        Command::Balance(options) => { balance::execute(options.input) }
+        Command::Balance { options, flat, no_total } => {
+            balance::execute(options.input, flat, !no_total)
+        }
         Command::Accounts(options) => { accounts::execute(options.input) }
         Command::Commodities(options) => { commodities::execute(options.input) }
-        Command::Check {input} => {check::execute(input)}
+        Command::Check { input } => { check::execute(input) }
     } {
         eprintln!("{}", e);
     }
