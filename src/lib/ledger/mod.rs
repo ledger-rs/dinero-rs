@@ -1,21 +1,16 @@
-pub use currency::{Currency};
-pub use account::Account;
-pub use money::{Money, Balance, Price, CostType};
-pub use transaction::{Transaction, Posting, Cleared, TransactionStatus};
-use crate::parser::Item;
-use crate::{Error, List, ErrorType};
-use crate::parser;
-use std::collections::{HashSet, HashMap};
-use std::hash::{Hash, Hasher};
 use crate::ledger::transaction::Cost;
-use colored::Colorize;
-use std::mem;
-use std::collections::hash_map::RandomState;
+use crate::parser::Item;
+use crate::{Error, List};
+pub use account::Account;
+pub use currency::Currency;
+pub use money::{Balance, CostType, Money, Price};
+use std::collections::HashMap;
+pub use transaction::{Cleared, Posting, Transaction, TransactionStatus};
 
-mod money;
-mod currency;
-mod transaction;
 mod account;
+mod currency;
+mod money;
+mod transaction;
 
 /// A lib.ledger has (journal) entries. Each of those entries has postings
 /// lib.ledger > entry > posting
@@ -42,8 +37,7 @@ impl<'a> LedgerElements<'a> {
 pub fn build_ledger(items: &Vec<Item>) -> Result<LedgerElements, Error> {
     let mut currencies = List::<Currency>::new();
     let mut accounts = List::<Account>::new();
-    let mut prices: Vec<Price> = Vec::new();
-
+    // let mut prices: Vec<Price> = Vec::new();
 
     // 1. Populate the lists
     for item in items.iter() {
@@ -72,15 +66,22 @@ pub fn build_ledger(items: &Vec<Item>) -> Result<LedgerElements, Error> {
         }
     }
 
-
     return Ok(LedgerElements {
         currencies,
         accounts,
     });
 }
 
-
-pub fn populate_transactions<'a>(items: &Vec<Item>, elements: &'a LedgerElements<'a>) -> Result<(Vec<Transaction<Posting<'a>>>, HashMap<&'a Account<'a>, Balance<'a>>), Error> {
+pub fn populate_transactions<'a>(
+    items: &Vec<Item>,
+    elements: &'a LedgerElements<'a>,
+) -> Result<
+    (
+        Vec<Transaction<Posting<'a>>>,
+        HashMap<&'a Account<'a>, Balance<'a>>,
+    ),
+    Error,
+> {
     let mut transactions = vec![];
     let accounts = &elements.accounts;
     let currencies = &elements.currencies;
@@ -105,27 +106,30 @@ pub fn populate_transactions<'a>(items: &Vec<Item>, elements: &'a LedgerElements
                     if let Some(c) = &p.money_currency {
                         posting.amount = Some(Money::from((
                             currencies.get(&c.as_str()).unwrap(),
-                            p.money_amount.unwrap()
+                            p.money_amount.unwrap(),
                         )));
                     }
                     if let Some(c) = &p.cost_currency {
-                        posting.cost = Some(Cost::PerUnit { // Todo Perunit or total?
+                        posting.cost = Some(Cost::PerUnit {
+                            // Todo Perunit or total?
                             amount: Money::from((
                                 currencies.get(c.as_str()).unwrap(),
-                                p.cost_amount.unwrap()
-                            ))
+                                p.cost_amount.unwrap(),
+                            )),
                         });
                     }
                     if let Some(c) = &p.balance_currency {
                         posting.balance = Some(Money::from((
                             currencies.get(c.as_str()).unwrap(),
-                            p.balance_amount.unwrap()
+                            p.balance_amount.unwrap(),
                         )));
                     }
                     transaction.postings.push(posting.to_owned());
                 }
                 match transaction.clone().is_balanced() {
-                    true => { transaction.status = TransactionStatus::InternallyBalanced; }
+                    true => {
+                        transaction.status = TransactionStatus::InternallyBalanced;
+                    }
                     false => {}
                 }
                 transactions.push(transaction);

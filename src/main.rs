@@ -1,7 +1,8 @@
-use structopt::StructOpt;
-use dinero::commands::{check, balance, accounts, commodities};
 use std::path::PathBuf;
-use dinero::Error;
+
+use structopt::StructOpt;
+
+use dinero::commands::{accounts, balance, check, commodities};
 
 #[derive(Debug, StructOpt)]
 enum Command {
@@ -42,7 +43,6 @@ name = "dinero"
 struct Opt {
     #[structopt(subcommand)]
     cmd: Command,
-
 }
 
 #[derive(Debug, StructOpt)]
@@ -64,12 +64,14 @@ fn main() {
     // println!("{:?}", opt);
 
     if let Err(e) = match opt.cmd {
-        Command::Balance { options, flat, no_total } => {
-            balance::execute(options.input_file, flat, !no_total, options.depth)
-        }
-        Command::Accounts(options) => { accounts::execute(options.input_file) }
-        Command::Commodities(options) => { commodities::execute(options.input_file) }
-        Command::Check { input } => { check::execute(input) }
+        Command::Balance {
+            options,
+            flat,
+            no_total,
+        } => balance::execute(options.input_file, flat, !no_total, options.depth),
+        Command::Accounts(options) => accounts::execute(options.input_file),
+        Command::Commodities(options) => commodities::execute(options.input_file),
+        Command::Check { input } => check::execute(input),
     } {
         eprintln!("{}", e);
     }

@@ -1,6 +1,5 @@
-use crate::parser::{Tokenizer, chars};
 use crate::ledger::Comment;
-
+use crate::parser::{chars, Tokenizer};
 
 /// Parses a comment
 ///
@@ -27,9 +26,11 @@ use crate::ledger::Comment;
 /// let items = tokenizer.parse().unwrap();
 /// assert_eq!(items.len(), 2, "Should have parsed two comments")
 /// ```
-pub(super) fn parse(tokenizer :&mut Tokenizer) -> Comment {
+pub(super) fn parse(tokenizer: &mut Tokenizer) -> Comment {
     tokenizer.position += 1;
     tokenizer.line_position += 1;
     chars::consume_whitespaces_and_lines(tokenizer);
-    return Comment {comment : chars::get_line(tokenizer)};
+    return Comment {
+        comment: chars::get_line(tokenizer),
+    };
 }

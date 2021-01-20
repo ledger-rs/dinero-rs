@@ -29,8 +29,12 @@ pub(super) fn consume_whitespaces_and_lines(tokenizer: &mut Tokenizer) -> LineTy
 pub(super) fn consume_whitespaces(tokenizer: &mut Tokenizer) {
     let chars = tokenizer.content.chars().collect::<Vec<char>>();
     while let Some(c) = chars.get(tokenizer.position) {
-        if !c.is_whitespace() { break; }
-        if *chars.get(tokenizer.position).unwrap() == '\n' { break; }
+        if !c.is_whitespace() {
+            break;
+        }
+        if *chars.get(tokenizer.position).unwrap() == '\n' {
+            break;
+        }
         tokenizer.position += 1;
         tokenizer.line_position += 1;
     }

@@ -1,5 +1,5 @@
-use std::path::{PathBuf};
 use dinero::parser::Tokenizer;
+use std::path::PathBuf;
 
 #[test]
 fn test_include() {

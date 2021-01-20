@@ -1,12 +1,12 @@
-use std::fmt;
-use colored::{ColoredString};
-use std::fmt::Debug;
+use colored::ColoredString;
 pub use list::List;
+use std::fmt;
+use std::fmt::Debug;
 
- pub mod ledger;
-pub mod parser;
 pub mod commands;
+pub mod ledger;
 mod list;
+pub mod parser;
 
 #[derive(Debug)]
 pub enum ErrorType {
@@ -31,7 +31,12 @@ struct ColoredStrings<'a>(pub &'a Vec<ColoredString>);
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}\n{}", self.error_type, ColoredStrings(&self.message))
+        write!(
+            f,
+            "{:?}\n{}",
+            self.error_type,
+            ColoredStrings(&self.message)
+        )
         //write!(f, "{}", "I am red".red())
     }
 }
@@ -54,7 +59,7 @@ impl From<ErrorType> for Error {
     fn from(error: ErrorType) -> Self {
         Error {
             error_type: error,
-            message: vec![]
+            message: vec![],
         }
     }
 }

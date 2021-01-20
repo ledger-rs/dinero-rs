@@ -1,8 +1,10 @@
-use std::collections::{HashMap, HashSet};
-use crate::{ErrorType, Error};
+use std::collections::HashMap;
 use std::hash::Hash;
-use crate::ledger::{HasName, FromDirective};
+
 use colored::Colorize;
+
+use crate::ledger::{FromDirective, HasName};
+use crate::{Error, ErrorType};
 
 #[derive(Debug, Clone)]
 pub struct List<'a, T> {
@@ -21,21 +23,28 @@ impl<'a, T: Eq + Hash + HasName + Clone + FromDirective> List<'a, T> {
         let found = self.list.get(element.get_name());
         match found {
             Some(_) => (), // do nothing
-            None => { self.list.insert(element.get_name().to_string(), element); }
+            None => {
+                self.list.insert(element.get_name().to_string(), element);
+            }
         }
     }
     pub fn add_element(&mut self, element: &'a T) {
         let found = self.list.get(element.get_name());
         match found {
             Some(_) => (), // do nothing
-            None => { self.list.insert(element.get_name().to_string(), element.clone()); }
+            None => {
+                self.list
+                    .insert(element.get_name().to_string(), element.clone());
+            }
         }
     }
     pub fn add_alias(&mut self, alias: String, for_element: &'a T) {
         let element = self.aliases.get(&alias);
         match element {
             Some(_) => (),
-            None => { self.aliases.insert(alias, for_element); }
+            None => {
+                self.aliases.insert(alias, for_element);
+            }
         }
         ()
         // self.list.insert(for_element.clone());
@@ -46,17 +55,16 @@ impl<'a, T: Eq + Hash + HasName + Clone + FromDirective> List<'a, T> {
             Some(_) => true,
         }
     }
-    pub fn get(&self, index: &str) -> Result<& T, Error> {
+    pub fn get(&self, index: &str) -> Result<&T, Error> {
         match self.list.get(index) {
             None => match self.aliases.get(index) {
-                None => Err(Error{
+                None => Err(Error {
                     error_type: ErrorType::CommodityNotInList,
-                    message: vec![
-                        format!("{:?} not found", index).as_str().bold()
-                    ] }),
-                Some(x) => Ok(x)
-            }
-            Some(x) => Ok(x)
+                    message: vec![format!("{:?} not found", index).as_str().bold()],
+                }),
+                Some(x) => Ok(x),
+            },
+            Some(x) => Ok(x),
         }
     }
 
