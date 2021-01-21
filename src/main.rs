@@ -1,8 +1,11 @@
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
 
 use structopt::StructOpt;
 
 use dinero::commands::{accounts, balance, check, commodities};
+use std::env;
+use std::fs::read_to_string;
+use std::collections::HashMap;
 
 #[derive(Debug, StructOpt)]
 enum Command {
@@ -51,17 +54,100 @@ struct CommonOpts {
     #[structopt(name = "FILE", short = "f", long = "file", parse(from_os_str))]
     input_file: PathBuf,
 
+    /// Init file
+    #[structopt(long = "--init-file", parse(from_os_str))]
+    init_file: Option<PathBuf>,
+
     /// Depth
     #[structopt(short = "d", long = "depth")]
     depth: Option<usize>,
 
     /// The pattern to look for
     pattern: Option<String>,
+
+    /// TODO Date format
+    #[structopt(long = "--date-format")]
+    date_format: Option<String>,
+
+    /// TODO force color
+    #[structopt(long = "--force-color")]
+    force_color: bool,
+    /// TODO force pager
+    #[structopt(long = "--force-pager")]
+    force_pager: bool,
+    /// TODO effective
+    #[structopt(long = "--effective")]
+    effective: bool,
+    /// TODO strict
+    #[structopt(long = "--strict")]
+    strict: bool,
+
+    /// TODO Unrealized gains
+    #[structopt(long = "--unrealized-gains")]
+    unrealized_gains: Option<String>,
+    /// TODO Unrealized losses
+    #[structopt(long = "--unrealized-losses")]
+    unrealized_losses: Option<String>,
 }
 
 fn main() {
-    let opt: Opt = Opt::from_args();
-    // println!("{:?}", opt);
+    let mut args: Vec<String> = env::args().collect();
+    let mut possible_paths: Vec<String> = Vec::new();
+    for i in 0..args.len() {
+        if args[i] == "--init-file" {
+            possible_paths.push(args[i + 1].clone());
+            break;
+        }
+    }
+    possible_paths.push(shellexpand::tilde("~/.ledgerrc").to_string());
+    possible_paths.push(".ledgerrc".to_string());
+    let mut config_file = None;
+    for path in possible_paths.iter() {
+        let file = Path::new(path);
+        if file.exists() {
+            config_file = Some(file);
+            break;
+        }
+    }
+    if let Some(file) = config_file {
+        let mut aliases = HashMap::new();
+        aliases.insert(
+            "-f".to_string(),
+            "--file".to_string(),
+        );
+        let contents = read_to_string(file).unwrap();
+        for line in contents.lines() {
+            let option = line.trim_start();
+            match option.chars().nth(0) {
+                Some(c) => match c {
+                    '-' => {
+                        assert!(line.starts_with("--"),
+                                format!("Bad config file {:?}\n{}", file, line));
+                        let mut iter = line.split_whitespace();
+                        let option = iter.next().unwrap();
+                        if !args.iter()
+                            .any(|x| (x == option) |
+                                (aliases.get(x).unwrap_or(&String::new()) == option)) {
+                            args.push(option.to_string());
+                            let mut rest = String::new();
+                            for arg in iter {
+                                rest.push_str(" ");
+                                rest.push_str(arg);
+                            }
+                            if rest.len() > 0 {
+                                args.push(rest.trim().to_string());
+                            }
+                        }
+                    }
+                    ';' | '#' | '!' | '%' => (),  // a comment
+
+                    _ => panic!("Bad config file {:?}\n{}", file, line),
+                },
+                None => (),
+            }
+        }
+    }
+    let opt: Opt = Opt::from_iter(args.iter());
 
     if let Err(e) = match opt.cmd {
         Command::Balance {
