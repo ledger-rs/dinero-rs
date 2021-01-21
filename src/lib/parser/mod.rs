@@ -106,10 +106,9 @@ impl<'a> Tokenizer<'a> {
                             items.append(&mut new_items);
                         }
                         _ =>
-                        // TODO Change by an Error
-                        {
-                            panic!("Unexpected char '{}'", c)
-                        }
+                            {
+                                return Err(self.error(ErrorType::UnexpectedInput));
+                            }
                     },
                     None => continue,
                 },
@@ -132,7 +131,13 @@ impl<'a> Tokenizer<'a> {
         }
     }
     fn error(&self, err: ErrorType) -> Error {
-        let mut message = vec![ColoredString::from("\n")];
+        let mut message = vec![ColoredString::from("")];
+        if let Some(file) = self.file {
+            message.push(ColoredString::from("while parsing "));
+            message.push(format!("{:?} ", file).bold());
+            message.push(ColoredString::from(
+                format!("at position {}:{}\n", self.line_index + 1, self.line_position + 1).as_str()));
+        }
         // TODO not the fastest
         for (i, line) in self.content.lines().enumerate() {
             if i < self.line_index - 1 {
@@ -154,7 +159,6 @@ impl<'a> Tokenizer<'a> {
                 "-".bold()
             });
         }
-        //message.push(ColoredString::from("\n"));
         Error {
             message,
             error_type: err,
