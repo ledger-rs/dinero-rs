@@ -26,12 +26,14 @@ pub enum Item {
     Directive(Directive),
     Price(ParsedPrice),
 }
+
 pub struct ParsedPrice {
-    date:NaiveDate,
+    date: NaiveDate,
     commodity: String,
     other_commodity: String,
-    other_quantity: Rational64
+    other_quantity: Rational64,
 }
+
 pub enum Directive {
     Commodity {
         name: String,
@@ -65,7 +67,7 @@ pub enum Directive {
 #[derive(Debug, Clone)]
 pub struct Tokenizer<'a> {
     file: Option<&'a PathBuf>,
-    content: String,
+    content: Vec<char>,
     line_index: usize,
     line_position: usize,
     line_string: &'a str,
@@ -78,7 +80,7 @@ impl<'a> From<&'a str> for Tokenizer<'a> {
     fn from(content: &'a str) -> Self {
         Tokenizer {
             file: None,
-            content: String::from(content),
+            content: content.chars().collect::<Vec<char>>(),
             line_index: 0,
             line_position: 0,
             line_string: "",
@@ -93,7 +95,7 @@ impl<'a> From<String> for Tokenizer<'a> {
     fn from(content: String) -> Self {
         Tokenizer {
             file: None,
-            content,
+            content: content.chars().collect::<Vec<char>>(),
             line_index: 0,
             line_position: 0,
             line_string: "",
@@ -112,7 +114,7 @@ impl<'a> From<&'a PathBuf> for Tokenizer<'a> {
                 seen_files.insert(file);
                 Tokenizer {
                     file: Some(file),
-                    content: content,
+                    content: content.chars().collect::<Vec<char>>(),
                     line_index: 0,
                     line_position: 0,
                     line_string: "",
@@ -132,7 +134,7 @@ impl<'a> From<&'a PathBuf> for Tokenizer<'a> {
 impl<'a> Tokenizer<'a> {
     pub fn parse(&'a mut self) -> Result<Vec<Item>, Error> {
         let mut items: Vec<Item> = Vec::new();
-        let len = self.content.chars().count();
+        let len = self.content.iter().count();
         while self.position < len {
             match chars::consume_whitespaces_and_lines(self) {
                 LineType::Blank => match self.get_char() {
@@ -180,8 +182,6 @@ impl<'a> Tokenizer<'a> {
     fn get_char(&self) -> Option<char> {
         match self
             .content
-            .chars()
-            .collect::<Vec<char>>()
             .get(self.position)
         {
             Some(c) => Some(*c),
@@ -196,7 +196,8 @@ impl<'a> Tokenizer<'a> {
             message.push(ColoredString::from(
                 format!("at position {}:{}\n", self.line_index + 1, self.line_position + 1).as_str()));
         }
-        for (i, line) in self.content.lines().enumerate() {
+        let string = self.content.iter().collect::<String>();
+        for (i, line) in string.lines().enumerate() {
             if i < self.line_index - 1 {
                 continue;
             };
@@ -223,7 +224,7 @@ impl<'a> Tokenizer<'a> {
     }
 
     pub fn next(&mut self) -> char {
-        let c: char = self.content.chars().collect::<Vec<char>>()[self.position];
+        let c: char = self.content[self.position];
         match c {
             '\n' => {
                 self.line_position = 0;
