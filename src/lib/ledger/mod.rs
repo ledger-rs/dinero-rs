@@ -1,5 +1,5 @@
 use crate::ledger::transaction::Cost;
-use crate::parser::Item;
+use crate::parser::{Item, Directive};
 use crate::{Error, List};
 pub use account::Account;
 pub use currency::Currency;
@@ -62,7 +62,14 @@ pub fn build_ledger(items: &Vec<Item>) -> Result<LedgerElements, Error> {
                     }
                 }
             }
-            Item::Directive => {}
+            // todo
+            Item::Directive(d) => match d {
+                Directive::Commodity { .. } => {}
+                Directive::Payee {..} => {}
+                Directive::Tag {..} => {}
+                Directive::Account {..} => {}
+            },
+            Item::Price(p) => {}
         }
     }
 

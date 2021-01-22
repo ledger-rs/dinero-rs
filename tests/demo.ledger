@@ -20,3 +20,6 @@
 2021-01-27 * ACME, inc.
     Income:Salary     $-100
     Assets:Checking account
+
+commodity €
+    alias EUR

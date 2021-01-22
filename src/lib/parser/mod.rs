@@ -4,6 +4,11 @@ mod chars;
 mod comment;
 mod include;
 pub(crate) mod transaction;
+mod account;
+mod commodity;
+mod payee;
+mod tag;
+mod price;
 
 use crate::ledger::{Comment, Transaction};
 use crate::parser::chars::LineType;
@@ -12,11 +17,49 @@ use colored::{ColoredString, Colorize};
 use std::collections::HashSet;
 use std::fs::read_to_string;
 use std::path::PathBuf;
+use chrono::NaiveDate;
+use num::rational::Rational64;
 
 pub enum Item {
     Comment(Comment),
     Transaction(Transaction<parser::transaction::Posting>),
-    Directive,
+    Directive(Directive),
+    Price(ParsedPrice),
+}
+pub struct ParsedPrice {
+    date:NaiveDate,
+    commodity: String,
+    other_commodity: String,
+    other_quantity: Rational64
+}
+pub enum Directive {
+    Commodity {
+        name: String,
+        note: Option<String>,
+        alias: HashSet<String>,
+        format: Option<String>,
+        default: bool,
+    },
+    Payee {
+        name: String,
+        note: Option<String>,
+        alias: HashSet<String>,
+    },
+    Account {
+        name: String,
+        note: Option<String>,
+        isin: Option<String>,
+        alias: HashSet<String>,
+        check: Vec<String>,
+        assert: Vec<String>,
+        payee: Vec<String>,
+        default: bool,
+    },
+    Tag {
+        name: String,
+        check: Vec<String>,
+        assert: Vec<String>,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -89,7 +132,7 @@ impl<'a> From<&'a PathBuf> for Tokenizer<'a> {
 impl<'a> Tokenizer<'a> {
     pub fn parse(&'a mut self) -> Result<Vec<Item>, Error> {
         let mut items: Vec<Item> = Vec::new();
-        let len = self.content.len();
+        let len = self.content.chars().count();
         while self.position < len {
             match chars::consume_whitespaces_and_lines(self) {
                 LineType::Blank => match self.get_char() {
@@ -104,6 +147,21 @@ impl<'a> Tokenizer<'a> {
                             // This is the special case
                             let mut new_items = include::parse(self)?;
                             items.append(&mut new_items);
+                        }
+                        'c' => {
+                            items.push(Item::Directive(commodity::parse(self)?));
+                        }
+                        'p' => {
+                            items.push(Item::Directive(payee::parse(self)?));
+                        }
+                        't' => {
+                            items.push(Item::Directive(tag::parse(self)?));
+                        }
+                        'a' => {
+                            items.push(Item::Directive(account::parse(self)?));
+                        }
+                        'P' => {
+                            items.push(Item::Price(price::parse(self)?));
                         }
                         _ =>
                             {
@@ -138,7 +196,6 @@ impl<'a> Tokenizer<'a> {
             message.push(ColoredString::from(
                 format!("at position {}:{}\n", self.line_index + 1, self.line_position + 1).as_str()));
         }
-        // TODO not the fastest
         for (i, line) in self.content.lines().enumerate() {
             if i < self.line_index - 1 {
                 continue;
