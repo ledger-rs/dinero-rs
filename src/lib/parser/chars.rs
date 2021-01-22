@@ -78,7 +78,7 @@ pub(super) fn get_line(tokenizer: &mut Tokenizer) -> String {
     }
     retval.iter().collect()
 }
-
+/// Returns a word (whatever is between spaces)
 pub(super) fn get_string(tokenizer: &mut Tokenizer) -> String {
     consume_whitespaces(tokenizer);
     let chars = tokenizer.content.chars().collect::<Vec<char>>();
