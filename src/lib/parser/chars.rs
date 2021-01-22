@@ -7,8 +7,7 @@ pub(super) enum LineType {
 }
 
 pub(super) fn consume_whitespaces_and_lines(tokenizer: &mut Tokenizer) -> LineType {
-    let chars = tokenizer.content.chars().collect::<Vec<char>>();
-    while let Some(c) = chars.get(tokenizer.position) {
+    while let Some(c) = tokenizer.content.get(tokenizer.position) {
         if *c == '\n' {
             tokenizer.line_index += 1;
             tokenizer.line_position = 0;
@@ -27,12 +26,11 @@ pub(super) fn consume_whitespaces_and_lines(tokenizer: &mut Tokenizer) -> LineTy
 }
 
 pub(super) fn consume_whitespaces(tokenizer: &mut Tokenizer) {
-    let chars = tokenizer.content.chars().collect::<Vec<char>>();
-    while let Some(c) = chars.get(tokenizer.position) {
+    while let Some(c) = tokenizer.content.get(tokenizer.position) {
         if !c.is_whitespace() {
             break;
         }
-        if *chars.get(tokenizer.position).unwrap() == '\n' {
+        if *tokenizer.content.get(tokenizer.position).unwrap() == '\n' {
             break;
         }
         tokenizer.position += 1;
@@ -45,9 +43,8 @@ pub(super) fn consume_str<'a>(
     string: &'a String,
 ) -> Result<(), Error> {
     let chars = string.chars().collect::<Vec<char>>();
-    let content = tokenizer.content.chars().collect::<Vec<char>>();
     for input in chars.iter() {
-        let found = content.get(tokenizer.position);
+        let found = tokenizer.content.get(tokenizer.position);
         match found {
             Some(c) if c == input => {
                 tokenizer.line_position += 1;
@@ -65,9 +62,8 @@ pub(super) fn consume_str<'a>(
 }
 
 pub(super) fn get_line(tokenizer: &mut Tokenizer) -> String {
-    let chars = tokenizer.content.chars().collect::<Vec<char>>();
     let mut retval: Vec<char> = Vec::new();
-    while let Some(c) = chars.get(tokenizer.position) {
+    while let Some(c) = tokenizer.content.get(tokenizer.position) {
         tokenizer.position += 1;
         if *c == '\n' {
             tokenizer.line_index += 1;
@@ -81,14 +77,13 @@ pub(super) fn get_line(tokenizer: &mut Tokenizer) -> String {
 /// Returns a word (whatever is between spaces)
 pub(super) fn get_string(tokenizer: &mut Tokenizer) -> String {
     consume_whitespaces(tokenizer);
-    let chars = tokenizer.content.chars().collect::<Vec<char>>();
     let mut retval: Vec<char> = Vec::new();
     let mut quote = false;
-    while let Some(c) = chars.get(tokenizer.position) {
+    while let Some(c) = tokenizer.content.get(tokenizer.position) {
         if *c == '\n' {
             break;
         } else if *c == '"' {
-            if chars.len() == 0 {
+            if tokenizer.content.len() == 0 {
                 quote = true
             } else if quote {
                 break;
