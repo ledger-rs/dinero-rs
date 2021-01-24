@@ -328,7 +328,7 @@ impl Display for Price<'_> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug,Copy, Clone)]
 pub enum CostType {
     Total,
     PerUnit,

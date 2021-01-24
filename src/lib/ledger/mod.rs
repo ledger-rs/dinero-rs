@@ -1,5 +1,5 @@
 use crate::ledger::transaction::Cost;
-use crate::parser::{Item, Directive};
+use crate::parser::{Item, Directive, ParsedPrice};
 use crate::{Error, List};
 pub use account::Account;
 pub use currency::Currency;
@@ -19,15 +19,16 @@ mod transaction;
 /// Each entry has to be balanced
 /// Commodities can change price over time
 #[derive(Debug, Clone)]
-pub struct LedgerElements<'a> {
+pub struct LedgerElements {
     // pub transactions: Vec<Transaction<Posting<'a>>>,
     pub currencies: List<Currency>,
     pub accounts: List<Account>,
-    pub prices: Vec<Price<'a>>,
+    pub prices: Vec<ParsedPrice>,
+
 }
 
-impl<'a> LedgerElements<'a> {
-    pub fn new() -> LedgerElements<'a> {
+impl<'a> LedgerElements {
+    pub fn new() -> LedgerElements {
         LedgerElements {
             //transactions: vec![],
             currencies: List::<Currency>::new(),
@@ -42,7 +43,7 @@ pub fn build_ledger<'a>(items: &'a Vec<Item>) -> Result<LedgerElements, Error> {
     let mut accounts = List::<Account>::new();
     let mut commodity_strs = HashSet::<String>::new();
     let mut account_strs = HashSet::<String>::new();
-    let mut prices: Vec<Price> = Vec::new();
+    let mut prices_parsed :Vec<ParsedPrice> = Vec::new();
 
     // 1. Populate the lists
     for item in items.iter() {
@@ -71,7 +72,11 @@ pub fn build_ledger<'a>(items: &'a Vec<Item>) -> Result<LedgerElements, Error> {
                 Directive::Tag { .. } => {}
                 Directive::Account(c) => accounts.insert(c.clone()),
             },
-            Item::Price(p) => {}
+            Item::Price(p) => {
+                commodity_strs.insert(p.clone().commodity);
+                commodity_strs.insert(p.clone().other_commodity);
+                prices_parsed.push(p.clone());
+            },
         }
     }
 
@@ -94,25 +99,41 @@ pub fn build_ledger<'a>(items: &'a Vec<Item>) -> Result<LedgerElements, Error> {
     return Ok(LedgerElements {
         currencies,
         accounts,
-        prices,
+        prices:prices_parsed,
     });
 }
 
 pub fn populate_transactions<'a>(
     items: &Vec<Item>,
-    elements: &'a mut LedgerElements<'a>,
+    elements: &'a mut LedgerElements,
 ) -> Result<
     (
         Vec<Transaction<Posting<'a>>>,
         HashMap<&'a Account, Balance<'a>>,
-        &'a Vec<Price<'a>>
+        Vec<Price<'a>>
     ),
     Error,
 > {
     let mut transactions = vec![];
     let accounts = &elements.accounts;
     let currencies = &elements.currencies;
-    let mut prices = &mut elements.prices;
+    let mut prices:Vec<Price> = Vec::new();
+
+    // Update the prices
+    // Prices
+    for price in elements.prices.iter() {
+        prices.push(Price {
+            date: price.date,
+            commodity: Money::Money {
+                amount: Rational64::new(1,1),
+                currency: currencies.get(price.commodity.as_str())?
+            },
+            price: Money::Money {
+                amount: price.other_quantity,
+                currency: currencies.get(price.other_commodity.as_str())?
+            }
+        });
+    }
 
     // 2. Get the right postings
     for item in items.iter() {
