@@ -8,45 +8,37 @@ use crate::{Error, ErrorType};
 use std::collections::hash_map::{Iter, Values};
 
 #[derive(Debug, Clone)]
-pub struct List<'a, T> {
-    aliases: HashMap<String, &'a T>,
+pub struct List<T> {
+    aliases: HashMap<String, String>,
     list: HashMap<String, T>,
 }
 
-impl<'a, T: Eq + Hash + HasName + Clone + FromDirective + HasAliases> List<'a, T> {
+impl<'a, T: Eq + Hash + HasName + Clone + FromDirective + HasAliases> List<T> {
     pub fn new() -> Self {
-        let aliases: HashMap<String, &T> = HashMap::new();
+        let aliases: HashMap<String, String> = HashMap::new();
         let list: HashMap<String, T> = HashMap::new();
         List { aliases, list }
     }
 
-    pub fn push(&mut self, element: T) {
+    pub fn insert(&mut self, element: T) {
         let found = self.list.get(element.get_name());
         match found {
             Some(_) => (), // do nothing
             None => {
-                self.list.insert(element.get_name().to_string(), element);
-            }
-        }
-    }
-    pub fn insert(&mut self, element: &'a T) {
-        let found = self.list.get(element.get_name());
-        match found {
-            Some(_) => (), // do nothing
-            None => {
-                self.list.insert(element.get_name().to_string(), element.clone());
+                let name = element.get_name().to_string();
                 for alias in element.get_aliases().iter() {
-                    self.aliases.insert(alias.clone(), element);
+                    self.aliases.insert(alias.clone(), name.clone());
                 }
+                self.list.insert(name.clone(), element);
             }
         }
     }
     pub fn add_alias(&mut self, alias: String, for_element: &'a T) {
         let element = self.aliases.get(&alias);
         match element {
-            Some(x) => panic!("Repeated alias {} for {} and {}", alias, for_element.get_name(), x.get_name()),
+            Some(x) => panic!("Repeated alias {} for {} and {}", alias, for_element.get_name(), x),
             None => {
-                self.aliases.insert(alias, for_element);
+                self.aliases.insert(alias, for_element.get_name().to_string());
             }
         }
         ()
@@ -65,7 +57,7 @@ impl<'a, T: Eq + Hash + HasName + Clone + FromDirective + HasAliases> List<'a, T
                     error_type: ErrorType::CommodityNotInList,
                     message: vec![format!("{:?} not found", index).as_str().bold()],
                 }),
-                Some(x) => Ok(x),
+                Some(x) => Ok(self.list.get(x).unwrap()),
             },
             Some(x) => Ok(x),
         }

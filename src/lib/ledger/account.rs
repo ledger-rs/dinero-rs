@@ -92,15 +92,15 @@ impl<'a> Account {
     /// Returns the name of the parent account should have
     /// ```rust
     /// use dinero::ledger::Account;
-    /// let mut account = Account::from("Expenses:Groceries".to_string());
+    /// let mut account = Account::from("Expenses:Groceries");
     /// let mut parent = account.parent_name();
     /// assert_eq!(parent, Some("Expenses".to_string()));
     ///
-    /// account = Account::from("Expenses:Groceries:Supermarket".to_string());
+    /// account = Account::from("Expenses:Groceries:Supermarket");
     /// parent = account.parent_name();
     /// assert_eq!(parent, Some("Expenses:Groceries".to_string()));
     ///
-    /// account = Account::from("Expenses".to_string());
+    /// account = Account::from("Expenses");
     /// parent = account.parent_name();
     /// assert_eq!(parent, None);
     /// ```
