@@ -286,6 +286,7 @@ impl<'a> Neg for Balance<'a> {
 }
 
 /// A price relates two commodities
+#[derive(Debug, Copy, Clone)]
 pub struct Price<'a> {
     pub date: &'a str,
     pub commodity: Money<'a>,

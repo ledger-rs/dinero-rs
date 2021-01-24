@@ -18,18 +18,20 @@ mod transaction;
 /// Each entry has to be balanced
 /// Commodities can change price over time
 #[derive(Debug, Clone)]
-pub struct LedgerElements {
+pub struct LedgerElements<'a> {
     // pub transactions: Vec<Transaction<Posting<'a>>>,
     pub currencies: List<Currency>,
     pub accounts: List<Account>,
+    pub prices: Vec<Price<'a>>,
 }
 
-impl LedgerElements {
-    pub fn new() -> LedgerElements {
+impl<'a> LedgerElements<'a> {
+    pub fn new() -> LedgerElements<'a> {
         LedgerElements {
             //transactions: vec![],
             currencies: List::<Currency>::new(),
             accounts: List::<Account>::new(),
+            prices: vec![]
         }
     }
 }
@@ -39,7 +41,7 @@ pub fn build_ledger<'a>(items: &'a Vec<Item>) -> Result<LedgerElements, Error> {
     let mut accounts = List::<Account>::new();
     let mut commodity_strs = HashSet::<String>::new();
     let mut account_strs = HashSet::<String>::new();
-    // let mut prices: Vec<Price> = Vec::new();
+    let mut prices: Vec<Price> = Vec::new();
 
     // 1. Populate the lists
     for item in items.iter() {
@@ -91,6 +93,7 @@ pub fn build_ledger<'a>(items: &'a Vec<Item>) -> Result<LedgerElements, Error> {
     return Ok(LedgerElements {
         currencies,
         accounts,
+        prices
     });
 }
 
@@ -107,6 +110,7 @@ pub fn populate_transactions<'a>(
     let mut transactions = vec![];
     let accounts = &elements.accounts;
     let currencies = &elements.currencies;
+    let prices = &elements.prices;
 
     // 2. Get the right postings
     for item in items.iter() {
