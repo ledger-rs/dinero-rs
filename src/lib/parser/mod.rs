@@ -10,7 +10,7 @@ mod payee;
 mod tag;
 mod price;
 
-use crate::ledger::{Comment, Transaction};
+use crate::ledger::{Comment, Transaction, Currency, Account};
 use crate::parser::chars::LineType;
 use crate::{parser, Error, ErrorType};
 use colored::{ColoredString, Colorize};
@@ -35,28 +35,13 @@ pub struct ParsedPrice {
 }
 
 pub enum Directive {
-    Commodity {
-        name: String,
-        note: Option<String>,
-        alias: HashSet<String>,
-        format: Option<String>,
-        default: bool,
-    },
+    Commodity(Currency),
     Payee {
         name: String,
         note: Option<String>,
         alias: HashSet<String>,
     },
-    Account {
-        name: String,
-        note: Option<String>,
-        isin: Option<String>,
-        alias: HashSet<String>,
-        check: Vec<String>,
-        assert: Vec<String>,
-        payee: Vec<String>,
-        default: bool,
-    },
+    Account(Account),
     Tag {
         name: String,
         check: Vec<String>,

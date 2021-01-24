@@ -1,4 +1,4 @@
-use crate::ledger::Comment;
+use crate::ledger::{Comment, Currency, Origin};
 use crate::parser::chars::LineType;
 use crate::parser::{chars, comment, Tokenizer, Directive};
 use crate::{Error, ErrorType};
@@ -23,7 +23,7 @@ pub(super) fn parse(tokenizer: &mut Tokenizer) -> Result<Directive, Error> {
     let mut format: Option<String> = None;
     let mut comments: Vec<Comment> = vec![];
     let mut default = false;
-    let mut alias = HashSet::new();
+    let mut aliases = HashSet::new();
 
     for (i, cap) in caps.iter().enumerate() {
         match cap {
@@ -59,7 +59,7 @@ pub(super) fn parse(tokenizer: &mut Tokenizer) -> Result<Directive, Error> {
             ';' => comments.push(comment::parse(tokenizer)),
             _ => match chars::get_string(tokenizer).as_str() {
                 "note" => note = Some(chars::get_line(tokenizer).trim().to_string()),
-                "alias" => {alias.insert(chars::get_line(tokenizer).trim().to_string());},
+                "alias" => { aliases.insert(chars::get_line(tokenizer).trim().to_string());},
                 "format" => format = Some(chars::get_line(tokenizer).trim().to_string()),
                 "default" => default = true,
                 _=> {
@@ -70,11 +70,13 @@ pub(super) fn parse(tokenizer: &mut Tokenizer) -> Result<Directive, Error> {
         }
     }
 
-    Ok(Directive::Commodity {
+    let currency = Currency {
         name,
+        origin: Origin::FromDirective,
         note,
-        alias,
+        aliases,
         format,
-        default,
-    })
+        default
+    };
+    Ok(Directive::Commodity(currency))
 }

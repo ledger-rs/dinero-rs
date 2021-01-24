@@ -41,7 +41,7 @@ pub enum Money<'a> {
     Zero,
     Money {
         amount: num::rational::Rational64,
-        currency: &'a Currency<'a>,
+        currency: &'a Currency,
     },
 }
 
@@ -97,8 +97,8 @@ impl<'a> Mul<Rational64> for Money<'a> {
     }
 }
 
-impl<'a> From<(&'a Currency<'a>, Rational64)> for Money<'a> {
-    fn from(cur_amount: (&'a Currency<'a>, Rational64)) -> Self {
+impl<'a> From<(&'a Currency, Rational64)> for Money<'a> {
+    fn from(cur_amount: (&'a Currency, Rational64)) -> Self {
         let (currency, amount) = cur_amount;
         Money::Money { amount, currency }
     }
@@ -106,7 +106,7 @@ impl<'a> From<(&'a Currency<'a>, Rational64)> for Money<'a> {
 
 #[derive(Debug, Clone)]
 pub struct Balance<'a> {
-    pub balance: HashMap<Option<&'a Currency<'a>>, Money<'a>>,
+    pub balance: HashMap<Option<&'a Currency>, Money<'a>>,
 }
 
 impl<'a> From<Money<'a>> for Balance<'a> {

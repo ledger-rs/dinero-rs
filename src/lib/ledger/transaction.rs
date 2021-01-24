@@ -43,14 +43,14 @@ pub enum PostingType {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Posting<'a> {
-    pub(crate) account: &'a Account<'a>,
+    pub(crate) account: &'a Account,
     pub amount: Option<Money<'a>>,
     pub balance: Option<Money<'a>>,
     pub cost: Option<Cost<'a>>,
 }
 
 impl<'a> Posting<'a> {
-    pub fn new(account: &'a Account<'a>) -> Posting<'a> {
+    pub fn new(account: &'a Account) -> Posting<'a> {
         Posting {
             account,
             amount: None,
@@ -134,7 +134,7 @@ impl<'a> Transaction<Posting<'a>> {
     pub fn is_balanced(&self) -> bool {
         total_balance(self.postings.as_ref()).can_be_zero()
     }
-    pub fn add_empty_posting(&mut self, account: &'a Account<'a>) {
+    pub fn add_empty_posting(&mut self, account: &'a Account) {
         self.postings.push(Posting {
             account,
             amount: None,
@@ -153,7 +153,7 @@ impl<'a> Transaction<Posting<'a>> {
     /// Balances the transaction
     pub fn balance(
         &mut self,
-        balances: &mut HashMap<&Account<'a>, Balance<'a>>,
+        balances: &mut HashMap<&'a Account, Balance<'a>>,
     ) -> Result<(), ErrorType> {
         let mut transaction_balance = Balance::new();
         // 1. update the amount of every posting if it has a balance

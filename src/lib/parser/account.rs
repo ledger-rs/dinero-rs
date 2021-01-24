@@ -4,6 +4,7 @@ use crate::{Error, ErrorType};
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::collections::HashSet;
+use crate::ledger::{Account, Origin};
 
 pub(super) fn parse(tokenizer: &mut Tokenizer) -> Result<Directive, Error> {
     lazy_static! {
@@ -18,7 +19,7 @@ pub(super) fn parse(tokenizer: &mut Tokenizer) -> Result<Directive, Error> {
     let mut name = String::new();
     let mut detected: bool = false;
     let mut default = false;
-    let mut alias = HashSet::new();
+    let mut aliases = HashSet::new();
     let mut check = Vec::new();
     let mut assert = Vec::new();
     let mut payee = Vec::new();
@@ -55,7 +56,7 @@ pub(super) fn parse(tokenizer: &mut Tokenizer) -> Result<Directive, Error> {
             _ => match chars::get_string(tokenizer).as_str() {
                 "note" => note = Some(chars::get_line(tokenizer).trim().to_string()),
                 "isin" => isin = Some(chars::get_line(tokenizer).trim().to_string()),
-                "alias" => {alias.insert(chars::get_line(tokenizer).trim().to_string());},
+                "alias" => { aliases.insert(chars::get_line(tokenizer).trim().to_string());},
                 "check" => {check.push(chars::get_line(tokenizer).trim().to_string());},
                 "assert" => {assert.push(chars::get_line(tokenizer).trim().to_string());},
                 "payee" => {payee.push(chars::get_line(tokenizer).trim().to_string());},
@@ -67,15 +68,16 @@ pub(super) fn parse(tokenizer: &mut Tokenizer) -> Result<Directive, Error> {
             },
         }
     }
-
-    Ok(Directive::Account {
+    let account = Account {
         name,
+        origin: Origin::FromDirective,
         note,
         isin,
-        alias,
+        aliases,
         check,
         assert,
         payee,
         default,
-    })
+    };
+    Ok(Directive::Account(account))
 }

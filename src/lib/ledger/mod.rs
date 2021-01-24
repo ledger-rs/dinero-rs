@@ -4,7 +4,7 @@ use crate::{Error, List};
 pub use account::Account;
 pub use currency::Currency;
 pub use money::{Balance, CostType, Money, Price};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 pub use transaction::{Cleared, Posting, Transaction, TransactionStatus};
 
 mod account;
@@ -20,8 +20,8 @@ mod transaction;
 #[derive(Debug, Clone)]
 pub struct LedgerElements<'a> {
     // pub transactions: Vec<Transaction<Posting<'a>>>,
-    pub currencies: List<'a, Currency<'a>>,
-    pub accounts: List<'a, Account<'a>>,
+    pub currencies: List<'a, Currency>,
+    pub accounts: List<'a, Account>,
 }
 
 impl<'a> LedgerElements<'a> {
@@ -37,6 +37,8 @@ impl<'a> LedgerElements<'a> {
 pub fn build_ledger(items: &Vec<Item>) -> Result<LedgerElements, Error> {
     let mut currencies = List::<Currency>::new();
     let mut accounts = List::<Account>::new();
+    let mut commodity_strs = HashSet::<String>::new();
+    let mut account_strs = HashSet::<String>::new();
     // let mut prices: Vec<Price> = Vec::new();
 
     // 1. Populate the lists
@@ -45,33 +47,46 @@ pub fn build_ledger(items: &Vec<Item>) -> Result<LedgerElements, Error> {
             Item::Comment(_) => {}
             Item::Transaction(parsed) => {
                 for p in parsed.postings.iter() {
-                    let account = Account::from(p.account.clone());
-                    accounts.push(account);
+                    account_strs.insert(p.account.clone());
 
                     // Currencies
                     if let Some(c) = &p.money_currency {
-                        currencies.push(Currency::from(c.as_str()));
+                        commodity_strs.insert(c.clone());
                     }
                     if let Some(c) = &p.cost_currency {
-                        let currency = Currency::from(c.as_str());
-                        currencies.push(currency);
+                        commodity_strs.insert(c.clone());
                     }
                     if let Some(c) = &p.balance_currency {
-                        let currency = Currency::from(c.as_str());
-                        currencies.push(currency);
+                        commodity_strs.insert(c.clone());
                     }
                 }
             }
             // todo
             Item::Directive(d) => match d {
-                Directive::Commodity { .. } => {}
-                Directive::Payee {..} => {}
-                Directive::Tag {..} => {}
-                Directive::Account {..} => {}
+                Directive::Commodity(c) => currencies.insert(c),
+                Directive::Payee { .. } => {}
+                Directive::Tag { .. } => {}
+                Directive::Account(c) => accounts.insert(c),
             },
             Item::Price(p) => {}
         }
     }
+
+    // Commodities
+    for alias in commodity_strs {
+        match currencies.get(&alias) {
+            Ok(cur) => {}   // do nothing
+            Err(_) => currencies.push(Currency::from(alias.as_str())),
+        }
+    }
+    // Accounts
+    for alias in account_strs {
+        match accounts.get(&alias) {
+            Ok(cur) => {}   // do nothing
+            Err(_) => accounts.push(Account::from(alias.as_str())),
+        }
+    }
+
 
     return Ok(LedgerElements {
         currencies,
@@ -85,13 +100,14 @@ pub fn populate_transactions<'a>(
 ) -> Result<
     (
         Vec<Transaction<Posting<'a>>>,
-        HashMap<&'a Account<'a>, Balance<'a>>,
+        HashMap<&'a Account, Balance<'a>>,
     ),
     Error,
 > {
     let mut transactions = vec![];
     let accounts = &elements.accounts;
     let currencies = &elements.currencies;
+
     // 2. Get the right postings
     for item in items.iter() {
         match item {
@@ -150,7 +166,7 @@ pub fn populate_transactions<'a>(
 
     // Populate balances
     let mut balances: HashMap<&Account, Balance> = HashMap::new();
-    for account in accounts.list.values() {
+    for account in accounts.values() {
         balances.insert(account, Balance::new());
     }
 
@@ -171,6 +187,10 @@ pub enum Origin {
 
 pub trait HasName {
     fn get_name(&self) -> &str;
+}
+
+pub trait HasAliases {
+    fn get_aliases(&self) -> &HashSet<String>;
 }
 
 pub trait FromDirective {
