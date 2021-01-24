@@ -18,14 +18,14 @@ mod transaction;
 /// Each entry has to be balanced
 /// Commodities can change price over time
 #[derive(Debug, Clone)]
-pub struct LedgerElements<'a> {
+pub struct LedgerElements {
     // pub transactions: Vec<Transaction<Posting<'a>>>,
-    pub currencies: List<'a, Currency>,
-    pub accounts: List<'a, Account>,
+    pub currencies: List<Currency>,
+    pub accounts: List<Account>,
 }
 
-impl<'a> LedgerElements<'a> {
-    pub fn new() -> LedgerElements<'a> {
+impl LedgerElements {
+    pub fn new() -> LedgerElements {
         LedgerElements {
             //transactions: vec![],
             currencies: List::<Currency>::new(),
@@ -34,7 +34,7 @@ impl<'a> LedgerElements<'a> {
     }
 }
 
-pub fn build_ledger(items: &Vec<Item>) -> Result<LedgerElements, Error> {
+pub fn build_ledger<'a>(items: &'a Vec<Item>) -> Result<LedgerElements, Error> {
     let mut currencies = List::<Currency>::new();
     let mut accounts = List::<Account>::new();
     let mut commodity_strs = HashSet::<String>::new();
@@ -63,10 +63,10 @@ pub fn build_ledger(items: &Vec<Item>) -> Result<LedgerElements, Error> {
             }
             // todo
             Item::Directive(d) => match d {
-                Directive::Commodity(c) => currencies.insert(c),
+                Directive::Commodity(c) => currencies.insert(c.clone()),
                 Directive::Payee { .. } => {}
                 Directive::Tag { .. } => {}
-                Directive::Account(c) => accounts.insert(c),
+                Directive::Account(c) => accounts.insert(c.clone()),
             },
             Item::Price(p) => {}
         }
@@ -76,14 +76,14 @@ pub fn build_ledger(items: &Vec<Item>) -> Result<LedgerElements, Error> {
     for alias in commodity_strs {
         match currencies.get(&alias) {
             Ok(cur) => {}   // do nothing
-            Err(_) => currencies.push(Currency::from(alias.as_str())),
+            Err(_) => currencies.insert(Currency::from(alias.as_str())),
         }
     }
     // Accounts
     for alias in account_strs {
         match accounts.get(&alias) {
             Ok(cur) => {}   // do nothing
-            Err(_) => accounts.push(Account::from(alias.as_str())),
+            Err(_) => accounts.insert(Account::from(alias.as_str())),
         }
     }
 
@@ -96,7 +96,7 @@ pub fn build_ledger(items: &Vec<Item>) -> Result<LedgerElements, Error> {
 
 pub fn populate_transactions<'a>(
     items: &Vec<Item>,
-    elements: &'a LedgerElements<'a>,
+    elements: &'a LedgerElements,
 ) -> Result<
     (
         Vec<Transaction<Posting<'a>>>,

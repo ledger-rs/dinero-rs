@@ -26,21 +26,21 @@ use std::collections::hash_map::RandomState;
 /// assert_eq!(eur1, eur2);
 ///
 /// let mut currencies = List::<Currency>::new();
-/// currencies.insert(&eur1);
-/// currencies.insert(&eur2);
-/// currencies.insert(&usd1);
-/// currencies.insert(&usd2);
+/// currencies.insert(eur1);
+/// currencies.insert(eur2);
+/// currencies.insert(usd1);
+/// currencies.insert(usd2);
 /// assert_eq!(currencies.len_alias(), 2, "Alias len should be 2");
-/// currencies.add_alias("euro".to_string(), &eur1);
+/// let eur = Currency::from("eur");
+/// currencies.add_alias("euro".to_string(), &eur);
 /// assert_eq!(currencies.len_alias(), 3, "Alias len should be 3");
-/// currencies.add_alias("€".to_string(), &eur1);
+/// currencies.add_alias("€".to_string(), &eur);
 /// assert_eq!(currencies.len(), 2, "List len should be 2");
 /// assert_eq!(currencies.len_alias(), 4, "Alias len should be 4");
-/// assert_eq!(currencies.get("eur").unwrap(), &eur1);
-/// assert_eq!(currencies.get("€").unwrap(), &eur2);
+/// assert_eq!(currencies.get("eur").unwrap(), &eur);
+/// assert_eq!(currencies.get("€").unwrap(), &eur);
 ///
-/// currencies.push(eur1);
-/// currencies.push(eur2);
+///
 /// assert_eq!(currencies.get("eur").unwrap(), currencies.get("€").unwrap(), "EUR and € should be the same");
 ///
 /// ```
