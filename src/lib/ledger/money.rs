@@ -8,6 +8,7 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::ops::{Add, Mul, Neg, Sub};
 use chrono::NaiveDate;
+use std::collections::hash_map::Iter;
 
 /// Money representation: an amount and a currency
 ///
@@ -236,6 +237,21 @@ impl<'a> Balance<'a> {
             }
         }
         false
+    }
+    pub fn len(&self) -> usize {
+        self.balance.len()
+    }
+    pub fn iter(&self) -> Iter<'_, Option<&'a Currency>, Money<'a>> {
+        self.balance.iter()
+    }
+}
+impl Display for Balance<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let mut string = String::new();
+        for (_, v) in self.balance.iter() {
+            string.push_str(format!("{}", v).as_str());
+        }
+        write!(f, "{}",string)
     }
 }
 
