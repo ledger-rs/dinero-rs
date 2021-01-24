@@ -87,7 +87,7 @@ pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<Transaction<Post
     Ok(transaction)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Posting {
     pub account: String,
     pub money_amount: Option<Rational64>,

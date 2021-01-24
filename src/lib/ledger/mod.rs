@@ -1,11 +1,14 @@
 use crate::ledger::transaction::Cost;
-use crate::parser::{Item, Directive};
+use crate::parser::{Item, Directive, ParsedPrice};
 use crate::{Error, List};
 pub use account::Account;
 pub use currency::Currency;
 pub use money::{Balance, CostType, Money, Price};
 use std::collections::{HashMap, HashSet};
 pub use transaction::{Cleared, Posting, Transaction, TransactionStatus};
+use num::rational::Rational64;
+use std::cell::RefCell;
+use std::collections::hash_map::RandomState;
 
 mod account;
 mod currency;
@@ -22,14 +25,17 @@ pub struct LedgerElements {
     // pub transactions: Vec<Transaction<Posting<'a>>>,
     pub currencies: List<Currency>,
     pub accounts: List<Account>,
+    pub prices: Vec<ParsedPrice>,
+
 }
 
-impl LedgerElements {
+impl<'a> LedgerElements {
     pub fn new() -> LedgerElements {
         LedgerElements {
             //transactions: vec![],
             currencies: List::<Currency>::new(),
             accounts: List::<Account>::new(),
+            prices: vec![],
         }
     }
 }
@@ -39,7 +45,7 @@ pub fn build_ledger<'a>(items: &'a Vec<Item>) -> Result<LedgerElements, Error> {
     let mut accounts = List::<Account>::new();
     let mut commodity_strs = HashSet::<String>::new();
     let mut account_strs = HashSet::<String>::new();
-    // let mut prices: Vec<Price> = Vec::new();
+    let mut prices_parsed: Vec<ParsedPrice> = Vec::new();
 
     // 1. Populate the lists
     for item in items.iter() {
@@ -68,7 +74,11 @@ pub fn build_ledger<'a>(items: &'a Vec<Item>) -> Result<LedgerElements, Error> {
                 Directive::Tag { .. } => {}
                 Directive::Account(c) => accounts.insert(c.clone()),
             },
-            Item::Price(p) => {}
+            Item::Price(p) => {
+                commodity_strs.insert(p.clone().commodity);
+                commodity_strs.insert(p.clone().other_commodity);
+                prices_parsed.push(p.clone());
+            }
         }
     }
 
@@ -91,22 +101,32 @@ pub fn build_ledger<'a>(items: &'a Vec<Item>) -> Result<LedgerElements, Error> {
     return Ok(LedgerElements {
         currencies,
         accounts,
+        prices: prices_parsed,
     });
 }
 
-pub fn populate_transactions<'a>(
-    items: &Vec<Item>,
-    elements: &'a LedgerElements,
-) -> Result<
-    (
-        Vec<Transaction<Posting<'a>>>,
-        HashMap<&'a Account, Balance<'a>>,
-    ),
-    Error,
-> {
-    let mut transactions = vec![];
+pub fn populate_transactions<'a>(items: &Vec<Item>, elements: &'a mut LedgerElements) ->
+Result<(Vec<Transaction<Posting<'a>>>, HashMap<&'a Account, Balance<'a>, RandomState>, Vec<Price<'a>>), Error> {
+    let mut transactions = Vec::new();
     let accounts = &elements.accounts;
     let currencies = &elements.currencies;
+    let mut prices: Vec<Price> = Vec::new();
+
+    // Update the prices
+    // Prices
+    for price in elements.prices.iter() {
+        prices.push(Price {
+            date: price.date,
+            commodity: Money::Money {
+                amount: Rational64::new(1, 1),
+                currency: currencies.get(price.commodity.as_str())?,
+            },
+            price: Money::Money {
+                amount: price.other_quantity,
+                currency: currencies.get(price.other_commodity.as_str())?,
+            },
+        });
+    }
 
     // 2. Get the right postings
     for item in items.iter() {
@@ -133,13 +153,25 @@ pub fn populate_transactions<'a>(
                         )));
                     }
                     if let Some(c) = &p.cost_currency {
-                        posting.cost = Some(Cost::PerUnit {
-                            // Todo Perunit or total?
-                            amount: Money::from((
-                                currencies.get(c.as_str()).unwrap(),
-                                p.cost_amount.unwrap(),
-                            )),
-                        });
+                        let posting_currency = currencies.get(
+                            &p.money_currency.as_ref().unwrap().as_str()
+                        ).unwrap();
+                        let amount = Money::from((
+                            currencies.get(c.as_str()).unwrap(),
+                            p.cost_amount.unwrap(),
+                        ));
+                        posting.cost = match p.cost_type.as_ref().unwrap() {
+                            CostType::Total => { Some(Cost::Total { amount }) }
+                            CostType::PerUnit => { Some(Cost::PerUnit { amount }) }
+                        };
+                        prices.push(Price {
+                            date: transaction.date.unwrap(),
+                            commodity: match p.cost_type.as_ref().unwrap() {
+                                CostType::Total => { posting.amount.unwrap().abs() }
+                                CostType::PerUnit => { Money::from((posting_currency, Rational64::new(1, 1))) }
+                            },
+                            price: amount,
+                        })
                     }
                     if let Some(c) = &p.balance_currency {
                         posting.balance = Some(Money::from((
@@ -170,7 +202,28 @@ pub fn populate_transactions<'a>(
         balances.insert(account, Balance::new());
     }
 
-    Ok((transactions, balances))
+
+    Ok((transactions, balances, prices))
+}
+
+pub fn balance_transactions<'a>(transactions: &'a mut Vec<Transaction<Posting<'a>>>,
+                                balances: &'a mut HashMap<&'a Account, Balance<'a>, RandomState>,
+                                prices: &'a mut Vec<Price<'a>>) {
+    // Balance the transactions
+    for t in transactions.iter_mut() {
+        let date = t.date.unwrap().clone();
+        let balance = t.balance(balances).unwrap();
+        if balance.len() == 2 {
+            let vec = balance.iter()
+                .map(|(_, x)| x.abs())
+                .collect::<Vec<Money>>();
+            prices.push(Price {
+                date: date,
+                commodity: vec[0],
+                price: vec[1],
+            });
+        }
+    }
 }
 
 #[derive(Debug, Clone)]

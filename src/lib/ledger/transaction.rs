@@ -17,7 +17,7 @@ pub struct Transaction<PostingType> {
     pub note: Option<String>,
     pub postings: Vec<PostingType>,
     pub virtual_postings: Vec<PostingType>,
-    pub comments: Vec<Comment>,
+    pub comments: Vec<Comment>
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -69,8 +69,8 @@ pub enum Cost<'a> {
     PerUnit { amount: Money<'a> },
 }
 
-impl<'a, PostingType> Transaction<PostingType> {
-    pub fn new() -> Transaction<PostingType> {
+impl<'a, PostingType> Transaction< PostingType> {
+    pub fn new() -> Transaction< PostingType> {
         Transaction {
             status: TransactionStatus::NotChecked,
             date: None,
@@ -81,7 +81,7 @@ impl<'a, PostingType> Transaction<PostingType> {
             note: None,
             postings: vec![],
             virtual_postings: vec![],
-            comments: vec![],
+            comments: vec![]
         }
     }
 }
@@ -154,7 +154,7 @@ impl<'a> Transaction<Posting<'a>> {
     pub fn balance(
         &mut self,
         balances: &mut HashMap<&'a Account, Balance<'a>>,
-    ) -> Result<(), ErrorType> {
+    ) -> Result<(Balance), ErrorType> {
         let mut transaction_balance = Balance::new();
         // 1. update the amount of every posting if it has a balance
         let mut postings: Vec<Posting> = Vec::new();
@@ -234,7 +234,7 @@ impl<'a> Transaction<Posting<'a>> {
             match transaction_balance.can_be_zero() {
                 true => {
                     self.postings = postings;
-                    Ok(())
+                    Ok((transaction_balance))
                 }
                 false => Err(ErrorType::TransactionIsNotBalanced),
             }
@@ -252,7 +252,7 @@ impl<'a> Transaction<Posting<'a>> {
                         cost: None,
                     });
                     self.postings = postings;
-                    Ok(())
+                    Ok((transaction_balance))
                 }
             }
         }

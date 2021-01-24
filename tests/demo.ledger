@@ -17,9 +17,16 @@
     Assets:Shares        2 GOOGL @ $957.37
     Assets:Checking account
 
+2021-01-16 * ACME.
+    Assets:Shares        2 ACME @@ $957.37
+    Assets:Checking account
+
 2021-01-27 * ACME, inc.
     Income:Salary     $-100
     Assets:Checking account
 
 commodity €
     alias EUR
+commodity USD
+    alias $
+P 2021-01-23 AAPL 139.07 USD
