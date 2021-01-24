@@ -1,7 +1,9 @@
-use crate::ledger::{FromDirective, HasName, Origin};
+use crate::ledger::{FromDirective, HasName, Origin, HasAliases};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
+use std::collections::{HashSet, HashMap};
+use std::collections::hash_map::RandomState;
 
 /// Currency representation
 ///
@@ -24,10 +26,10 @@ use std::hash::{Hash, Hasher};
 /// assert_eq!(eur1, eur2);
 ///
 /// let mut currencies = List::<Currency>::new();
-/// currencies.add_element(&eur1);
-/// currencies.add_element(&eur2);
-/// currencies.add_element(&usd1);
-/// currencies.add_element(&usd2);
+/// currencies.insert(&eur1);
+/// currencies.insert(&eur2);
+/// currencies.insert(&usd1);
+/// currencies.insert(&usd2);
 /// assert_eq!(currencies.len_alias(), 2, "Alias len should be 2");
 /// currencies.add_alias("euro".to_string(), &eur1);
 /// assert_eq!(currencies.len_alias(), 3, "Alias len should be 3");
@@ -42,34 +44,46 @@ use std::hash::{Hash, Hasher};
 /// assert_eq!(currencies.get("eur").unwrap(), currencies.get("€").unwrap(), "EUR and € should be the same");
 ///
 /// ```
-#[derive(Debug, Copy, Clone)]
-pub struct Currency<'a> {
-    name: &'a str,
-    origin: Origin,
+#[derive(Debug, Clone)]
+pub struct Currency {
+    pub (crate) name: String,
+    pub (crate) origin: Origin,
+    pub (crate) note: Option<String>,
+    pub (crate) aliases: HashSet<String>,
+    pub (crate) format: Option<String>,
+    pub (crate) default: bool,
 }
 
-impl Display for Currency<'_> {
+impl Display for Currency {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.name)
     }
 }
 
-impl HasName for Currency<'_> {
+impl HasName for Currency {
     fn get_name(&self) -> &str {
-        self.name
+        self.name.as_str()
     }
 }
-
-impl<'a> From<&'a str> for Currency<'a> {
+impl HasAliases for Currency {
+    fn get_aliases(&self) -> &HashSet<String> {
+        &self.aliases
+    }
+}
+impl<'a> From<&'a str> for Currency {
     fn from(name: &'a str) -> Self {
         Currency {
-            name,
+            name: String::from(name),
             origin: Origin::Other,
+            note: None,
+            aliases: Default::default(),
+            format: None,
+            default: false
         }
     }
 }
 
-impl FromDirective for Currency<'_> {
+impl FromDirective for Currency {
     fn is_from_directive(&self) -> bool {
         match self.origin {
             Origin::FromDirective => true,
@@ -78,15 +92,15 @@ impl FromDirective for Currency<'_> {
     }
 }
 
-impl PartialEq for Currency<'_> {
+impl PartialEq for Currency {
     fn eq(&self, other: &Self) -> bool {
         self.name == other.name
     }
 }
 
-impl Eq for Currency<'_> {}
+impl Eq for Currency {}
 
-impl Hash for Currency<'_> {
+impl Hash for Currency {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.name.hash(state);
     }

@@ -1,47 +1,67 @@
-use crate::ledger::{FromDirective, HasName, Origin};
+use crate::ledger::{FromDirective, HasName, Origin, HasAliases};
 use crate::List;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
+use std::collections::HashSet;
+use std::collections::hash_map::RandomState;
 
 #[derive(Debug, Clone)]
-pub struct Account<'a> {
-    name: String,
-    origin: Origin,
-    parent: Option<&'a Account<'a>>,
+pub struct Account {
+    pub(crate) name: String,
+    pub(crate) origin: Origin,
+    pub(crate) note: Option<String>,
+    pub(crate) isin: Option<String>,
+    pub(crate) aliases: HashSet<String>,
+    pub(crate) check: Vec<String>,
+    pub(crate) assert: Vec<String>,
+    pub(crate) payee: Vec<String>,
+    pub(crate) default: bool,
 }
 
-impl Display for Account<'_> {
+impl Display for Account {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.name)
     }
 }
 
-impl PartialEq for Account<'_> {
+impl PartialEq for Account {
     fn eq(&self, other: &Self) -> bool {
         self.name == other.name
     }
 }
 
-impl Eq for Account<'_> {}
+impl Eq for Account {}
 
-impl Hash for Account<'_> {
+impl HasAliases for Account {
+    fn get_aliases(&self) -> &HashSet<String, RandomState> {
+        &self.aliases
+    }
+}
+
+impl Hash for Account {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.name.hash(state);
     }
 }
 
-impl From<String> for Account<'_> {
-    fn from(name: String) -> Self {
+impl From<&str> for Account {
+    fn from(name: &str) -> Self {
         Account {
-            name,
+            name: String::from(name),
             origin: Origin::Other,
-            parent: None,
+            note: None,
+            isin: None,
+            aliases: Default::default(),
+            check: vec![],
+            assert: vec![],
+            payee: vec![],
+            default: false,
         }
     }
 }
 
-impl FromDirective for Account<'_> {
+impl FromDirective for Account {
     fn is_from_directive(&self) -> bool {
         match self.origin {
             Origin::FromDirective => true,
@@ -50,13 +70,13 @@ impl FromDirective for Account<'_> {
     }
 }
 
-impl HasName for Account<'_> {
+impl HasName for Account {
     fn get_name(&self) -> &str {
         self.name.as_str()
     }
 }
 
-impl<'a> Account<'a> {
+impl<'a> Account {
     /// Depth of the account, useful for filters and other
     pub fn depth(&self) -> usize {
         self.name
@@ -67,12 +87,6 @@ impl<'a> Account<'a> {
             + 1
     }
 
-    pub fn set_parent(&mut self, parent: &'a Account<'a>) {
-        self.parent = Some(parent)
-    }
-    pub fn get_parent(&self) -> Option<&'a Account<'a>> {
-        self.parent
-    }
     /// Parent name
     ///
     /// Returns the name of the parent account should have
@@ -106,37 +120,6 @@ impl<'a> Account<'a> {
                     ),
                 }
             }
-        }
-    }
-}
-
-impl<'a> List<'a, Account<'a>> {
-    /// Given a list of accounts it builds the account tree structure
-    pub fn to_account_tree(&'a mut self) {
-        let mut finished = false;
-        while !finished {
-            let mut new_accounts = Vec::<Account>::new();
-            for (_, a) in self.list.clone().iter_mut() {
-                if a.depth() > 1 {
-                    let parent_name = a.parent_name().unwrap();
-                    match self.list.get(&parent_name) {
-                        None => {
-                            new_accounts.push(Account::from(parent_name.to_string()));
-                        }
-                        Some(p) => a.parent = Some(p),
-                    }
-                }
-            }
-            for acc in new_accounts {
-                self.push(acc);
-            }
-            finished = self
-                .list
-                .values()
-                .filter(|x| x.parent.is_none() & (x.depth() > 1))
-                .collect::<Vec<&Account>>()
-                .len()
-                == 0;
         }
     }
 }

@@ -8,12 +8,13 @@ use num::rational::Rational64;
 use regex::Regex;
 use std::str::FromStr;
 
+/// Parses a transaction
 pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<Transaction<Posting>, Error> {
     lazy_static! {
         static ref RE: Regex = Regex::new(format!("{}{}{}{}{}{}",
         r"(\d{4}[\-]\d{2}[\-]\d{2})"        , // date
         r"(= ?\d{4}[\-]\d{2}[\-]\d{2})? +"  , // effective_date
-        r"([\*!]) +"                        , // cleared
+        r"([\*!])? +"                        , // cleared
         r"(\(.*\) )?"                       , // code
         r"(.*)"                             , // description
         r"(  ;.*)?"                         , // note
@@ -98,7 +99,8 @@ pub struct Posting {
     pub balance_currency: Option<String>,
     pub comments: Vec<Comment>,
 }
-
+/// Parses a posting
+///
 fn parse_posting(tokenizer: &mut Tokenizer) -> Result<Posting, Error> {
     // let posting_line = chars::get_line(tokenizer);
     //let vec_chars: Vec<char> = posting_line.chars().collect();
