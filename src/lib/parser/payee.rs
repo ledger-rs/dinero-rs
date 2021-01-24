@@ -1,6 +1,6 @@
 use crate::ledger::Comment;
 use crate::parser::chars::LineType;
-use crate::parser::{chars, comment, Tokenizer, Directive};
+use crate::parser::{chars, comment, Directive, Tokenizer};
 use crate::{Error, ErrorType};
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -29,19 +29,19 @@ pub(super) fn parse(tokenizer: &mut Tokenizer) -> Result<Directive, Error> {
                 match i {
                     1 =>
                     // commodity
-                        {
-                            detected = true;
-                        }
+                    {
+                        detected = true;
+                    }
                     2 =>
                     // description
-                        {
-                            name = m.as_str().to_string()
-                        }
+                    {
+                        name = m.as_str().to_string()
+                    }
                     3 =>
                     // note
-                        {
-                            note = Some(m.as_str().to_string())
-                        }
+                    {
+                        note = Some(m.as_str().to_string())
+                    }
                     _ => (),
                 }
             }
@@ -56,8 +56,10 @@ pub(super) fn parse(tokenizer: &mut Tokenizer) -> Result<Directive, Error> {
         match tokenizer.get_char().unwrap() {
             ';' => comments.push(comment::parse(tokenizer)),
             _ => match chars::get_string(tokenizer).as_str() {
-                "alias" => {alias.insert(chars::get_line(tokenizer).trim().to_string());},
-                _=> {
+                "alias" => {
+                    alias.insert(chars::get_line(tokenizer).trim().to_string());
+                }
+                _ => {
                     eprintln!("Error while parsing posting.");
                     return Err(tokenizer.error(ErrorType::UnexpectedInput));
                 }
@@ -65,9 +67,5 @@ pub(super) fn parse(tokenizer: &mut Tokenizer) -> Result<Directive, Error> {
         }
     }
 
-    Ok(Directive::Payee {
-        name,
-        note,
-        alias,
-    })
+    Ok(Directive::Payee { name, note, alias })
 }

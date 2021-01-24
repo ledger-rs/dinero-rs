@@ -1,14 +1,14 @@
 use crate::ledger::transaction::Cost;
-use crate::parser::{Item, Directive, ParsedPrice};
+use crate::parser::{Directive, Item, ParsedPrice};
 use crate::{Error, List};
 pub use account::Account;
 pub use currency::Currency;
 pub use money::{Balance, CostType, Money, Price};
-use std::collections::{HashMap, HashSet};
-pub use transaction::{Cleared, Posting, Transaction, TransactionStatus};
 use num::rational::Rational64;
 use std::cell::RefCell;
 use std::collections::hash_map::RandomState;
+use std::collections::{HashMap, HashSet};
+pub use transaction::{Cleared, Posting, Transaction, TransactionStatus};
 
 mod account;
 mod currency;
@@ -26,7 +26,6 @@ pub struct LedgerElements {
     pub currencies: List<Currency>,
     pub accounts: List<Account>,
     pub prices: Vec<ParsedPrice>,
-
 }
 
 impl<'a> LedgerElements {
@@ -85,18 +84,17 @@ pub fn build_ledger<'a>(items: &'a Vec<Item>) -> Result<LedgerElements, Error> {
     // Commodities
     for alias in commodity_strs {
         match currencies.get(&alias) {
-            Ok(cur) => {}   // do nothing
+            Ok(cur) => {} // do nothing
             Err(_) => currencies.insert(Currency::from(alias.as_str())),
         }
     }
     // Accounts
     for alias in account_strs {
         match accounts.get(&alias) {
-            Ok(cur) => {}   // do nothing
+            Ok(cur) => {} // do nothing
             Err(_) => accounts.insert(Account::from(alias.as_str())),
         }
     }
-
 
     return Ok(LedgerElements {
         currencies,
@@ -105,8 +103,17 @@ pub fn build_ledger<'a>(items: &'a Vec<Item>) -> Result<LedgerElements, Error> {
     });
 }
 
-pub fn populate_transactions<'a>(items: &Vec<Item>, elements: &'a mut LedgerElements) ->
-Result<(Vec<Transaction<Posting<'a>>>, HashMap<&'a Account, Balance<'a>, RandomState>, Vec<Price<'a>>), Error> {
+pub fn populate_transactions<'a>(
+    items: &Vec<Item>,
+    elements: &'a mut LedgerElements,
+) -> Result<
+    (
+        Vec<Transaction<Posting<'a>>>,
+        HashMap<&'a Account, Balance<'a>, RandomState>,
+        Vec<Price<'a>>,
+    ),
+    Error,
+> {
     let mut transactions = Vec::new();
     let accounts = &elements.accounts;
     let currencies = &elements.currencies;
@@ -153,22 +160,24 @@ Result<(Vec<Transaction<Posting<'a>>>, HashMap<&'a Account, Balance<'a>, RandomS
                         )));
                     }
                     if let Some(c) = &p.cost_currency {
-                        let posting_currency = currencies.get(
-                            &p.money_currency.as_ref().unwrap().as_str()
-                        ).unwrap();
+                        let posting_currency = currencies
+                            .get(&p.money_currency.as_ref().unwrap().as_str())
+                            .unwrap();
                         let amount = Money::from((
                             currencies.get(c.as_str()).unwrap(),
                             p.cost_amount.unwrap(),
                         ));
                         posting.cost = match p.cost_type.as_ref().unwrap() {
-                            CostType::Total => { Some(Cost::Total { amount }) }
-                            CostType::PerUnit => { Some(Cost::PerUnit { amount }) }
+                            CostType::Total => Some(Cost::Total { amount }),
+                            CostType::PerUnit => Some(Cost::PerUnit { amount }),
                         };
                         prices.push(Price {
                             date: transaction.date.unwrap(),
                             commodity: match p.cost_type.as_ref().unwrap() {
-                                CostType::Total => { posting.amount.unwrap().abs() }
-                                CostType::PerUnit => { Money::from((posting_currency, Rational64::new(1, 1))) }
+                                CostType::Total => posting.amount.unwrap().abs(),
+                                CostType::PerUnit => {
+                                    Money::from((posting_currency, Rational64::new(1, 1)))
+                                }
                             },
                             price: amount,
                         })
@@ -202,21 +211,20 @@ Result<(Vec<Transaction<Posting<'a>>>, HashMap<&'a Account, Balance<'a>, RandomS
         balances.insert(account, Balance::new());
     }
 
-
     Ok((transactions, balances, prices))
 }
 
-pub fn balance_transactions<'a>(transactions: &'a mut Vec<Transaction<Posting<'a>>>,
-                                balances: &'a mut HashMap<&'a Account, Balance<'a>, RandomState>,
-                                prices: &'a mut Vec<Price<'a>>) {
+pub fn balance_transactions<'a>(
+    transactions: &'a mut Vec<Transaction<Posting<'a>>>,
+    balances: &'a mut HashMap<&'a Account, Balance<'a>, RandomState>,
+    prices: &'a mut Vec<Price<'a>>,
+) {
     // Balance the transactions
     for t in transactions.iter_mut() {
         let date = t.date.unwrap().clone();
         let balance = t.balance(balances).unwrap();
         if balance.len() == 2 {
-            let vec = balance.iter()
-                .map(|(_, x)| x.abs())
-                .collect::<Vec<Money>>();
+            let vec = balance.iter().map(|(_, x)| x.abs()).collect::<Vec<Money>>();
             prices.push(Price {
                 date: date,
                 commodity: vec[0],
