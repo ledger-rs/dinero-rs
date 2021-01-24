@@ -20,6 +20,8 @@ use std::path::PathBuf;
 use chrono::NaiveDate;
 use num::rational::Rational64;
 
+
+#[derive(Debug, Clone)]
 pub enum Item {
     Comment(Comment),
     Transaction(Transaction<parser::transaction::Posting>),
@@ -27,13 +29,14 @@ pub enum Item {
     Price(ParsedPrice),
 }
 
+#[derive(Debug, Clone)]
 pub struct ParsedPrice {
-    date: NaiveDate,
-    commodity: String,
-    other_commodity: String,
-    other_quantity: Rational64,
+    pub(crate) date: NaiveDate,
+    pub(crate) commodity: String,
+    pub(crate) other_commodity: String,
+    pub(crate) other_quantity: Rational64,
 }
-
+#[derive(Debug, Clone)]
 pub enum Directive {
     Commodity(Currency),
     Payee {

@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use colored::Colorize;
 
 use crate::ledger;
-use crate::ledger::{Account, Balance, HasName};
+use crate::ledger::{Account, Balance, HasName, Money, Price};
 use crate::parser::Tokenizer;
 use crate::Error;
 
@@ -17,11 +17,23 @@ pub fn execute(
 ) -> Result<(), Error> {
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
     let items = tokenizer.parse()?;
-    let ledgerelements = ledger::build_ledger(&items)?;
-    let (mut transactions, mut balances) = ledger::populate_transactions(&items, &ledgerelements)?;
-    transactions
-        .iter_mut()
-        .for_each(|t| t.balance(&mut balances).unwrap());
+    let mut ledgerelements = ledger::build_ledger(&items)?;
+    let (mut transactions, mut balances, mut prices) = ledger::populate_transactions(&items, &mut ledgerelements)?;
+    // Balance the transactions
+    for t in transactions.iter_mut() {
+        let date = t.date.unwrap().clone();
+        let balance = t.balance(&mut balances).unwrap();
+        if balance.len() == 2 {
+            let vec = balance.iter()
+                .map(|(_, x)| x.abs())
+                .collect::<Vec<Money>>();
+            prices.push(Price {
+                date: date,
+                commodity: vec[0],
+                price: vec[1],
+            });
+        }
+    }
     let mut balances: HashMap<&Account, Balance> = HashMap::new();
 
     for t in transactions.iter() {

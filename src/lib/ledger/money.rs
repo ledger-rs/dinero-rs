@@ -1,12 +1,14 @@
 use crate::ledger::{Currency, HasName};
 use crate::ErrorType;
 use num;
-use num::rational::Rational64;
+use num::rational::{Rational64, Ratio};
 use num::{Signed, Zero};
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::ops::{Add, Mul, Neg, Sub};
+use chrono::NaiveDate;
+use std::collections::hash_map::Iter;
 
 /// Money representation: an amount and a currency
 ///
@@ -236,6 +238,21 @@ impl<'a> Balance<'a> {
         }
         false
     }
+    pub fn len(&self) -> usize {
+        self.balance.len()
+    }
+    pub fn iter(&self) -> Iter<'_, Option<&'a Currency>, Money<'a>> {
+        self.balance.iter()
+    }
+}
+impl Display for Balance<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let mut string = String::new();
+        for (_, v) in self.balance.iter() {
+            string.push_str(format!("{}", v).as_str());
+        }
+        write!(f, "{}",string)
+    }
 }
 
 impl<'a> Money<'a> {
@@ -255,6 +272,24 @@ impl<'a> Money<'a> {
         match self {
             Money::Zero => true,
             Money::Money { amount, .. } => amount.is_negative(),
+        }
+    }
+    pub fn get_commodity(&self) -> Option<&Currency> {
+        match self {
+            Money::Zero => None,
+            Money::Money { currency, .. } => Some(*currency)
+        }
+    }
+    pub fn get_amount(&self) -> Rational64 {
+        match self {
+            Money::Zero => Rational64::new(0, 1),
+            Money::Money { amount, .. } => amount.clone(),
+        }
+    }
+    pub fn abs(&self) -> Money<'a> {
+        match self.is_negative() {
+            true => -self.clone(),
+            false => self.clone()
         }
     }
 }
@@ -286,13 +321,30 @@ impl<'a> Neg for Balance<'a> {
 }
 
 /// A price relates two commodities
+#[derive(Debug, Copy, Clone)]
 pub struct Price<'a> {
-    pub date: &'a str,
+    pub date: NaiveDate,
     pub commodity: Money<'a>,
     pub price: Money<'a>,
 }
 
-#[derive(Debug)]
+impl<'a> Price<'a> {
+    pub fn get_price(&'a self) -> Money<'a> {
+        Money::Money {
+            currency: self.price.get_commodity().unwrap(),
+            amount: self.price.get_amount() / self.commodity.get_amount(),
+        }
+    }
+}
+
+impl Display for Price<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{} {} {}",
+               self.date, self.commodity.get_commodity().unwrap(), self.get_price())
+    }
+}
+
+#[derive(Debug,Copy, Clone)]
 pub enum CostType {
     Total,
     PerUnit,
