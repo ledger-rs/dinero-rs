@@ -3,7 +3,7 @@ use std::hash::Hash;
 
 use colored::Colorize;
 
-use crate::ledger::{FromDirective, HasName, HasAliases};
+use crate::ledger::{FromDirective, HasAliases, HasName};
 use crate::{Error, ErrorType};
 use std::collections::hash_map::{Iter, Values};
 
@@ -36,9 +36,15 @@ impl<'a, T: Eq + Hash + HasName + Clone + FromDirective + HasAliases> List<T> {
     pub fn add_alias(&mut self, alias: String, for_element: &'a T) {
         let element = self.aliases.get(&alias);
         match element {
-            Some(x) => panic!("Repeated alias {} for {} and {}", alias, for_element.get_name(), x),
+            Some(x) => panic!(
+                "Repeated alias {} for {} and {}",
+                alias,
+                for_element.get_name(),
+                x
+            ),
             None => {
-                self.aliases.insert(alias, for_element.get_name().to_string());
+                self.aliases
+                    .insert(alias, for_element.get_name().to_string());
             }
         }
         ()

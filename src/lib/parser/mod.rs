@@ -1,25 +1,24 @@
 //! Parser module
 
+mod account;
 mod chars;
 mod comment;
-mod include;
-pub(crate) mod transaction;
-mod account;
 mod commodity;
+mod include;
 mod payee;
-mod tag;
 mod price;
+mod tag;
+pub(crate) mod transaction;
 
-use crate::ledger::{Comment, Transaction, Currency, Account};
+use crate::ledger::{Account, Comment, Currency, Transaction};
 use crate::parser::chars::LineType;
 use crate::{parser, Error, ErrorType};
+use chrono::NaiveDate;
 use colored::{ColoredString, Colorize};
+use num::rational::Rational64;
 use std::collections::HashSet;
 use std::fs::read_to_string;
 use std::path::PathBuf;
-use chrono::NaiveDate;
-use num::rational::Rational64;
-
 
 #[derive(Debug, Clone)]
 pub enum Item {
@@ -153,10 +152,9 @@ impl<'a> Tokenizer<'a> {
                         'P' => {
                             items.push(Item::Price(price::parse(self)?));
                         }
-                        _ =>
-                            {
-                                return Err(self.error(ErrorType::UnexpectedInput));
-                            }
+                        _ => {
+                            return Err(self.error(ErrorType::UnexpectedInput));
+                        }
                     },
                     None => continue,
                 },
@@ -168,10 +166,7 @@ impl<'a> Tokenizer<'a> {
         Ok(items)
     }
     fn get_char(&self) -> Option<char> {
-        match self
-            .content
-            .get(self.position)
-        {
+        match self.content.get(self.position) {
             Some(c) => Some(*c),
             None => None,
         }
@@ -182,7 +177,13 @@ impl<'a> Tokenizer<'a> {
             message.push(ColoredString::from("while parsing "));
             message.push(format!("{:?} ", file).bold());
             message.push(ColoredString::from(
-                format!("at position {}:{}\n", self.line_index + 1, self.line_position + 1).as_str()));
+                format!(
+                    "at position {}:{}\n",
+                    self.line_index + 1,
+                    self.line_position + 1
+                )
+                .as_str(),
+            ));
         }
         let string = self.content.iter().collect::<String>();
         for (i, line) in string.lines().enumerate() {
