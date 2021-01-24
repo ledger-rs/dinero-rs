@@ -1,4 +1,4 @@
-use crate::parser::{chars, Tokenizer, ParsedPrice};
+use crate::parser::{chars, ParsedPrice, Tokenizer};
 use crate::{Error, ErrorType};
 use chrono::NaiveDate;
 use lazy_static::lazy_static;
@@ -20,12 +20,14 @@ pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<ParsedPrice, Err
     let caps = match RE.captures(mystr.as_str()) {
         Some(m) => m,
         None => {
-            eprintln!("{}{}{}{}{}",
-                      r"P +",
-                      r"(\d{4}[\-/]\d{2}[\-/]\d{2}) +", // date
-                      r"(.*) +", // commodity
-                      r"([\d\.,]+) +", // quantity
-                      r"(.*)");
+            eprintln!(
+                "{}{}{}{}{}",
+                r"P +",
+                r"(\d{4}[\-/]\d{2}[\-/]\d{2}) +", // date
+                r"(.*) +",                        // commodity
+                r"([\d\.,]+) +",                  // quantity
+                r"(.*)"
+            );
             return Err(tokenizer.error(ErrorType::ParserError));
         }
     };
@@ -41,31 +43,30 @@ pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<ParsedPrice, Err
                 match i {
                     1 =>
                     // date
-                        {
-                            date = parse_date(m.as_str());
-                        }
+                    {
+                        date = parse_date(m.as_str());
+                    }
                     2 =>
                     // code
-                        {
-                            commodity = m.as_str().to_string();
-                        }
+                    {
+                        commodity = m.as_str().to_string();
+                    }
                     3 =>
                     // code
-                        {
-                            other_quantity = parse_amount(m.as_str())?;
-                        }
+                    {
+                        other_quantity = parse_amount(m.as_str())?;
+                    }
                     4 =>
                     // code
-                        {
-                            other_commodity = m.as_str().to_string();
-                        }
+                    {
+                        other_commodity = m.as_str().to_string();
+                    }
                     _ => (),
                 }
             }
             None => (),
         }
     }
-
 
     Ok(ParsedPrice {
         date,

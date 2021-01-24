@@ -2,8 +2,8 @@ use crate::ledger;
 use crate::ledger::{Currency, HasName};
 use crate::parser::Tokenizer;
 use crate::Error;
-use std::path::PathBuf;
 use std::ops::Deref;
+use std::path::PathBuf;
 
 pub fn execute(path: PathBuf) -> Result<(), Error> {
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);

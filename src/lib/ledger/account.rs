@@ -1,10 +1,10 @@
-use crate::ledger::{FromDirective, HasName, Origin, HasAliases};
+use crate::ledger::{FromDirective, HasAliases, HasName, Origin};
 use crate::List;
+use std::collections::hash_map::RandomState;
+use std::collections::HashSet;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
-use std::collections::HashSet;
-use std::collections::hash_map::RandomState;
 
 #[derive(Debug, Clone)]
 pub struct Account {
