@@ -1,14 +1,14 @@
 use crate::ledger::{Currency, HasName};
 use crate::ErrorType;
+use chrono::NaiveDate;
 use num;
-use num::rational::{Rational64, Ratio};
+use num::rational::{Ratio, Rational64};
 use num::{Signed, Zero};
+use std::collections::hash_map::Iter;
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::ops::{Add, Mul, Neg, Sub};
-use chrono::NaiveDate;
-use std::collections::hash_map::Iter;
 
 /// Money representation: an amount and a currency
 ///
@@ -251,7 +251,7 @@ impl Display for Balance<'_> {
         for (_, v) in self.balance.iter() {
             string.push_str(format!("{}", v).as_str());
         }
-        write!(f, "{}",string)
+        write!(f, "{}", string)
     }
 }
 
@@ -277,7 +277,7 @@ impl<'a> Money<'a> {
     pub fn get_commodity(&self) -> Option<&Currency> {
         match self {
             Money::Zero => None,
-            Money::Money { currency, .. } => Some(*currency)
+            Money::Money { currency, .. } => Some(*currency),
         }
     }
     pub fn get_amount(&self) -> Rational64 {
@@ -289,7 +289,7 @@ impl<'a> Money<'a> {
     pub fn abs(&self) -> Money<'a> {
         match self.is_negative() {
             true => -self.clone(),
-            false => self.clone()
+            false => self.clone(),
         }
     }
 }
@@ -339,12 +339,17 @@ impl<'a> Price<'a> {
 
 impl Display for Price<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{} {} {}",
-               self.date, self.commodity.get_commodity().unwrap(), self.get_price())
+        write!(
+            f,
+            "{} {} {}",
+            self.date,
+            self.commodity.get_commodity().unwrap(),
+            self.get_price()
+        )
     }
 }
 
-#[derive(Debug,Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum CostType {
     Total,
     PerUnit,

@@ -12,7 +12,9 @@ pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<Vec<Item>, Error
     if let Some(current_path) = tokenizer.file {
         // let mut parent = format!("{:?}", current_path.parent().unwrap()).replace('"', "");
         let mut parent = current_path.parent().unwrap().to_str().unwrap().to_string();
-        if parent.len() == 0 { parent.push('.') }
+        if parent.len() == 0 {
+            parent.push('.')
+        }
         parent.push('/');
         pattern.push_str(parent.as_str());
     }

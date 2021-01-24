@@ -1,3 +1,5 @@
+//! todo document this
+
 use colored::ColoredString;
 pub use list::List;
 use std::fmt;
@@ -31,12 +33,7 @@ struct ColoredStrings<'a>(pub &'a Vec<ColoredString>);
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{:?} {}",
-            self.error_type,
-            ColoredStrings(&self.message)
-        )
+        write!(f, "{:?} {}", self.error_type, ColoredStrings(&self.message))
         //write!(f, "{}", "I am red".red())
     }
 }

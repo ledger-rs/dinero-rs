@@ -1,9 +1,9 @@
-use crate::ledger::{FromDirective, HasName, Origin, HasAliases};
+use crate::ledger::{FromDirective, HasAliases, HasName, Origin};
+use std::collections::hash_map::RandomState;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
-use std::collections::{HashSet, HashMap};
-use std::collections::hash_map::RandomState;
 
 /// Currency representation
 ///
@@ -46,12 +46,12 @@ use std::collections::hash_map::RandomState;
 /// ```
 #[derive(Debug, Clone)]
 pub struct Currency {
-    pub (crate) name: String,
-    pub (crate) origin: Origin,
-    pub (crate) note: Option<String>,
-    pub (crate) aliases: HashSet<String>,
-    pub (crate) format: Option<String>,
-    pub (crate) default: bool,
+    pub(crate) name: String,
+    pub(crate) origin: Origin,
+    pub(crate) note: Option<String>,
+    pub(crate) aliases: HashSet<String>,
+    pub(crate) format: Option<String>,
+    pub(crate) default: bool,
 }
 
 impl Display for Currency {
@@ -78,7 +78,7 @@ impl<'a> From<&'a str> for Currency {
             note: None,
             aliases: Default::default(),
             format: None,
-            default: false
+            default: false,
         }
     }
 }

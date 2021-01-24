@@ -1,11 +1,11 @@
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 
 use structopt::StructOpt;
 
 use dinero::commands::{accounts, balance, check, commodities, prices};
+use std::collections::HashMap;
 use std::env;
 use std::fs::read_to_string;
-use std::collections::HashMap;
 
 #[derive(Debug, StructOpt)]
 enum Command {
@@ -112,23 +112,22 @@ fn main() {
     }
     if let Some(file) = config_file {
         let mut aliases = HashMap::new();
-        aliases.insert(
-            "-f".to_string(),
-            "--file".to_string(),
-        );
+        aliases.insert("-f".to_string(), "--file".to_string());
         let contents = read_to_string(file).unwrap();
         for line in contents.lines() {
             let option = line.trim_start();
             match option.chars().nth(0) {
                 Some(c) => match c {
                     '-' => {
-                        assert!(line.starts_with("--"),
-                                format!("Bad config file {:?}\n{}", file, line));
+                        assert!(
+                            line.starts_with("--"),
+                            format!("Bad config file {:?}\n{}", file, line)
+                        );
                         let mut iter = line.split_whitespace();
                         let option = iter.next().unwrap();
-                        if !args.iter()
-                            .any(|x| (x == option) |
-                                (aliases.get(x).unwrap_or(&String::new()) == option)) {
+                        if !args.iter().any(|x| {
+                            (x == option) | (aliases.get(x).unwrap_or(&String::new()) == option)
+                        }) {
                             args.push(option.to_string());
                             let mut rest = String::new();
                             for arg in iter {
@@ -140,7 +139,7 @@ fn main() {
                             }
                         }
                     }
-                    ';' | '#' | '!' | '%' => (),  // a comment
+                    ';' | '#' | '!' | '%' => (), // a comment
 
                     _ => panic!("Bad config file {:?}\n{}", file, line),
                 },
