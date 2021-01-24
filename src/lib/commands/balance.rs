@@ -17,11 +17,8 @@ pub fn execute(
 ) -> Result<(), Error> {
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
     let items = tokenizer.parse()?;
-    let ledgerelements = ledger::build_ledger(&items)?;
-    let (mut transactions, mut balances) = ledger::populate_transactions(&items, &ledgerelements)?;
-    transactions
-        .iter_mut()
-        .for_each(|t| t.balance(&mut balances).unwrap());
+    let mut ledgerelements = ledger::build_ledger(&items)?;
+    let (mut transactions, mut balances,_) = ledger::populate_transactions(&items, &mut ledgerelements)?;
     let mut balances: HashMap<&Account, Balance> = HashMap::new();
 
     for t in transactions.iter() {

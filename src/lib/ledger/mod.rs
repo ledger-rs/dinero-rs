@@ -6,6 +6,7 @@ pub use currency::Currency;
 pub use money::{Balance, CostType, Money, Price};
 use std::collections::{HashMap, HashSet};
 pub use transaction::{Cleared, Posting, Transaction, TransactionStatus};
+use num::rational::Rational64;
 
 mod account;
 mod currency;
@@ -31,7 +32,7 @@ impl<'a> LedgerElements<'a> {
             //transactions: vec![],
             currencies: List::<Currency>::new(),
             accounts: List::<Account>::new(),
-            prices: vec![]
+            prices: vec![],
         }
     }
 }
@@ -93,24 +94,25 @@ pub fn build_ledger<'a>(items: &'a Vec<Item>) -> Result<LedgerElements, Error> {
     return Ok(LedgerElements {
         currencies,
         accounts,
-        prices
+        prices,
     });
 }
 
 pub fn populate_transactions<'a>(
     items: &Vec<Item>,
-    elements: &'a LedgerElements,
+    elements: &'a mut LedgerElements<'a>,
 ) -> Result<
     (
         Vec<Transaction<Posting<'a>>>,
         HashMap<&'a Account, Balance<'a>>,
+        &'a Vec<Price<'a>>
     ),
     Error,
 > {
     let mut transactions = vec![];
     let accounts = &elements.accounts;
     let currencies = &elements.currencies;
-    let prices = &elements.prices;
+    let mut prices = &mut elements.prices;
 
     // 2. Get the right postings
     for item in items.iter() {
@@ -137,13 +139,25 @@ pub fn populate_transactions<'a>(
                         )));
                     }
                     if let Some(c) = &p.cost_currency {
-                        posting.cost = Some(Cost::PerUnit {
-                            // Todo Perunit or total?
-                            amount: Money::from((
-                                currencies.get(c.as_str()).unwrap(),
-                                p.cost_amount.unwrap(),
-                            )),
-                        });
+                        let posting_currency = currencies.get(
+                            &p.money_currency.as_ref().unwrap().as_str()
+                        ).unwrap();
+                        let amount = Money::from((
+                            currencies.get(c.as_str()).unwrap(),
+                            p.cost_amount.unwrap(),
+                        ));
+                        posting.cost = match p.cost_type.as_ref().unwrap() {
+                            CostType::Total => { Some(Cost::Total { amount }) }
+                            CostType::PerUnit => { Some(Cost::PerUnit { amount }) }
+                        };
+                        prices.push(Price {
+                            date: transaction.date.unwrap(),
+                            commodity: match p.cost_type.as_ref().unwrap() {
+                                CostType::Total => { posting.amount.unwrap().abs() }
+                                CostType::PerUnit => { Money::from((posting_currency, Rational64::new(1, 1))) }
+                            },
+                            price: amount,
+                        })
                     }
                     if let Some(c) = &p.balance_currency {
                         posting.balance = Some(Money::from((
@@ -174,7 +188,12 @@ pub fn populate_transactions<'a>(
         balances.insert(account, Balance::new());
     }
 
-    Ok((transactions, balances))
+    // Balance the transactions
+    transactions
+        .iter_mut()
+        .for_each(|t| t.balance(&mut balances).unwrap());
+
+    Ok((transactions, balances, prices))
 }
 
 #[derive(Debug, Clone)]
