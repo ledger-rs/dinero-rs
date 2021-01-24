@@ -2,7 +2,7 @@ use std::path::{PathBuf, Path};
 
 use structopt::StructOpt;
 
-use dinero::commands::{accounts, balance, check, commodities};
+use dinero::commands::{accounts, balance, check, commodities, prices};
 use std::env;
 use std::fs::read_to_string;
 use std::collections::HashMap;
@@ -27,7 +27,8 @@ enum Command {
     Accounts(CommonOpts),
     // Codes,
     // Payees,
-    // Prices,
+    /// Show the exchange rates
+    Prices(CommonOpts),
     /// List commodities
     #[structopt(alias = "currencies")]
     Commodities(CommonOpts),
@@ -155,8 +156,9 @@ fn main() {
             flat,
             no_total,
         } => balance::execute(options.input_file, flat, !no_total, options.depth),
-        Command::Accounts(options) => accounts::execute(options.input_file),
         Command::Commodities(options) => commodities::execute(options.input_file),
+        Command::Prices(options) => prices::execute(options.input_file),
+        Command::Accounts(options) => accounts::execute(options.input_file),
         Command::Check { input } => check::execute(input),
     } {
         eprintln!("{}", e);

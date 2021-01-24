@@ -9,6 +9,7 @@ pub fn execute(path: PathBuf) -> Result<(), Error> {
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
     let items = tokenizer.parse()?;
     let ledger = ledger::build_ledger(&items)?;
+
     let mut commodities = ledger
         .currencies
         .iter()
