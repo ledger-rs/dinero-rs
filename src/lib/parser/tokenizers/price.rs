@@ -1,12 +1,13 @@
-use crate::parser::{chars, ParsedPrice, Tokenizer};
-use crate::{Error, ErrorType};
+use crate::models::ParsedPrice;
+use crate::parser::{chars, Tokenizer};
+use crate::{Error, ParserError};
 use chrono::NaiveDate;
 use lazy_static::lazy_static;
 use num::rational::Rational64;
 use regex::Regex;
 use std::str::FromStr;
 
-pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<ParsedPrice, Error> {
+pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<ParsedPrice, ParserError> {
     lazy_static! {
         static ref RE: Regex = Regex::new(format!("{}{}{}{}{}",
         r"P +",
@@ -20,15 +21,9 @@ pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<ParsedPrice, Err
     let caps = match RE.captures(mystr.as_str()) {
         Some(m) => m,
         None => {
-            eprintln!(
-                "{}{}{}{}{}",
-                r"P +",
-                r"(\d{4}[\-/]\d{2}[\-/]\d{2}) +", // date
-                r"(.*) +",                        // commodity
-                r"([\d\.,]+) +",                  // quantity
-                r"(.*)"
-            );
-            return Err(tokenizer.error(ErrorType::ParserError));
+            return Err(ParserError::UnexpectedInput(Some(
+                "Expected price.".to_string(),
+            )));
         }
     };
 
@@ -76,7 +71,7 @@ pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<ParsedPrice, Err
     })
 }
 
-fn parse_amount(input: &str) -> Result<Rational64, Error> {
+fn parse_amount(input: &str) -> Result<Rational64, ParserError> {
     let mut num = String::new();
     let mut den = "1".to_string();
     let mut decimal = false;
@@ -84,7 +79,9 @@ fn parse_amount(input: &str) -> Result<Rational64, Error> {
         match c {
             '.' => {
                 if decimal {
-                    return Err(ErrorType::ParserError.into());
+                    return Err(ParserError::UnexpectedInput(Some(
+                        "Too many decimal separators".to_string(),
+                    )));
                 } else {
                     decimal = true
                 }
@@ -101,11 +98,15 @@ fn parse_amount(input: &str) -> Result<Rational64, Error> {
     Ok(Rational64::new(
         match i64::from_str(num.as_str()) {
             Ok(n) => n,
-            Err(_) => return Err(ErrorType::ParserError.into()),
+            Err(_) => {
+                return Err(ParserError::UnexpectedInput(Some(
+                    "Wrong number format".to_string(),
+                )))
+            }
         },
         match i64::from_str(den.as_str()) {
             Ok(d) => d,
-            Err(_) => return Err(ErrorType::ParserError.into()),
+            Err(_) => return Err(ParserError::UnexpectedInput(None)),
         },
     ))
 }

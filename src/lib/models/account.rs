@@ -1,4 +1,4 @@
-use crate::ledger::{FromDirective, HasAliases, HasName, Origin};
+use crate::models::{FromDirective, HasAliases, HasName, Origin};
 use crate::List;
 use std::collections::hash_map::RandomState;
 use std::collections::HashSet;
@@ -91,7 +91,7 @@ impl<'a> Account {
     ///
     /// Returns the name of the parent account should have
     /// ```rust
-    /// use dinero::ledger::Account;
+    /// use dinero::models::Account;
     /// let mut account = Account::from("Expenses:Groceries");
     /// let mut parent = account.parent_name();
     /// assert_eq!(parent, Some("Expenses".to_string()));

@@ -1,4 +1,4 @@
-use crate::ledger::{FromDirective, HasAliases, HasName, Origin};
+use crate::models::{FromDirective, HasAliases, HasName, Origin};
 use std::collections::hash_map::RandomState;
 use std::collections::{HashMap, HashSet};
 use std::fmt;
@@ -7,12 +7,12 @@ use std::hash::{Hash, Hasher};
 
 /// Currency representation
 ///
-/// A currency has a name and a list of aliases, we have to make sure that when two commodities are
+/// A currency (or commodity) has a name and a list of aliases, we have to make sure that when two commodities are
 /// created, they are the same, like so:
 ///
 /// # Examples
 /// ```rust
-/// use dinero::ledger::{Currency};
+/// use dinero::models::{Currency};
 /// use dinero::List;
 ///
 /// let usd1 = Currency::from("usd");
@@ -37,8 +37,8 @@ use std::hash::{Hash, Hasher};
 /// currencies.add_alias("€".to_string(), &eur);
 /// assert_eq!(currencies.len(), 2, "List len should be 2");
 /// assert_eq!(currencies.len_alias(), 4, "Alias len should be 4");
-/// assert_eq!(currencies.get("eur").unwrap(), &eur);
-/// assert_eq!(currencies.get("€").unwrap(), &eur);
+/// assert_eq!(currencies.get("eur").unwrap().as_ref(), &eur);
+/// assert_eq!(currencies.get("€").unwrap().as_ref(), &eur);
 ///
 ///
 /// assert_eq!(currencies.get("eur").unwrap(), currencies.get("€").unwrap(), "EUR and € should be the same");

@@ -3,10 +3,13 @@ use std::path::PathBuf;
 
 use colored::Colorize;
 
-use crate::ledger;
-use crate::ledger::{Account, Balance, HasName, Money, Price};
+use crate::models;
+use crate::models::{Account, Balance, HasName, Ledger, Money, Price};
 use crate::parser::Tokenizer;
 use crate::Error;
+use std::convert::TryFrom;
+use std::ops::Deref;
+use std::rc::Rc;
 
 /// Balance report
 pub fn execute(
@@ -16,33 +19,19 @@ pub fn execute(
     depth: Option<usize>,
 ) -> Result<(), Error> {
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
-    let items = tokenizer.parse()?;
-    let mut ledgerelements = ledger::build_ledger(&items)?;
-    let (mut transactions, mut balances, mut prices) =
-        ledger::populate_transactions(&items, &mut ledgerelements)?;
-    // Balance the transactions
-    for t in transactions.iter_mut() {
-        let date = t.date.unwrap().clone();
-        let balance = t.balance(&mut balances).unwrap();
-        if balance.len() == 2 {
-            let vec = balance.iter().map(|(_, x)| x.abs()).collect::<Vec<Money>>();
-            prices.push(Price {
-                date: date,
-                commodity: vec[0],
-                price: vec[1],
-            });
-        }
-    }
-    let mut balances: HashMap<&Account, Balance> = HashMap::new();
+    let items = tokenizer.tokenize()?;
+    let mut ledger = Ledger::try_from(items)?;
 
-    for t in transactions.iter() {
+    let mut balances: HashMap<Rc<Account>, Balance> = HashMap::new();
+
+    for t in ledger.transactions.iter() {
         for p in t.postings.iter() {
             let mut cur_bal = balances
-                .get(p.account)
+                .get(p.account.deref())
                 .unwrap_or(&Balance::new())
                 .to_owned();
-            cur_bal = cur_bal + p.amount.unwrap().into();
-            balances.insert(p.account, cur_bal.to_owned());
+            cur_bal = cur_bal + Balance::from(p.amount.as_ref().unwrap().clone());
+            balances.insert(p.account.clone(), cur_bal.to_owned());
         }
     }
 

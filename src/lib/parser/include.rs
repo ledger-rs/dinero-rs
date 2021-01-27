@@ -1,11 +1,11 @@
-use crate::parser::{chars, Item, Tokenizer};
+use crate::parser::{chars, ParsedLedger, Tokenizer};
 
-use crate::{Error, ErrorType};
+use crate::{Error, ParserError};
 use glob::glob;
 use std::path::PathBuf;
 
 /// Handles include directive
-pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<Vec<Item>, Error> {
+pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<ParsedLedger, ParserError> {
     chars::consume_str(tokenizer, &"include ".to_string())?;
     let mut pattern = String::new();
     let mut files: Vec<PathBuf> = Vec::new();
@@ -24,20 +24,25 @@ pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<Vec<Item>, Error
             Ok(path) => {
                 files.push(path.clone());
                 match tokenizer.seen_files.get(&path) {
-                    Some(_) => return Err(tokenizer.error(ErrorType::IncludeLoop)),
+                    Some(_) => {
+                        return Err(ParserError::IncludeLoop(format!(
+                            "Cycle detected. {:?}",
+                            &path
+                        )))
+                    }
                     None => (),
                 }
             }
             Err(e) => eprintln!("{:?}", e),
         }
     }
-    let mut items: Vec<Item> = Vec::new();
+    let mut items: ParsedLedger = ParsedLedger::new();
     for file in files {
         let mut inner_tokenizer: Tokenizer = Tokenizer::from(&file);
         for p in tokenizer.seen_files.iter() {
             inner_tokenizer.seen_files.insert(*p);
         }
-        let mut new_items: Vec<Item> = inner_tokenizer.parse()?;
+        let mut new_items: ParsedLedger = inner_tokenizer.tokenize()?;
         items.append(&mut new_items);
     }
     Ok(items)
