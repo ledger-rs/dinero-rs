@@ -5,7 +5,7 @@ use glob::glob;
 use std::path::PathBuf;
 
 /// Handles include directive
-pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<ParsedLedger, ParserError> {
+pub(super) fn parse(tokenizer: &mut Tokenizer) -> Result<ParsedLedger, Error> {
     chars::consume_str(tokenizer, &"include ".to_string())?;
     let mut pattern = String::new();
     let mut files: Vec<PathBuf> = Vec::new();
@@ -25,10 +25,10 @@ pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<ParsedLedger, Pa
                 files.push(path.clone());
                 match tokenizer.seen_files.get(&path) {
                     Some(_) => {
-                        return Err(ParserError::IncludeLoop(format!(
+                        return Err(tokenizer.error(ParserError::IncludeLoop(format!(
                             "Cycle detected. {:?}",
                             &path
-                        )))
+                        ))))
                     }
                     None => (),
                 }

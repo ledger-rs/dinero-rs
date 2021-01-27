@@ -4,7 +4,7 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 /// A price relates two commodities
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Price {
     pub date: NaiveDate,
     pub commodity: Money,

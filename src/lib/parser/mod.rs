@@ -54,6 +54,7 @@ impl ParsedLedger {
         self.comments.append(&mut other.comments);
         self.transactions.append(&mut other.transactions);
     }
+
     pub fn len(&self) -> usize {
         self.accounts.len()
             + self.payees.len()
@@ -120,7 +121,7 @@ impl<'a> From<String> for Tokenizer<'a> {
 impl<'a> Tokenizer<'a> {
     /// Parses a string into a parsed ledger. It allows for recursivity,
     /// i.e. the include keyword is properly handled
-    pub fn tokenize(&'a mut self) -> Result<ParsedLedger, ParserError> {
+    pub fn tokenize(&'a mut self) -> Result<ParsedLedger, Error> {
         let mut ledger: ParsedLedger = ParsedLedger::new();
         let len = self.content.iter().count();
         while self.position < len {
@@ -135,30 +136,45 @@ impl<'a> Tokenizer<'a> {
                             ledger.append(&mut new_ledger);
                         }
                         'c' => {
-                            ledger.commodities.insert(commodity::parse(self)?);
+                            ledger.commodities.insert(match commodity::parse(self) {
+                                Ok(x) => x,
+                                Err(e) => return Err(self.error(e)),
+                            });
                         }
                         'p' => {
-                            ledger.payees.insert(payee::parse(self)?);
+                            ledger.payees.insert(match payee::parse(self) {
+                                Ok(x) => x,
+                                Err(e) => return Err(self.error(e)),
+                            });
                         }
                         't' => {
-                            ledger.tags.push(tag::parse(self)?);
+                            ledger.tags.push(match tag::parse(self) {
+                                Ok(x) => x,
+                                Err(e) => return Err(self.error(e)),
+                            });
                         }
                         'a' => {
-                            ledger.accounts.insert(account::parse(self)?);
+                            ledger.accounts.insert(match account::parse(self) {
+                                Ok(x) => x,
+                                Err(e) => return Err(self.error(e)),
+                            });
                         }
                         'P' => {
-                            ledger.prices.push(price::parse(self)?);
+                            ledger.prices.push(match price::parse(self) {
+                                Ok(x) => x,
+                                Err(e) => return Err(self.error(e)),
+                            });
                         }
                         _ => {
-                            return Err(ParserError::UnexpectedInput(None));
+                            return Err(self.error(ParserError::UnexpectedInput(None)));
                         }
                     },
                     None => continue,
                 },
                 LineType::Indented => {
-                    return Err(ParserError::UnexpectedInput(Some(
+                    return Err(Error::from(ParserError::UnexpectedInput(Some(
                         "Unexpected indentation".to_string(),
-                    )));
+                    ))));
                 }
             };
         }
@@ -170,8 +186,8 @@ impl<'a> Tokenizer<'a> {
             None => None,
         }
     }
-    fn error(&self, err: ParserError) -> Error {
-        let mut message = vec![ColoredString::from("")];
+    pub fn error(&self, err: ParserError) -> Error {
+        let mut message = vec![ColoredString::from(format!("{:?}", err).as_str())];
         if let Some(file) = self.file {
             message.push(ColoredString::from("while parsing "));
             message.push(format!("{:?} ", file).bold());
