@@ -35,7 +35,7 @@ pub struct LedgerMasterData {
     pub(crate) accounts: List<Account>,
     pub(crate) commodities: List<Currency>,
 }
-
+#[derive(Debug, Clone)]
 pub struct Ledger {
     pub(crate) accounts: List<Account>,
     pub(crate) commodities: List<Currency>,
@@ -212,7 +212,7 @@ impl<'a> TryFrom<ParsedLedger> for Ledger {
         // Balance the transactions
         for t in transactions.iter_mut() {
             let date = t.date.unwrap().clone();
-            let balance = t.balance(&mut balances).unwrap();
+            let balance = t.balance(&mut balances)?;
             if balance.len() == 2 {
                 let vec = balance.iter().map(|(_, x)| x.abs()).collect::<Vec<Money>>();
                 prices.push(Price {

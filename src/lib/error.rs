@@ -24,22 +24,29 @@ pub struct Error {
 
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let mut output = String::new();
-        for m in self.message.iter() {
-            output.push_str(m);
-        }
-        write!(f, "{}", output)
+        write!(f, "{}", ColoredStrings(&self.message))
     }
 }
 
 impl From<ParserError> for Error {
-    fn from(_: ParserError) -> Self {
+    fn from(error: ParserError) -> Self {
+        eprintln!("{:?}", error);
         todo!()
     }
 }
 
 impl From<LedgerError> for Error {
-    fn from(_: LedgerError) -> Self {
+    fn from(error: LedgerError) -> Self {
+        eprintln!("{:?}", error);
         todo!()
+    }
+}
+// https://medium.com/apolitical-engineering/how-do-you-impl-display-for-vec-b8dbb21d814f
+struct ColoredStrings<'a>(pub &'a Vec<ColoredString>);
+impl<'a> fmt::Display for ColoredStrings<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.iter().fold(Ok(()), |result, partial| {
+            result.and_then(|_| write!(f, "{}", partial))
+        })
     }
 }
