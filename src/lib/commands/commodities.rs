@@ -1,17 +1,18 @@
-use crate::ledger;
-use crate::ledger::{Currency, HasName};
+use crate::models;
+use crate::models::{Currency, HasName, Ledger};
 use crate::parser::Tokenizer;
 use crate::Error;
+use std::convert::TryFrom;
 use std::ops::Deref;
 use std::path::PathBuf;
 
 pub fn execute(path: PathBuf) -> Result<(), Error> {
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
-    let items = tokenizer.parse()?;
-    let ledger = ledger::build_ledger(&items)?;
+    let items = tokenizer.tokenize()?;
+    let ledger = Ledger::try_from(items)?;
 
     let mut commodities = ledger
-        .currencies
+        .commodities
         .iter()
         .map(|x| x.1.deref().to_owned())
         .collect::<Vec<Currency>>();

@@ -1,7 +1,8 @@
-use crate::ledger::{Cleared, Comment, CostType, Transaction};
+use crate::models::{Cleared, Comment, PriceType, Transaction};
 use crate::parser::chars::LineType;
-use crate::parser::{chars, comment, Tokenizer};
-use crate::{Error, ErrorType};
+use crate::parser::tokenizers::comment;
+use crate::parser::{chars, Tokenizer};
+use crate::ParserError;
 use chrono::NaiveDate;
 use lazy_static::lazy_static;
 use num::rational::Rational64;
@@ -9,7 +10,7 @@ use regex::Regex;
 use std::str::FromStr;
 
 /// Parses a transaction
-pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<Transaction<Posting>, Error> {
+pub(crate) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<Transaction<Posting>, ParserError> {
     lazy_static! {
         static ref RE: Regex = Regex::new(format!("{}{}{}{}{}{}",
         r"(\d{4}[\-]\d{2}[\-]\d{2})"        , // date
@@ -45,7 +46,7 @@ pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<Transaction<Post
                         transaction.cleared = match m.as_str() {
                             "*" => Cleared::Cleared,
                             "!" => Cleared::NotCleared,
-                            _ => return Err(tokenizer.error(ErrorType::ParserError)),
+                            _ => Cleared::Unknown,
                         }
                     }
                     4 =>
@@ -73,7 +74,11 @@ pub(super) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<Transaction<Post
     while let LineType::Indented = chars::consume_whitespaces_and_lines(tokenizer) {
         match tokenizer.get_char().unwrap() {
             ';' => transaction.comments.push(comment::parse(tokenizer)),
-            c if c.is_numeric() => return Err(tokenizer.error(ErrorType::UnexpectedInput)),
+            c if c.is_numeric() => {
+                return Err(ParserError::UnexpectedInput(Some(
+                    "Expecting account name".to_string(),
+                )))
+            }
             _ => match parse_posting(tokenizer) {
                 Ok(posting) => transaction.postings.push(posting),
                 Err(e) => {
@@ -94,14 +99,15 @@ pub struct Posting {
     pub money_currency: Option<String>,
     pub cost_amount: Option<Rational64>,
     pub cost_currency: Option<String>,
-    pub cost_type: Option<CostType>,
+    pub cost_type: Option<PriceType>,
     pub balance_amount: Option<Rational64>,
     pub balance_currency: Option<String>,
     pub comments: Vec<Comment>,
 }
+
 /// Parses a posting
 ///
-fn parse_posting(tokenizer: &mut Tokenizer) -> Result<Posting, Error> {
+fn parse_posting(tokenizer: &mut Tokenizer) -> Result<Posting, ParserError> {
     // let posting_line = chars::get_line(tokenizer);
     //let vec_chars: Vec<char> = posting_line.chars().collect();
     let mut account = String::new();
@@ -151,7 +157,9 @@ fn parse_posting(tokenizer: &mut Tokenizer) -> Result<Posting, Error> {
             }
             Some('@') => {
                 if posting.money_amount.is_none() {
-                    return Err(tokenizer.error(ErrorType::ParserError));
+                    return Err(ParserError::UnexpectedInput(Some(
+                        "Amount not found".to_string(),
+                    )));
                 }
 
                 tokenizer.position += 1;
@@ -159,9 +167,9 @@ fn parse_posting(tokenizer: &mut Tokenizer) -> Result<Posting, Error> {
                 if tokenizer.get_char().unwrap() == '@' {
                     tokenizer.position += 1;
                     tokenizer.line_position += 1;
-                    posting.cost_type = Some(CostType::Total);
+                    posting.cost_type = Some(PriceType::Total);
                 } else {
-                    posting.cost_type = Some(CostType::PerUnit);
+                    posting.cost_type = Some(PriceType::PerUnit);
                 }
                 let money = parse_money(tokenizer)?;
                 posting.cost_amount = Some(money.0);
@@ -178,7 +186,7 @@ fn parse_posting(tokenizer: &mut Tokenizer) -> Result<Posting, Error> {
     Ok(posting)
 }
 
-fn parse_money(tokenizer: &mut Tokenizer) -> Result<(Rational64, String), Error> {
+fn parse_money(tokenizer: &mut Tokenizer) -> Result<(Rational64, String), ParserError> {
     let currency: String;
     let amount: Rational64;
 
@@ -191,12 +199,16 @@ fn parse_money(tokenizer: &mut Tokenizer) -> Result<(Rational64, String), Error>
             currency = chars::get_string(tokenizer);
             amount = parse_amount(tokenizer)?;
         }
-        None => return Err(tokenizer.error(ErrorType::ParserError)),
+        None => {
+            return Err(ParserError::UnexpectedInput(Some(
+                "Expected ammount missing".to_string(),
+            )));
+        }
     }
     Ok((amount, currency))
 }
 
-fn parse_amount(tokenizer: &mut Tokenizer) -> Result<Rational64, Error> {
+fn parse_amount(tokenizer: &mut Tokenizer) -> Result<Rational64, ParserError> {
     let mut num = String::new();
     let mut den = "1".to_string();
     let mut decimal = false;
@@ -204,7 +216,9 @@ fn parse_amount(tokenizer: &mut Tokenizer) -> Result<Rational64, Error> {
         match tokenizer.get_char() {
             Some('.') => {
                 if decimal {
-                    return Err(tokenizer.error(ErrorType::ParserError));
+                    return Err(ParserError::UnexpectedInput(Some(
+                        "Too many decimal separators".to_string(),
+                    )));
                 } else {
                     decimal = true
                 }
@@ -223,11 +237,15 @@ fn parse_amount(tokenizer: &mut Tokenizer) -> Result<Rational64, Error> {
     Ok(Rational64::new(
         match i64::from_str(num.as_str()) {
             Ok(n) => n,
-            Err(_) => return Err(tokenizer.error(ErrorType::ParserError)),
+            Err(_) => {
+                return Err(ParserError::UnexpectedInput(Some(
+                    "Wrong number format".to_string(),
+                )))
+            }
         },
         match i64::from_str(den.as_str()) {
             Ok(d) => d,
-            Err(_) => return Err(tokenizer.error(ErrorType::ParserError)),
+            Err(_) => return Err(ParserError::UnexpectedInput(None)),
         },
     ))
 }
