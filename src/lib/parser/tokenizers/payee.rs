@@ -1,12 +1,13 @@
-use crate::ledger::Comment;
+use crate::models::{Comment, Origin, Payee};
 use crate::parser::chars::LineType;
-use crate::parser::{chars, comment, Directive, Tokenizer};
-use crate::{Error, ErrorType};
+use crate::parser::tokenizers::comment;
+use crate::parser::{chars, Tokenizer};
+use crate::{Error, ParserError};
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::collections::HashSet;
 
-pub(super) fn parse(tokenizer: &mut Tokenizer) -> Result<Directive, Error> {
+pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Payee, ParserError> {
     lazy_static! {
         static ref RE: Regex = Regex::new(format!("{}{}{}",
         r"(payee) +"        , // directive commodity
@@ -50,7 +51,7 @@ pub(super) fn parse(tokenizer: &mut Tokenizer) -> Result<Directive, Error> {
     }
 
     if !detected {
-        return Err(tokenizer.error(ErrorType::UnexpectedInput));
+        return Err(ParserError::UnexpectedInput(None));
     }
     while let LineType::Indented = chars::consume_whitespaces_and_lines(tokenizer) {
         match tokenizer.get_char().unwrap() {
@@ -61,11 +62,16 @@ pub(super) fn parse(tokenizer: &mut Tokenizer) -> Result<Directive, Error> {
                 }
                 _ => {
                     eprintln!("Error while parsing posting.");
-                    return Err(tokenizer.error(ErrorType::UnexpectedInput));
+                    return Err(ParserError::UnexpectedInput(None));
                 }
             },
         }
     }
 
-    Ok(Directive::Payee { name, note, alias })
+    Ok(Payee {
+        name,
+        note,
+        alias,
+        origin: Origin::FromDirective,
+    })
 }

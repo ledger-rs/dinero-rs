@@ -2,15 +2,17 @@ use std::path::PathBuf;
 
 use colored::Colorize;
 
-use crate::ledger;
+use crate::error::Error;
+use crate::models;
+use crate::models::Ledger;
 use crate::parser::Tokenizer;
-use crate::Error;
+use std::convert::TryFrom;
 
 pub fn execute(path: PathBuf) -> Result<(), Error> {
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
-    let items = tokenizer.parse()?;
-    let ledger = ledger::build_ledger(&items);
-    match ledger {
+    let parsed = tokenizer.tokenize()?;
+
+    match Ledger::try_from(parsed) {
         Ok(_) => println!(
             "Input file {} is {}",
             path.to_str().unwrap().bold(),
