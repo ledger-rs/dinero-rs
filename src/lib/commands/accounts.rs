@@ -1,15 +1,15 @@
 use std::path::PathBuf;
 
-use crate::ledger;
-use crate::ledger::{Account, HasName};
+use crate::error::Error;
+use crate::models::{Account, HasName, Ledger};
 use crate::parser::Tokenizer;
-use crate::Error;
+use std::convert::TryFrom;
 use std::ops::Deref;
 
 pub fn execute(path: PathBuf) -> Result<(), Error> {
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
-    let items = tokenizer.parse()?;
-    let ledger = ledger::build_ledger(&items)?;
+    let items = tokenizer.tokenize()?;
+    let ledger = Ledger::try_from(items)?;
     let mut accounts = ledger
         .accounts
         .iter()

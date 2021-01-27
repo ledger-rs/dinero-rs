@@ -1,16 +1,18 @@
-use crate::ledger::{Account, Origin};
+use crate::models::{Comment, Currency, Origin};
 use crate::parser::chars::LineType;
-use crate::parser::{chars, Directive, Tokenizer};
-use crate::{Error, ErrorType};
+use crate::parser::tokenizers::comment;
+use crate::parser::{chars, Tokenizer};
+use crate::{Error, ParserError};
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::collections::HashSet;
 
-pub(super) fn parse(tokenizer: &mut Tokenizer) -> Result<Directive, Error> {
+pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Currency, ParserError> {
     lazy_static! {
-        static ref RE: Regex = Regex::new(format!("{}{}",
-        r"(account) +"        , // directive commodity
+        static ref RE: Regex = Regex::new(format!("{}{}{}",
+        r"(commodity) +"        , // directive commodity
         r"(.*)"                 , // description
+        r"(  ;.*)?"             , // note
         ).as_str()).unwrap();
     }
     let mystr = chars::get_line(tokenizer);
@@ -18,13 +20,11 @@ pub(super) fn parse(tokenizer: &mut Tokenizer) -> Result<Directive, Error> {
 
     let mut name = String::new();
     let mut detected: bool = false;
+    let mut note: Option<String> = None;
+    let mut format: Option<String> = None;
+    let mut comments: Vec<Comment> = vec![];
     let mut default = false;
     let mut aliases = HashSet::new();
-    let mut check = Vec::new();
-    let mut assert = Vec::new();
-    let mut payee = Vec::new();
-    let mut note = None;
-    let mut isin = None;
 
     for (i, cap) in caps.iter().enumerate() {
         match cap {
@@ -40,6 +40,11 @@ pub(super) fn parse(tokenizer: &mut Tokenizer) -> Result<Directive, Error> {
                     {
                         name = m.as_str().to_string()
                     }
+                    3 =>
+                    // note
+                    {
+                        note = Some(m.as_str().to_string())
+                    }
                     _ => (),
                 }
             }
@@ -48,46 +53,38 @@ pub(super) fn parse(tokenizer: &mut Tokenizer) -> Result<Directive, Error> {
     }
 
     if !detected {
-        return Err(tokenizer.error(ErrorType::UnexpectedInput));
+        return Err(ParserError::UnexpectedInput(Some(
+            "Commodity expected. Not found.".to_string(),
+        )));
     }
     while let LineType::Indented = chars::consume_whitespaces_and_lines(tokenizer) {
         match tokenizer.get_char().unwrap() {
-            ';' => {
-                chars::get_line(tokenizer);
-            } // ignore comments
+            ';' => comments.push(comment::parse(tokenizer)),
             _ => match chars::get_string(tokenizer).as_str() {
                 "note" => note = Some(chars::get_line(tokenizer).trim().to_string()),
-                "isin" => isin = Some(chars::get_line(tokenizer).trim().to_string()),
                 "alias" => {
                     aliases.insert(chars::get_line(tokenizer).trim().to_string());
                 }
-                "check" => {
-                    check.push(chars::get_line(tokenizer).trim().to_string());
-                }
-                "assert" => {
-                    assert.push(chars::get_line(tokenizer).trim().to_string());
-                }
-                "payee" => {
-                    payee.push(chars::get_line(tokenizer).trim().to_string());
-                }
+                "format" => format = Some(chars::get_line(tokenizer).trim().to_string()),
                 "default" => default = true,
-                _ => {
+                other => {
                     eprintln!("Error while parsing posting.");
-                    return Err(tokenizer.error(ErrorType::UnexpectedInput));
+                    return Err(ParserError::UnexpectedInput(Some(format!(
+                        "Found {}. Should be one of 'note', 'alias', 'format', 'default'",
+                        other
+                    ))));
                 }
             },
         }
     }
-    let account = Account {
+
+    let currency = Currency {
         name,
         origin: Origin::FromDirective,
         note,
-        isin,
         aliases,
-        check,
-        assert,
-        payee,
+        format,
         default,
     };
-    Ok(Directive::Account(account))
+    Ok(currency)
 }

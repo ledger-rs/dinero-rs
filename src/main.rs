@@ -1,3 +1,4 @@
+//! Document the command line interface
 use std::path::{Path, PathBuf};
 
 use structopt::StructOpt;

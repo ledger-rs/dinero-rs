@@ -3,8 +3,11 @@ use std::collections::HashMap;
 use chrono::NaiveDate;
 use num::rational::Rational64;
 
-use crate::ledger::{Account, Balance, Comment, Money};
-use crate::ErrorType;
+use crate::models::balance::Balance;
+use crate::models::{Account, Comment, Money};
+use crate::{LedgerError, ParserError};
+use std::ops::Deref;
+use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub struct Transaction<PostingType> {
@@ -41,32 +44,32 @@ pub enum PostingType {
 // todo Virtual,
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct Posting<'a> {
-    pub(crate) account: &'a Account,
-    pub amount: Option<Money<'a>>,
-    pub balance: Option<Money<'a>>,
-    pub cost: Option<Cost<'a>>,
+#[derive(Debug, Clone)]
+pub struct Posting {
+    pub(crate) account: Rc<Account>,
+    pub amount: Option<Money>,
+    pub balance: Option<Money>,
+    pub cost: Option<Cost>,
 }
 
-impl<'a> Posting<'a> {
-    pub fn new(account: &'a Account) -> Posting<'a> {
+impl<'a> Posting {
+    pub fn new(account: &Account) -> Posting {
         Posting {
-            account,
+            account: Rc::new(account.clone()),
             amount: None,
             balance: None,
             cost: None,
         }
     }
-    pub fn set_amount(&mut self, money: Money<'a>) {
+    pub fn set_amount(&mut self, money: Money) {
         self.amount = Some(money)
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub enum Cost<'a> {
-    Total { amount: Money<'a> },
-    PerUnit { amount: Money<'a> },
+#[derive(Debug, Clone)]
+pub enum Cost {
+    Total { amount: Money },
+    PerUnit { amount: Money },
 }
 
 impl<'a, PostingType> Transaction<PostingType> {
@@ -86,19 +89,19 @@ impl<'a, PostingType> Transaction<PostingType> {
     }
 }
 
-fn total_balance<'a>(postings: &'a Vec<Posting>) -> Balance<'a> {
+fn total_balance(postings: &Vec<Posting>) -> Balance {
     let bal = Balance::new();
     postings
         .iter()
         .filter(|p| p.amount.is_some())
-        .map(|p| match p.cost {
-            None => Balance::from(p.amount.unwrap()),
+        .map(|p| match &p.cost {
+            None => Balance::from(p.amount.as_ref().unwrap().clone()),
             Some(cost) => match cost {
                 Cost::Total { amount } => {
-                    if p.amount.unwrap().is_negative() {
-                        Balance::from(-amount)
+                    if p.amount.as_ref().unwrap().clone().is_negative() {
+                        Balance::from(-amount.clone())
                     } else {
-                        Balance::from(amount)
+                        Balance::from(amount.clone())
                     }
                 }
                 Cost::PerUnit { amount } => {
@@ -108,19 +111,19 @@ fn total_balance<'a>(postings: &'a Vec<Posting>) -> Balance<'a> {
                     };
                     let units = match amount {
                         Money::Zero => Rational64::new(0, 1),
-                        Money::Money { amount, .. } => amount,
-                    } * match p.amount.unwrap() {
+                        Money::Money { amount, .. } => amount.clone(),
+                    } * match p.amount.as_ref().unwrap() {
                         Money::Zero => Rational64::new(0, 1),
-                        Money::Money { amount, .. } => amount,
+                        Money::Money { amount, .. } => amount.clone(),
                     };
                     let money = Money::Money {
                         amount: units
-                            * (if p.amount.unwrap().is_negative() {
+                            * (if p.amount.as_ref().unwrap().is_negative() {
                                 -1
                             } else {
                                 1
                             }),
-                        currency: currency,
+                        currency: currency.clone(),
                     };
                     Balance::from(money)
                 }
@@ -129,11 +132,11 @@ fn total_balance<'a>(postings: &'a Vec<Posting>) -> Balance<'a> {
         .fold(bal, |acc, cur| acc + cur)
 }
 
-impl<'a> Transaction<Posting<'a>> {
+impl Transaction<Posting> {
     pub fn is_balanced(&self) -> bool {
         total_balance(self.postings.as_ref()).can_be_zero()
     }
-    pub fn add_empty_posting(&mut self, account: &'a Account) {
+    pub fn add_empty_posting(&mut self, account: Rc<Account>) {
         self.postings.push(Posting {
             account,
             amount: None,
@@ -152,31 +155,31 @@ impl<'a> Transaction<Posting<'a>> {
     /// Balances the transaction
     pub fn balance(
         &mut self,
-        balances: &mut HashMap<&'a Account, Balance<'a>>,
-    ) -> Result<(Balance), ErrorType> {
+        balances: &mut HashMap<Rc<Account>, Balance>,
+    ) -> Result<(Balance), LedgerError> {
         let mut transaction_balance = Balance::new();
         // 1. update the amount of every posting if it has a balance
         let mut postings: Vec<Posting> = Vec::new();
         for p in self.postings.iter() {
             // If it has money, update the balance
-            if let Some(money) = p.amount {
+            if let Some(money) = &p.amount {
                 let expected_balance =
-                    balances.get(p.account).unwrap().clone() + Balance::from(money);
-                if let Some(balance) = p.balance {
-                    if Balance::from(balance) != expected_balance {
-                        return Err(ErrorType::TransactionIsNotBalanced);
+                    balances.get(p.account.deref()).unwrap().clone() + Balance::from(money.clone());
+                if let Some(balance) = &p.balance {
+                    if Balance::from(balance.clone()) != expected_balance {
+                        return Err(LedgerError::TransactionIsNotBalanced);
                     }
                 }
-                balances.insert(p.account, expected_balance);
+                balances.insert(p.account.clone(), expected_balance);
                 transaction_balance = transaction_balance
-                    + match p.cost {
-                        None => Balance::from(p.amount.unwrap()),
+                    + match &p.cost {
+                        None => Balance::from(p.amount.as_ref().unwrap().clone()),
                         Some(cost) => match cost {
                             Cost::Total { amount } => {
-                                if p.amount.unwrap().is_negative() {
-                                    Balance::from(-amount)
+                                if p.amount.as_ref().unwrap().is_negative() {
+                                    Balance::from(-amount.clone())
                                 } else {
-                                    Balance::from(amount)
+                                    Balance::from(amount.clone())
                                 }
                             }
                             Cost::PerUnit { amount } => {
@@ -186,19 +189,19 @@ impl<'a> Transaction<Posting<'a>> {
                                 };
                                 let units = match amount {
                                     Money::Zero => Rational64::new(0, 1),
-                                    Money::Money { amount, .. } => amount,
-                                } * match p.amount.unwrap() {
+                                    Money::Money { amount, .. } => amount.clone(),
+                                } * match p.amount.as_ref().unwrap() {
                                     Money::Zero => Rational64::new(0, 1),
-                                    Money::Money { amount, .. } => amount,
+                                    Money::Money { amount, .. } => amount.clone(),
                                 };
                                 let money = Money::Money {
                                     amount: units
-                                        * (if p.amount.unwrap().is_negative() {
+                                        * (if p.amount.as_ref().unwrap().is_negative() {
                                             -1
                                         } else {
                                             1
                                         }),
-                                    currency: currency,
+                                    currency: currency.clone(),
                                 };
                                 Balance::from(money)
                             }
@@ -206,46 +209,46 @@ impl<'a> Transaction<Posting<'a>> {
                     };
 
                 postings.push(Posting {
-                    account: p.account,
-                    amount: p.amount,
+                    account: p.account.clone(),
+                    amount: p.amount.clone(),
                     balance: None,
-                    cost: p.cost,
+                    cost: p.cost.clone(),
                 });
-            } else if let Some(balance) = p.balance {
+            } else if let Some(balance) = &p.balance {
                 // update the amount
-                let account_bal = balances.get(p.account).unwrap().clone();
-                let amount_bal = Balance::from(balance) - account_bal;
+                let account_bal = balances.get(p.account.deref()).unwrap().clone();
+                let amount_bal = Balance::from(balance.clone()) - account_bal;
                 let money = amount_bal.to_money()?;
-                transaction_balance = transaction_balance + money.into();
+                transaction_balance = transaction_balance + Balance::from(money.clone());
                 postings.push(Posting {
-                    account: p.account,
+                    account: p.account.clone(),
                     amount: Some(money),
                     balance: None,
-                    cost: p.cost,
+                    cost: p.cost.clone(),
                 });
             }
         }
 
         let empties = self.postings.len() - postings.len();
         if empties > 1 {
-            Err(ErrorType::TooManyEmptyPostings(empties))
+            Err(LedgerError::TooManyEmptyPostings(empties))
         } else if empties == 0 {
             match transaction_balance.can_be_zero() {
                 true => {
                     self.postings = postings;
                     Ok((transaction_balance))
                 }
-                false => Err(ErrorType::TransactionIsNotBalanced),
+                false => Err(LedgerError::TransactionIsNotBalanced),
             }
         } else {
             // Delete the empty posting
             match self.postings.last().unwrap().amount {
-                Some(_) => Err(ErrorType::EmptyPostingShouldBeLast),
+                Some(_) => Err(LedgerError::EmptyPostingShouldBeLast),
                 None => {
-                    let account = self.postings.last().unwrap().account;
+                    let account = &self.postings.last().unwrap().account;
                     let money = -transaction_balance.to_money()?;
                     postings.push(Posting {
-                        account: account,
+                        account: account.clone(),
                         amount: Some(money),
                         balance: None,
                         cost: None,

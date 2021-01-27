@@ -1,56 +1,71 @@
 //! Parser module
+//!
+//! The parser takes an input string (or file) and translates it into tokens with a tokenizer
+//! These tokens are one of:
+//! - Directive account
+//! - Directive payee
+//! - Directive commodity
 
-mod account;
-mod chars;
-mod comment;
-mod commodity;
-mod include;
-mod payee;
-mod price;
-mod tag;
-pub(crate) mod transaction;
-
-use crate::ledger::{Account, Comment, Currency, Transaction};
-use crate::parser::chars::LineType;
-use crate::{parser, Error, ErrorType};
-use chrono::NaiveDate;
-use colored::{ColoredString, Colorize};
-use num::rational::Rational64;
 use std::collections::HashSet;
 use std::fs::read_to_string;
 use std::path::PathBuf;
 
-#[derive(Debug, Clone)]
-pub enum Item {
-    Comment(Comment),
-    Transaction(Transaction<parser::transaction::Posting>),
-    Directive(Directive),
-    Price(ParsedPrice),
-}
+use colored::{ColoredString, Colorize};
+
+use chars::LineType;
+
+use crate::models::{Account, Comment, Currency, Payee, Transaction};
+use crate::{models, Error, List, ParserError};
+
+mod chars;
+mod include;
+mod tokenizers;
+
+use tokenizers::{account, comment, commodity, payee, price, tag, transaction};
 
 #[derive(Debug, Clone)]
-pub struct ParsedPrice {
-    pub(crate) date: NaiveDate,
-    pub(crate) commodity: String,
-    pub(crate) other_commodity: String,
-    pub(crate) other_quantity: Rational64,
-}
-#[derive(Debug, Clone)]
-pub enum Directive {
-    Commodity(Currency),
-    Payee {
-        name: String,
-        note: Option<String>,
-        alias: HashSet<String>,
-    },
-    Account(Account),
-    Tag {
-        name: String,
-        check: Vec<String>,
-        assert: Vec<String>,
-    },
+pub struct ParsedLedger {
+    pub accounts: List<Account>,
+    pub payees: List<Payee>,
+    pub commodities: List<Currency>,
+    pub transactions: Vec<Transaction<transaction::Posting>>,
+    pub prices: Vec<models::ParsedPrice>,
+    pub comments: Vec<Comment>,
+    pub tags: Vec<models::Tag>,
 }
 
+impl ParsedLedger {
+    pub fn new() -> Self {
+        ParsedLedger {
+            accounts: List::<Account>::new(),
+            payees: List::<models::Payee>::new(),
+            commodities: List::<Currency>::new(),
+            transactions: vec![],
+            prices: vec![],
+            comments: vec![],
+            tags: vec![],
+        }
+    }
+    pub fn append(&mut self, other: &mut ParsedLedger) {
+        self.accounts.append(&other.accounts);
+        self.payees.append(&other.payees);
+        self.commodities.append(&other.commodities);
+        self.transactions.append(&mut other.transactions);
+        self.comments.append(&mut other.comments);
+        self.transactions.append(&mut other.transactions);
+    }
+    pub fn len(&self) -> usize {
+        self.accounts.len()
+            + self.payees.len()
+            + self.commodities.len()
+            + self.transactions.len()
+            + self.prices.len()
+            + self.comments.len()
+            + self.tags.len()
+    }
+}
+
+/// A struct for holding data about the string being parsed
 #[derive(Debug, Clone)]
 pub struct Tokenizer<'a> {
     file: Option<&'a PathBuf>,
@@ -61,36 +76,6 @@ pub struct Tokenizer<'a> {
     line_characters: Vec<char>,
     position: usize,
     seen_files: HashSet<&'a PathBuf>,
-}
-
-impl<'a> From<&'a str> for Tokenizer<'a> {
-    fn from(content: &'a str) -> Self {
-        Tokenizer {
-            file: None,
-            content: content.chars().collect::<Vec<char>>(),
-            line_index: 0,
-            line_position: 0,
-            line_string: "",
-            line_characters: Vec::new(),
-            position: 0,
-            seen_files: HashSet::new(),
-        }
-    }
-}
-
-impl<'a> From<String> for Tokenizer<'a> {
-    fn from(content: String) -> Self {
-        Tokenizer {
-            file: None,
-            content: content.chars().collect::<Vec<char>>(),
-            line_index: 0,
-            line_position: 0,
-            line_string: "",
-            line_characters: Vec::new(),
-            position: 0,
-            seen_files: HashSet::new(),
-        }
-    }
 }
 
 impl<'a> From<&'a PathBuf> for Tokenizer<'a> {
@@ -111,59 +96,73 @@ impl<'a> From<&'a PathBuf> for Tokenizer<'a> {
                 }
             }
             Err(err) => {
-                panic!(ErrorType::CannotReadFile(err.to_string()))
+                panic!(ParserError::CannotReadFile(err.to_string()))
             }
         }
     }
 }
 
-/// Parses a string into Items
+impl<'a> From<String> for Tokenizer<'a> {
+    fn from(content: String) -> Self {
+        Tokenizer {
+            file: None,
+            content: content.chars().collect::<Vec<char>>(),
+            line_index: 0,
+            line_position: 0,
+            line_string: "",
+            line_characters: Vec::new(),
+            position: 0,
+            seen_files: HashSet::new(),
+        }
+    }
+}
+
 impl<'a> Tokenizer<'a> {
-    pub fn parse(&'a mut self) -> Result<Vec<Item>, Error> {
-        let mut items: Vec<Item> = Vec::new();
+    /// Parses a string into a parsed ledger. It allows for recursivity,
+    /// i.e. the include keyword is properly handled
+    pub fn tokenize(&'a mut self) -> Result<ParsedLedger, ParserError> {
+        let mut ledger: ParsedLedger = ParsedLedger::new();
         let len = self.content.iter().count();
         while self.position < len {
             match chars::consume_whitespaces_and_lines(self) {
                 LineType::Blank => match self.get_char() {
                     Some(c) => match c {
-                        ';' | '!' | '*' | '%' | '#' => {
-                            items.push(Item::Comment(comment::parse(self)))
-                        }
-                        c if c.is_numeric() => {
-                            items.push(Item::Transaction(transaction::parse(self)?))
-                        }
+                        ';' | '!' | '*' | '%' | '#' => ledger.comments.push(comment::parse(self)),
+                        c if c.is_numeric() => ledger.transactions.push(transaction::parse(self)?),
                         'i' => {
                             // This is the special case
-                            let mut new_items = include::parse(self)?;
-                            items.append(&mut new_items);
+                            let mut new_ledger = include::parse(self)?;
+                            ledger.append(&mut new_ledger);
                         }
                         'c' => {
-                            items.push(Item::Directive(commodity::parse(self)?));
+                            ledger.commodities.insert(commodity::parse(self)?);
                         }
                         'p' => {
-                            items.push(Item::Directive(payee::parse(self)?));
+                            ledger.payees.insert(payee::parse(self)?);
                         }
                         't' => {
-                            items.push(Item::Directive(tag::parse(self)?));
+                            ledger.tags.push(tag::parse(self)?);
                         }
                         'a' => {
-                            items.push(Item::Directive(account::parse(self)?));
+                            ledger.accounts.insert(account::parse(self)?);
                         }
                         'P' => {
-                            items.push(Item::Price(price::parse(self)?));
+                            ledger.prices.push(price::parse(self)?);
                         }
                         _ => {
-                            return Err(self.error(ErrorType::UnexpectedInput));
+                            return Err(ParserError::UnexpectedInput(None));
                         }
                     },
                     None => continue,
                 },
                 LineType::Indented => {
-                    return Err(self.error(ErrorType::ParserError));
+                    return Err(ParserError::UnexpectedInput(Some(
+                        "Unexpected indentation".to_string(),
+                    )));
                 }
             };
         }
-        Ok(items)
+        Ok(ledger)
     }
     fn get_char(&self) -> Option<char> {
         match self.content.get(self.position) {
@@ -171,7 +170,7 @@ impl<'a> Tokenizer<'a> {
             None => None,
         }
     }
-    fn error(&self, err: ErrorType) -> Error {
+    fn error(&self, err: ParserError) -> Error {
         let mut message = vec![ColoredString::from("")];
         if let Some(file) = self.file {
             message.push(ColoredString::from("while parsing "));
@@ -206,10 +205,7 @@ impl<'a> Tokenizer<'a> {
                 "-".bold()
             });
         }
-        Error {
-            message,
-            error_type: err,
-        }
+        Error { message }
     }
 
     pub fn next(&mut self) -> char {
@@ -236,7 +232,7 @@ mod tests {
     fn test_empty_string() {
         let content = "".to_string();
         let mut tokenizer = Tokenizer::from(content);
-        let items = tokenizer.parse().unwrap();
+        let items = tokenizer.tokenize().unwrap();
         assert_eq!(items.len(), 0, "Should be empty");
     }
 
@@ -244,7 +240,7 @@ mod tests {
     fn test_only_spaces() {
         let content = "\n\n\n\n\n".to_string();
         let mut tokenizer = Tokenizer::from(content);
-        let items = tokenizer.parse().unwrap();
+        let items = tokenizer.tokenize().unwrap();
         assert_eq!(items.len(), 0, "Should be empty")
     }
 }
