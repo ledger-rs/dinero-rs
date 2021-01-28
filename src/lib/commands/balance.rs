@@ -99,7 +99,10 @@ pub fn execute(
                 println!();
             }
             first = false;
-            print!("{:>20}", format!("{}", money));
+            match money.is_negative() {
+                true => print!("{:>20}", format!("{}", money).red()),
+                false => print!("{:>20}", format!("{}", money)),
+            }
         }
         if flat {
             println!("  {}", account.blue());
@@ -125,7 +128,10 @@ pub fn execute(
             print!("\n{:>20}", "0");
         } else {
             for (_, money) in total_balance.balance.iter() {
-                print!("\n{:>20}", format!("{}", money));
+                match money.is_negative() {
+                    true => print!("\n{:>20}", format!("{}", money).red()),
+                    false => print!("\n{:>20}", format!("{}", money)),
+                }
             }
         }
         println!();
