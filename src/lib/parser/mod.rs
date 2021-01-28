@@ -187,20 +187,28 @@ impl<'a> Tokenizer<'a> {
         }
     }
     pub fn error(&self, err: ParserError) -> Error {
-        let mut message = vec![ColoredString::from(format!("{:?}", err).as_str())];
+        let number_length = format!("{}", self.line_index + 1).len();
+        let mut message = Vec::new();
+        message.push(format!("Error: ").bold().bright_red());
+        message.push(format!("{:?}", err).bold());
         if let Some(file) = self.file {
-            message.push(ColoredString::from("while parsing "));
-            message.push(format!("{:?} ", file).bold());
-            message.push(ColoredString::from(
+            // message.push(ColoredString::from(" while parsing "));
+            message.push(
                 format!(
-                    "at position {}:{}\n",
-                    self.line_index + 1,
-                    self.line_position + 1
+                    "\n{:width$}{} {:?}",
+                    "",
+                    "-->".blue(),
+                    file,
+                    width = number_length
                 )
-                .as_str(),
+                .bold(),
+            );
+            message.push(ColoredString::from(
+                format!(":{}:{}\n", self.line_index + 1, self.line_position + 1).as_str(),
             ));
         }
         let string = self.content.iter().collect::<String>();
+
         for (i, line) in string.lines().enumerate() {
             if i < self.line_index - 1 {
                 continue;
@@ -208,12 +216,23 @@ impl<'a> Tokenizer<'a> {
             if i > self.line_index {
                 break;
             };
-            message.push(ColoredString::from(line));
+            message.push(format!("{:>width$} |{:6}", i + 1, "", width = number_length).blue());
+            // message.push(ColoredString::from(line));
+            message.push(format!("{}\n", line).as_str().into());
         }
         let line = message.pop().unwrap().cyan();
-        message.push(ColoredString::from("\n"));
         message.push(line.clone());
-        message.push(ColoredString::from("\n"));
+        message.push(
+            format!(
+                " {:width$}{}{:6}",
+                "",
+                "|".blue(),
+                "",
+                width = number_length
+            )
+            .as_str()
+            .into(),
+        );
         for i in 0..line.len().to_owned() {
             message.push(if i == self.line_position {
                 "^".bold()
