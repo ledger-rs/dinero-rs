@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use structopt::StructOpt;
 
-use dinero::commands::{accounts, balance, check, commodities, prices};
+use dinero::commands::{accounts, balance, check, commodities, prices, register};
 use std::collections::HashMap;
 use std::env;
 use std::fs::read_to_string;
@@ -25,7 +25,9 @@ enum Command {
         #[structopt(long = "--no-total")]
         no_total: bool,
     },
-    // Register,
+
+    #[structopt(alias = "reg")]
+    Register(CommonOpts),
     /// List the accounts
     Accounts(CommonOpts),
     // Codes,
@@ -165,6 +167,7 @@ fn main() {
             options.depth,
             options.query,
         ),
+        Command::Register(options) => register::execute(options.input_file, options.query),
         Command::Commodities(options) => commodities::execute(options.input_file),
         Command::Prices(options) => prices::execute(options.input_file),
         Command::Accounts(options) => accounts::execute(options.input_file),
