@@ -3,6 +3,7 @@ use std::path::PathBuf;
 
 use colored::Colorize;
 
+use crate::filter;
 use crate::models;
 use crate::models::{Account, Balance, HasName, Ledger, Money, Price};
 use crate::parser::Tokenizer;
@@ -17,6 +18,7 @@ pub fn execute(
     flat: bool,
     show_total: bool,
     depth: Option<usize>,
+    query: Vec<String>,
 ) -> Result<(), Error> {
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
     let items = tokenizer.tokenize()?;
@@ -26,6 +28,9 @@ pub fn execute(
 
     for t in ledger.transactions.iter() {
         for p in t.postings.iter() {
+            if !filter::filter(&query, t, p) {
+                continue;
+            }
             let mut cur_bal = balances
                 .get(p.account.deref())
                 .unwrap_or(&Balance::new())

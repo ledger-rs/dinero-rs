@@ -7,6 +7,8 @@ use dinero::commands::{accounts, balance, check, commodities, prices};
 use std::collections::HashMap;
 use std::env;
 use std::fs::read_to_string;
+use std::io::Error;
+use std::str::FromStr;
 
 #[derive(Debug, StructOpt)]
 enum Command {
@@ -65,7 +67,8 @@ struct CommonOpts {
     depth: Option<usize>,
 
     /// The pattern to look for
-    pattern: Option<String>,
+    #[structopt(multiple = true, takes_value = true)]
+    query: Vec<String>,
 
     /// TODO Date format
     #[structopt(long = "--date-format")]
@@ -155,7 +158,13 @@ fn main() {
             options,
             flat,
             no_total,
-        } => balance::execute(options.input_file, flat, !no_total, options.depth),
+        } => balance::execute(
+            options.input_file,
+            flat,
+            !no_total,
+            options.depth,
+            options.query,
+        ),
         Command::Commodities(options) => commodities::execute(options.input_file),
         Command::Prices(options) => prices::execute(options.input_file),
         Command::Accounts(options) => accounts::execute(options.input_file),
