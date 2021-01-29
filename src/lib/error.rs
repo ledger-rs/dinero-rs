@@ -30,8 +30,20 @@ impl Display for Error {
 
 impl From<ParserError> for Error {
     fn from(error: ParserError) -> Self {
-        eprintln!("{:?}", error);
-        todo!()
+        match error {
+            ParserError::CannotReadFile(s) => Error {
+                message: vec![ColoredString::from(s.as_str())],
+            },
+            ParserError::IncludeLoop(s) => Error {
+                message: vec![ColoredString::from(s.as_str())],
+            },
+            ParserError::UnexpectedInput(s) => Error {
+                message: match s {
+                    None => vec![],
+                    Some(s) => vec![ColoredString::from(s.as_str())],
+                },
+            },
+        }
     }
 }
 
@@ -41,8 +53,10 @@ impl From<LedgerError> for Error {
         todo!()
     }
 }
+
 // https://medium.com/apolitical-engineering/how-do-you-impl-display-for-vec-b8dbb21d814f
 struct ColoredStrings<'a>(pub &'a Vec<ColoredString>);
+
 impl<'a> fmt::Display for ColoredStrings<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.iter().fold(Ok(()), |result, partial| {
