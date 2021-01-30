@@ -1,9 +1,10 @@
+use lazy_static::lazy_static;
+use regex::Regex;
+
 use crate::models::Tag;
 use crate::parser::chars::LineType;
 use crate::parser::{chars, Tokenizer};
-use crate::{Error, ParserError};
-use lazy_static::lazy_static;
-use regex::Regex;
+use crate::ParserError;
 
 pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Tag, ParserError> {
     lazy_static! {

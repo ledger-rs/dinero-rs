@@ -1,5 +1,6 @@
+use crate::ParserError;
+
 use super::Tokenizer;
-use crate::{Error, ParserError};
 
 pub(super) enum LineType {
     Blank,

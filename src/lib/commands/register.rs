@@ -1,29 +1,25 @@
-use std::collections::{HashMap, HashSet};
+use std::convert::TryFrom;
 use std::path::PathBuf;
 
 use colored::Colorize;
 
 use crate::filter;
-use crate::models;
-use crate::models::{Account, Balance, HasName, Ledger, Money, Price};
+use crate::models::{Balance, Ledger};
 use crate::parser::Tokenizer;
 use crate::Error;
-use std::convert::TryFrom;
-use std::ops::Deref;
-use std::rc::Rc;
 
 /// Register report
-pub fn execute(path: PathBuf, query: Vec<String>) -> Result<(), Error> {
+pub fn execute(path: PathBuf, query: Vec<String>, real: bool) -> Result<(), Error> {
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
     let items = tokenizer.tokenize()?;
-    let mut ledger = Ledger::try_from(items)?;
+    let ledger = Ledger::try_from(items)?;
 
     let mut balance = Balance::new();
 
     for t in ledger.transactions.iter() {
         let mut counter = 0;
         for p in t.postings.iter() {
-            if !filter::filter(&query, t, p) {
+            if !filter::filter(&query, t, p, real) {
                 continue;
             }
             counter += 1;

@@ -1,5 +1,4 @@
 use crate::models::{FromDirective, HasAliases, HasName, Origin};
-use crate::List;
 use std::collections::hash_map::RandomState;
 use std::collections::HashSet;
 use std::fmt;

@@ -1,4 +1,3 @@
-use crate::models;
 use crate::models::{Currency, HasName, Ledger};
 use crate::parser::Tokenizer;
 use crate::Error;

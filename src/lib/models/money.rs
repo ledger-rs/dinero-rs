@@ -1,16 +1,14 @@
-use crate::models::balance::Balance;
-use crate::models::{Currency, HasName};
-use crate::ParserError;
-use chrono::NaiveDate;
-use num;
-use num::rational::{Ratio, Rational64};
-use num::{Signed, Zero};
-use std::collections::hash_map::Iter;
-use std::collections::HashMap;
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::ops::{Add, Mul, Neg, Sub};
+use std::ops::{Add, Mul, Neg};
 use std::rc::Rc;
+
+use num;
+use num::rational::Rational64;
+use num::{Signed, Zero};
+
+use crate::models::balance::Balance;
+use crate::models::{Currency, HasName};
 
 /// Money representation: an amount and a currency
 ///

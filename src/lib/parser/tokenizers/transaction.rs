@@ -1,4 +1,4 @@
-use crate::models::{Cleared, Comment, PriceType, Transaction};
+use crate::models::{Cleared, Comment, PostingType, PriceType, Transaction};
 use crate::parser::chars::LineType;
 use crate::parser::tokenizers::comment;
 use crate::parser::{chars, Tokenizer};
@@ -77,9 +77,11 @@ pub(crate) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<Transaction<Post
             c if c.is_numeric() => {
                 return Err(ParserError::UnexpectedInput(Some(
                     "Expecting account name".to_string(),
-                )))
+                )));
             }
             _ => match parse_posting(tokenizer) {
+                // Although here we already know the kind of the posting (virtual, real),
+                // we deal with that in the next phase of parsing
                 Ok(posting) => transaction.postings.push(posting),
                 Err(e) => {
                     eprintln!("Error while parsing posting.");
@@ -103,14 +105,16 @@ pub struct Posting {
     pub balance_amount: Option<Rational64>,
     pub balance_currency: Option<String>,
     pub comments: Vec<Comment>,
+    pub kind: PostingType,
 }
 
 /// Parses a posting
 ///
 fn parse_posting(tokenizer: &mut Tokenizer) -> Result<Posting, ParserError> {
-    // let posting_line = chars::get_line(tokenizer);
-    //let vec_chars: Vec<char> = posting_line.chars().collect();
     let mut account = String::new();
+    let mut posting_type = PostingType::Real;
+
+    // Get the account name
     loop {
         let c = tokenizer.next();
         if !c.is_whitespace() {
@@ -127,6 +131,35 @@ fn parse_posting(tokenizer: &mut Tokenizer) -> Result<Posting, ParserError> {
             }
         }
     }
+    // See if it is a virtual account
+    match &account[0..1] {
+        "(" => {
+            posting_type = PostingType::Virtual;
+            if account.pop().unwrap() != ')' {
+                return Err(ParserError::UnexpectedInput(Some(
+                    "Expected ')'".to_string(),
+                )));
+            }
+        }
+        "[" => {
+            posting_type = PostingType::VirtualMustBalance;
+            if account.pop().unwrap() != ']' {
+                return Err(ParserError::UnexpectedInput(Some(
+                    "Expected ']'".to_string(),
+                )));
+            }
+        }
+        _ => {}
+    }
+
+    // If it is not real, get the actual account name
+    match posting_type {
+        PostingType::Real => {}
+        PostingType::Virtual | PostingType::VirtualMustBalance => {
+            account = account[1..].trim().to_string();
+            // println!("{} is a virtual account {:?}", account, posting_type)
+        }
+    }
     let mut posting = Posting {
         account,
         money_amount: None,
@@ -137,6 +170,7 @@ fn parse_posting(tokenizer: &mut Tokenizer) -> Result<Posting, ParserError> {
         balance_amount: None,
         balance_currency: None,
         comments: Vec::new(),
+        kind: posting_type,
     };
     chars::consume_whitespaces(tokenizer);
     // Amounts
@@ -240,7 +274,7 @@ fn parse_amount(tokenizer: &mut Tokenizer) -> Result<Rational64, ParserError> {
             Err(_) => {
                 return Err(ParserError::UnexpectedInput(Some(
                     "Wrong number format".to_string(),
-                )))
+                )));
             }
         },
         match i64::from_str(den.as_str()) {

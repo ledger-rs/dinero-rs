@@ -1,14 +1,12 @@
 //! Document the command line interface
+use std::collections::HashMap;
+use std::env;
+use std::fs::read_to_string;
 use std::path::{Path, PathBuf};
 
 use structopt::StructOpt;
 
 use dinero::commands::{accounts, balance, check, commodities, prices, register};
-use std::collections::HashMap;
-use std::env;
-use std::fs::read_to_string;
-use std::io::Error;
-use std::str::FromStr;
 
 #[derive(Debug, StructOpt)]
 enum Command {
@@ -71,7 +69,9 @@ struct CommonOpts {
     /// The pattern to look for
     #[structopt(multiple = true, takes_value = true)]
     query: Vec<String>,
-
+    /// Use only real postings rather than real and virtual
+    #[structopt(long = "--real")]
+    real: bool,
     /// TODO Date format
     #[structopt(long = "--date-format")]
     date_format: Option<String>,
@@ -155,6 +155,8 @@ fn main() {
     }
     let opt: Opt = Opt::from_iter(args.iter());
 
+    // Print options
+    // println!("{:?}", opt.cmd);
     if let Err(e) = match opt.cmd {
         Command::Balance {
             options,
@@ -166,8 +168,11 @@ fn main() {
             !no_total,
             options.depth,
             options.query,
+            options.real,
         ),
-        Command::Register(options) => register::execute(options.input_file, options.query),
+        Command::Register(options) => {
+            register::execute(options.input_file, options.query, options.real)
+        }
         Command::Commodities(options) => commodities::execute(options.input_file),
         Command::Prices(options) => prices::execute(options.input_file),
         Command::Accounts(options) => accounts::execute(options.input_file),

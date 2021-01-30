@@ -1,9 +1,9 @@
-use crate::models::{FromDirective, HasAliases, HasName, Origin};
-use std::collections::hash_map::RandomState;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
+
+use crate::models::{FromDirective, HasAliases, HasName, Origin};
 
 /// Currency representation
 ///

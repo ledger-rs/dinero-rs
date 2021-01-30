@@ -1,13 +1,15 @@
 use std::collections::HashMap;
+use std::iter::Chain;
+use std::ops::Deref;
+use std::rc::Rc;
+use std::slice::Iter;
 
 use chrono::NaiveDate;
 use num::rational::Rational64;
 
 use crate::models::balance::Balance;
 use crate::models::{Account, Comment, Money};
-use crate::{LedgerError, ParserError};
-use std::ops::Deref;
-use std::rc::Rc;
+use crate::LedgerError;
 
 #[derive(Debug, Clone)]
 pub struct Transaction<PostingType> {
@@ -20,6 +22,7 @@ pub struct Transaction<PostingType> {
     pub note: Option<String>,
     pub postings: Vec<PostingType>,
     pub virtual_postings: Vec<PostingType>,
+    pub virtual_postings_balance: Vec<PostingType>,
     pub comments: Vec<Comment>,
 }
 
@@ -37,11 +40,11 @@ pub enum Cleared {
     Cleared,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum PostingType {
-    // todo Real,
-// todo VirtualMustBalance,
-// todo Virtual,
+    Real,
+    Virtual,
+    VirtualMustBalance,
 }
 
 #[derive(Debug, Clone)]
@@ -50,15 +53,17 @@ pub struct Posting {
     pub amount: Option<Money>,
     pub balance: Option<Money>,
     pub cost: Option<Cost>,
+    pub kind: PostingType,
 }
 
-impl<'a> Posting {
-    pub fn new(account: &Account) -> Posting {
+impl Posting {
+    pub fn new(account: &Account, kind: PostingType) -> Posting {
         Posting {
             account: Rc::new(account.clone()),
             amount: None,
             balance: None,
             cost: None,
+            kind: kind,
         }
     }
     pub fn set_amount(&mut self, money: Money) {
@@ -72,7 +77,7 @@ pub enum Cost {
     PerUnit { amount: Money },
 }
 
-impl<'a, PostingType> Transaction<PostingType> {
+impl<PostingType> Transaction<PostingType> {
     pub fn new() -> Transaction<PostingType> {
         Transaction {
             status: TransactionStatus::NotChecked,
@@ -84,8 +89,18 @@ impl<'a, PostingType> Transaction<PostingType> {
             note: None,
             postings: vec![],
             virtual_postings: vec![],
+            virtual_postings_balance: vec![],
             comments: vec![],
         }
+    }
+    /// Iterator over all the postings
+    pub fn postings_iter(
+        &self,
+    ) -> Chain<Chain<Iter<'_, PostingType>, Iter<'_, PostingType>>, Iter<'_, PostingType>> {
+        self.postings
+            .iter()
+            .chain(self.virtual_postings.iter())
+            .chain(self.virtual_postings_balance.iter())
     }
 }
 
@@ -136,14 +151,7 @@ impl Transaction<Posting> {
     pub fn is_balanced(&self) -> bool {
         total_balance(self.postings.as_ref()).can_be_zero()
     }
-    pub fn add_empty_posting(&mut self, account: Rc<Account>) {
-        self.postings.push(Posting {
-            account,
-            amount: None,
-            cost: None,
-            balance: None,
-        })
-    }
+
     pub fn num_empty_postings(&self) -> usize {
         self.postings
             .iter()
@@ -153,11 +161,17 @@ impl Transaction<Posting> {
     }
 
     /// Balances the transaction
+    /// There are two groups of postings that have to balance: the real postings and the [virtual postings]
+    /// but not the (virtual postings)
     pub fn balance(
         &mut self,
         balances: &mut HashMap<Rc<Account>, Balance>,
-    ) -> Result<(Balance), LedgerError> {
+    ) -> Result<Balance, LedgerError> {
         let mut transaction_balance = Balance::new();
+        match total_balance(self.virtual_postings_balance.as_ref()).can_be_zero() {
+            true => {}
+            false => return Err(LedgerError::TransactionIsNotBalanced),
+        }
         // 1. update the amount of every posting if it has a balance
         let mut postings: Vec<Posting> = Vec::new();
         for p in self.postings.iter() {
@@ -213,6 +227,7 @@ impl Transaction<Posting> {
                     amount: p.amount.clone(),
                     balance: None,
                     cost: p.cost.clone(),
+                    kind: PostingType::Real,
                 });
             } else if let Some(balance) = &p.balance {
                 // update the amount
@@ -225,6 +240,7 @@ impl Transaction<Posting> {
                     amount: Some(money),
                     balance: None,
                     cost: p.cost.clone(),
+                    kind: PostingType::Real,
                 });
             }
         }
@@ -236,7 +252,7 @@ impl Transaction<Posting> {
             match transaction_balance.can_be_zero() {
                 true => {
                     self.postings = postings;
-                    Ok((transaction_balance))
+                    Ok(transaction_balance)
                 }
                 false => Err(LedgerError::TransactionIsNotBalanced),
             }
@@ -252,9 +268,10 @@ impl Transaction<Posting> {
                         amount: Some(money),
                         balance: None,
                         cost: None,
+                        kind: PostingType::Real,
                     });
                     self.postings = postings;
-                    Ok((transaction_balance))
+                    Ok(transaction_balance)
                 }
             }
         }

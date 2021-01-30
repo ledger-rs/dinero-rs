@@ -1,11 +1,13 @@
-use crate::models::ParsedPrice;
-use crate::parser::{chars, Tokenizer};
-use crate::{Error, ParserError};
+use std::str::FromStr;
+
 use chrono::NaiveDate;
 use lazy_static::lazy_static;
 use num::rational::Rational64;
 use regex::Regex;
-use std::str::FromStr;
+
+use crate::models::ParsedPrice;
+use crate::parser::{chars, Tokenizer};
+use crate::ParserError;
 
 pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<ParsedPrice, ParserError> {
     lazy_static! {

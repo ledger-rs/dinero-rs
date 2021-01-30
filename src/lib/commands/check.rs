@@ -3,7 +3,6 @@ use std::path::PathBuf;
 use colored::Colorize;
 
 use crate::error::Error;
-use crate::models;
 use crate::models::Ledger;
 use crate::parser::Tokenizer;
 use std::convert::TryFrom;
