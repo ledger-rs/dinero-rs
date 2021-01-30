@@ -117,7 +117,10 @@ impl Add for Balance {
                 };
             }
         }
-        Balance { balance: total }
+
+        Balance {
+            balance: total.into_iter().filter(|(_, v)| !v.is_zero()).collect(),
+        }
     }
 }
 

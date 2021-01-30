@@ -1,6 +1,15 @@
 ; A simple demo file with comments
 ! Comments can also be like this
 # or like this
+
+2019-01-05 * Círculo
+    ; comimos con los primos Villalaín
+    Gastos:Comida:Restaurantes     56.00 EUR
+    cartera 
+    
+2019-01-07 * Cepsa
+    Gastos:Coche:Combustible     70.00 EUR
+    cartera   
 2021-01-01 * Groceries
     Expenses:Groceries   $100
     Assets:Checking account
@@ -30,3 +39,24 @@ commodity €
 commodity USD
     alias $
 P 2021-01-23 AAPL 139.07 USD
+
+2008/09/13 * Claudio Noguera Pereiro
+    ; Apertura de préstamos de Papá y Mamá
+    Pasivo:Hipoteca:Papá                  -41400.00 EUR
+    Pasivo:Hipoteca:Mamá                  -41400.00 EUR
+    Patrimonio neto:Saldos de apertura
+
+2010/12/16 * Ajuste Amex                      
+    Gastos:Ajustes Amex      299.17 EUR
+    amex:personal    
+2010/12/16 * Recibo AMERICAN EXPRESS DE ESPA A SA (SOCIEDAD
+    ; uuid: ___V1ID___pm8s3AGWEyTX9wkKc07-0ReZZS_fmRgwKi4k7O7BFCVBEEQPrLVB9rjrmtVd3L6w_kshTkCodgrMSLMhgCNCjiiailzQoayNu9Q6W_C5gUpHN4oq3FnYJViSs240LEvCw_KJ3LZY2mLQv_Dfh0yOBf8aY9sdk5vGfkKJjZYXUirC1MIDIX5fzQGk3iE60uJ2XspbFzDbkmB_4wQSFgzciQCD6FdVnOpuUbfWGCTsKPZEfdbcrz57GEgXsxHjrwx_xrRWbT48B5ow5OlrKLA0_59DM6IrtGXH965MMypc7WLv0r3amILeqJIySmYFryebAd8looqu_GG8nBbJI6Uvk1j3ebVfnbuhryti2YGggYSH8ZmufRXwKzVvt_hHCvU2___V1ID___
+    ; sequence: 428
+    ; balance: 1921.34
+    ; comment: Nº Contrato:006894910030 ; Nº Recibo:          161210 ; Titular: SR. D. CLAUDIO NOGUE ; Más información: AMEXPA A FACT.DIC                       
+    Activo:ING:Cuenta nómina                -299.17 EUR
+    Pasivo:Medios de pago:Amex personal      299.17 EUR
+2008-11-13 * Casa y coche
+    Activo:Coches              1 "Renault_0283BKT"
+    Activo:Inmuebles        0.33 "DF32_68" @@ 112800 EUR
+    Patrimonio neto:Saldos de apertura    

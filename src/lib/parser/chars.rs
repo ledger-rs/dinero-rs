@@ -84,16 +84,17 @@ pub(super) fn get_string(tokenizer: &mut Tokenizer) -> String {
         if *c == '\n' {
             break;
         } else if *c == '"' {
-            if tokenizer.content.len() == 0 {
+            if retval.len() == 0 {
                 quote = true
-            } else if quote {
+            } else if quote {tokenizer.position += 1;
+                tokenizer.line_position += 1;
                 break;
             }
-        }
-        if (c.is_whitespace() | c.is_numeric() | (*c == '.') | (*c == '-')) & !quote {
+        } else if (c.is_whitespace() | c.is_numeric() | (*c == '.') | (*c == '-')) & !quote {
             break;
-        }
+        } else {
         retval.push(*c);
+        }
         tokenizer.position += 1;
         tokenizer.line_position += 1;
     }

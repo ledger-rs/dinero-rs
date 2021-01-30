@@ -1,30 +1,53 @@
-use crate::models::{Cleared, Comment, PostingType, PriceType, Transaction};
+use crate::models::{Cleared, Comment, PostingType, PriceType, Transaction, TransactionType};
 use crate::parser::chars::LineType;
 use crate::parser::tokenizers::comment;
 use crate::parser::{chars, Tokenizer};
-use crate::ParserError;
+use crate::{Error, ParserError};
 use chrono::NaiveDate;
 use lazy_static::lazy_static;
 use num::rational::Rational64;
 use regex::Regex;
 use std::str::FromStr;
 
+pub(crate) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<Transaction<Posting>, Error> {
+    parse_generic(tokenizer, true)
+}
+
+pub(crate) fn parse_automated_transaction<'a>(
+    tokenizer: &'a mut Tokenizer,
+) -> Result<Transaction<Posting>, Error> {
+    parse_generic(tokenizer, false)
+}
+
 /// Parses a transaction
-pub(crate) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<Transaction<Posting>, ParserError> {
+pub(crate) fn parse_generic<'a>(
+    tokenizer: &'a mut Tokenizer,
+    real: bool,
+) -> Result<Transaction<Posting>, Error> {
     lazy_static! {
-        static ref RE: Regex = Regex::new(format!("{}{}{}{}{}{}",
-        r"(\d{4}[\-]\d{2}[\-]\d{2})"        , // date
-        r"(= ?\d{4}[\-]\d{2}[\-]\d{2})? +"  , // effective_date
-        r"([\*!])? +"                        , // cleared
+        static ref RE_REAL: Regex = Regex::new(format!("{}{}{}{}{}{}",
+        r"(\d{4}[/-]\d{2}[/-]\d{2})"        , // date
+        r"(= ?\d{4}[/-]\d{2}[/-]\d{2})? +"  , // effective_date
+        r"([\*!])? +"                       , // cleared
         r"(\(.*\) )?"                       , // code
         r"(.*)"                             , // description
         r"(  ;.*)?"                         , // note
         ).as_str()).unwrap();
+        static ref RE_AUTOMATED: Regex = Regex::new(format!("{}",r"(.*)" ).as_str()).unwrap();
     }
     let mystr = chars::get_line(tokenizer);
-    let caps = RE.captures(mystr.as_str()).unwrap();
+    let caps = match real {
+        true => match RE_REAL.captures(mystr.as_str()) {
+            Some(c) => c,
+            None => return Err(tokenizer.error(ParserError::UnexpectedInput(None))),
+        },
+        false => RE_AUTOMATED.captures(mystr.as_str()).unwrap(),
+    };
 
-    let mut transaction = Transaction::<Posting>::new();
+    let mut transaction = Transaction::<Posting>::new(match real {
+        true => TransactionType::Real,
+        false => TransactionType::Automated,
+    });
 
     for (i, cap) in caps.iter().enumerate() {
         match cap {
@@ -33,7 +56,10 @@ pub(crate) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<Transaction<Post
                     1 =>
                     // date
                     {
-                        transaction.date = Some(parse_date(m.as_str()))
+                        match real {
+                            true => transaction.date = Some(parse_date(m.as_str())),
+                            false => transaction.description = m.as_str().to_string(),
+                        }
                     }
                     2 =>
                     // effective date
@@ -75,17 +101,17 @@ pub(crate) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<Transaction<Post
         match tokenizer.get_char().unwrap() {
             ';' => transaction.comments.push(comment::parse(tokenizer)),
             c if c.is_numeric() => {
-                return Err(ParserError::UnexpectedInput(Some(
+                return Err(tokenizer.error(ParserError::UnexpectedInput(Some(
                     "Expecting account name".to_string(),
-                )));
+                ))));
             }
-            _ => match parse_posting(tokenizer) {
+            _ => match parse_posting(tokenizer, transaction.transaction_type) {
                 // Although here we already know the kind of the posting (virtual, real),
                 // we deal with that in the next phase of parsing
                 Ok(posting) => transaction.postings.push(posting),
                 Err(e) => {
                     eprintln!("Error while parsing posting.");
-                    return Err(e);
+                    return Err(tokenizer.error(e));
                 }
             },
         }
@@ -105,25 +131,35 @@ pub struct Posting {
     pub balance_amount: Option<Rational64>,
     pub balance_currency: Option<String>,
     pub comments: Vec<Comment>,
+    pub amount_expr: Option<String>,
     pub kind: PostingType,
 }
 
 /// Parses a posting
 ///
-fn parse_posting(tokenizer: &mut Tokenizer) -> Result<Posting, ParserError> {
+fn parse_posting(
+    tokenizer: &mut Tokenizer,
+    transaction_type: TransactionType,
+) -> Result<Posting, ParserError> {
     let mut account = String::new();
     let mut posting_type = PostingType::Real;
-
+    let mut finished = false;
     // Get the account name
     loop {
         let c = tokenizer.next();
         if !c.is_whitespace() {
             account.push(c);
-        } else if (c == '\t') | (c == '\n') | (c == '\r') {
+        } else if (c == '\t') | (c == '\n') {
+            if c == '\n' {
+                // println!("1 {}-", account);
+                tokenizer.line_index -= 1;
+                tokenizer.position -= 1;
+                finished = true;
+            }
             break;
         } else {
             let d = tokenizer.next();
-            if d.is_whitespace() | (c == '\n') | (c == '\r') {
+            if d.is_whitespace() | (c == '\n') {
                 break;
             } else {
                 account.push(c);
@@ -170,8 +206,12 @@ fn parse_posting(tokenizer: &mut Tokenizer) -> Result<Posting, ParserError> {
         balance_amount: None,
         balance_currency: None,
         comments: Vec::new(),
+        amount_expr: None,
         kind: posting_type,
     };
+    if finished {
+        return Ok(posting);
+    }
     chars::consume_whitespaces(tokenizer);
     // Amounts
     loop {
@@ -185,7 +225,14 @@ fn parse_posting(tokenizer: &mut Tokenizer) -> Result<Posting, ParserError> {
             Some('=') => {
                 tokenizer.position += 1;
                 tokenizer.line_position += 1;
-                let money = parse_money(tokenizer)?;
+                chars::consume_whitespaces(tokenizer);
+                let money = match parse_money(tokenizer) {
+                    Ok(money) => money,
+                    Err(e) => {
+                        // eprintln!("I fail here 218.");
+                        return Err(e);
+                    }
+                };
                 posting.balance_amount = Some(money.0);
                 posting.balance_currency = Some(money.1);
             }
@@ -205,15 +252,35 @@ fn parse_posting(tokenizer: &mut Tokenizer) -> Result<Posting, ParserError> {
                 } else {
                     posting.cost_type = Some(PriceType::PerUnit);
                 }
-                let money = parse_money(tokenizer)?;
+                chars::consume_whitespaces(tokenizer);
+                let money = match parse_money(tokenizer) {
+                    Ok(money) => money,
+                    Err(e) => {
+                        // eprintln!("I fail here 249.");
+                        return Err(e);
+                    }
+                };
                 posting.cost_amount = Some(money.0);
                 posting.cost_currency = Some(money.1);
             }
-            _ => {
-                let money = parse_money(tokenizer)?;
-                posting.money_amount = Some(money.0);
-                posting.money_currency = Some(money.1);
-            }
+            _ => match parse_money(tokenizer) {
+                Ok(money) => {
+                    posting.money_amount = Some(money.0);
+                    posting.money_currency = Some(money.1);
+                }
+                Err(e) => {
+                    // eprintln!("I fail here 260");
+                    match transaction_type {
+                        TransactionType::Real | TransactionType::Periodic => return Err(e),
+                        TransactionType::Automated => {
+                            posting.amount_expr = Some(chars::get_line(tokenizer));
+
+                            tokenizer.line_index -= 1;
+                            tokenizer.position -= 1;
+                        }
+                    }
+                }
+            },
         }
         chars::consume_whitespaces(tokenizer);
     }
@@ -226,12 +293,24 @@ fn parse_money(tokenizer: &mut Tokenizer) -> Result<(Rational64, String), Parser
 
     match tokenizer.get_char() {
         Some(c) if c.is_numeric() | (c == '.') | (c == '-') => {
-            amount = parse_amount(tokenizer)?;
+            amount = match parse_amount(tokenizer) {
+                Ok(amount) => amount,
+                Err(e) => {
+                    // eprintln!("I fail here 286.");
+                    return Err(e);
+                }
+            };
             currency = chars::get_string(tokenizer);
         }
         Some(_) => {
             currency = chars::get_string(tokenizer);
-            amount = parse_amount(tokenizer)?;
+            amount = match parse_amount(tokenizer) {
+                Ok(amount) => amount,
+                Err(e) => {
+                    // eprintln!("I fail here 297.");
+                    return Err(e);
+                }
+            };
         }
         None => {
             return Err(ParserError::UnexpectedInput(Some(
@@ -272,6 +351,7 @@ fn parse_amount(tokenizer: &mut Tokenizer) -> Result<Rational64, ParserError> {
         match i64::from_str(num.as_str()) {
             Ok(n) => n,
             Err(_) => {
+                // eprintln!("I fail here 341.");
                 return Err(ParserError::UnexpectedInput(Some(
                     "Wrong number format".to_string(),
                 )));
@@ -284,9 +364,11 @@ fn parse_amount(tokenizer: &mut Tokenizer) -> Result<Rational64, ParserError> {
     ))
 }
 
-fn parse_date(date_str: &str) -> NaiveDate {
-    // yyyy-mm-dd is 10 characters
-    assert!(date_str.len() == 10);
+fn parse_date(input_str: &str) -> NaiveDate {
+    // yyyy-mm-dd is 10 characters -- guaranted by the regexp, but it comes with maybe stuff in the front
+    let len = input_str.len();
+    let date_str = &input_str[len - 10..len];
+    assert!(date_str.len() == 10, date_str.to_string());
     assert_eq!(
         date_str.chars().nth(4),
         date_str.chars().nth(7),
