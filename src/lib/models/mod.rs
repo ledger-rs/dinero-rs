@@ -10,7 +10,9 @@ pub use models::{ParsedPrice, Tag};
 pub use money::Money;
 pub use payee::Payee;
 pub use price::{Price, PriceType};
-pub use transaction::{Cleared, Posting, PostingType, Transaction, TransactionStatus};
+pub use transaction::{
+    Cleared, Posting, PostingType, Transaction, TransactionStatus, TransactionType,
+};
 
 use crate::models::transaction::Cost;
 use crate::parser::ParsedLedger;
@@ -135,7 +137,18 @@ impl<'a> TryFrom<ParsedLedger> for Ledger {
         //
         let mut transactions = Vec::new();
         for parsed in parsedledger.transactions.iter() {
-            let mut transaction = Transaction::<Posting>::new();
+            match parsed.transaction_type {
+                TransactionType::Real => {}
+                TransactionType::Automated => {
+                    eprintln!("Found automated transaction. Skipping.");
+                    continue;
+                }
+                TransactionType::Periodic => {
+                    eprintln!("Found periodic transaction. Skipping.");
+                    continue;
+                }
+            }
+            let mut transaction = Transaction::<Posting>::new(TransactionType::Real);
             transaction.description = parsed.description.clone();
             transaction.code = parsed.code.clone();
             transaction.note = parsed.note.clone();

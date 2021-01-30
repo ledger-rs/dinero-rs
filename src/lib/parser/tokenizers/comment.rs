@@ -26,7 +26,7 @@ use crate::parser::{chars, Tokenizer};
 pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Comment {
     tokenizer.position += 1;
     tokenizer.line_position += 1;
-    chars::consume_whitespaces_and_lines(tokenizer);
+    chars::consume_whitespaces(tokenizer);
     return Comment {
         comment: chars::get_line(tokenizer),
     };

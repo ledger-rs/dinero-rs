@@ -24,6 +24,7 @@ pub struct Transaction<PostingType> {
     pub virtual_postings: Vec<PostingType>,
     pub virtual_postings_balance: Vec<PostingType>,
     pub comments: Vec<Comment>,
+    pub transaction_type: TransactionType,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -31,6 +32,13 @@ pub enum TransactionStatus {
     NotChecked,
     InternallyBalanced,
     Correct,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum TransactionType {
+    Real,
+    Automated,
+    Periodic,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -78,7 +86,7 @@ pub enum Cost {
 }
 
 impl<PostingType> Transaction<PostingType> {
-    pub fn new() -> Transaction<PostingType> {
+    pub fn new(t_type: TransactionType) -> Transaction<PostingType> {
         Transaction {
             status: TransactionStatus::NotChecked,
             date: None,
@@ -91,6 +99,7 @@ impl<PostingType> Transaction<PostingType> {
             virtual_postings: vec![],
             virtual_postings_balance: vec![],
             comments: vec![],
+            transaction_type: t_type,
         }
     }
     /// Iterator over all the postings
@@ -262,16 +271,17 @@ impl Transaction<Posting> {
                 Some(_) => Err(LedgerError::EmptyPostingShouldBeLast),
                 None => {
                     let account = &self.postings.last().unwrap().account;
-                    let money = -transaction_balance.to_money()?;
-                    postings.push(Posting {
-                        account: account.clone(),
-                        amount: Some(money),
-                        balance: None,
-                        cost: None,
-                        kind: PostingType::Real,
-                    });
+                    for (_, money) in (-transaction_balance).iter() {
+                        postings.push(Posting {
+                            account: account.clone(),
+                            amount: Some(money.clone()),
+                            balance: None,
+                            cost: None,
+                            kind: PostingType::Real,
+                        });
+                    }
                     self.postings = postings;
-                    Ok(transaction_balance)
+                    Ok(Balance::new())
                 }
             }
         }
