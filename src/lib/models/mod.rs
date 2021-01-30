@@ -1,5 +1,3 @@
-use std::cell::RefCell;
-use std::collections::hash_map::RandomState;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 
@@ -12,11 +10,11 @@ pub use models::{ParsedPrice, Tag};
 pub use money::Money;
 pub use payee::Payee;
 pub use price::{Price, PriceType};
-pub use transaction::{Cleared, Posting, Transaction, TransactionStatus};
+pub use transaction::{Cleared, Posting, PostingType, Transaction, TransactionStatus};
 
 use crate::models::transaction::Cost;
 use crate::parser::ParsedLedger;
-use crate::{Error, List, ParserError};
+use crate::{Error, List};
 use std::rc::Rc;
 
 mod account;
@@ -35,6 +33,7 @@ pub struct LedgerMasterData {
     pub(crate) accounts: List<Account>,
     pub(crate) commodities: List<Currency>,
 }
+
 #[derive(Debug, Clone)]
 pub struct Ledger {
     pub(crate) accounts: List<Account>,
@@ -92,7 +91,7 @@ impl<'a> TryFrom<ParsedLedger> for Ledger {
         // Commodities
         for alias in commodity_strs {
             match parsedledger.commodities.get(&alias) {
-                Ok(cur) => {} // do nothing
+                Ok(_) => {} // do nothing
                 Err(_) => parsedledger
                     .commodities
                     .insert(Currency::from(alias.as_str())),
@@ -101,7 +100,7 @@ impl<'a> TryFrom<ParsedLedger> for Ledger {
         // Accounts
         for alias in account_strs {
             match parsedledger.accounts.get(&alias) {
-                Ok(cur) => {} // do nothing
+                Ok(_) => {} // do nothing
                 Err(_) => parsedledger.accounts.insert(Account::from(alias.as_str())),
             }
         }
@@ -147,7 +146,7 @@ impl<'a> TryFrom<ParsedLedger> for Ledger {
             for p in parsed.postings.iter() {
                 let account = parsedledger.accounts.get(&p.account)?;
 
-                let mut posting: Posting = Posting::new(account);
+                let mut posting: Posting = Posting::new(account, p.kind);
 
                 // Modify posting with amounts
                 if let Some(c) = &p.money_currency {
@@ -189,7 +188,13 @@ impl<'a> TryFrom<ParsedLedger> for Ledger {
                         p.balance_amount.unwrap(),
                     )));
                 }
-                transaction.postings.push(posting.to_owned());
+                match posting.kind {
+                    PostingType::Real => transaction.postings.push(posting.to_owned()),
+                    PostingType::Virtual => transaction.virtual_postings.push(posting.to_owned()),
+                    PostingType::VirtualMustBalance => transaction
+                        .virtual_postings_balance
+                        .push(posting.to_owned()),
+                }
             }
             match transaction.clone().is_balanced() {
                 true => {
@@ -216,7 +221,7 @@ impl<'a> TryFrom<ParsedLedger> for Ledger {
             if balance.len() == 2 {
                 let vec = balance.iter().map(|(_, x)| x.abs()).collect::<Vec<Money>>();
                 prices.push(Price {
-                    date: date,
+                    date,
                     commodity: vec[0].clone(),
                     price: vec[1].clone(),
                 });
@@ -229,26 +234,6 @@ impl<'a> TryFrom<ParsedLedger> for Ledger {
             transactions,
             prices,
         })
-    }
-}
-
-pub fn balance_transactions<'a>(
-    transactions: &'a mut Vec<Transaction<Posting>>,
-    balances: &'a mut HashMap<Rc<Account>, Balance, RandomState>,
-    prices: &'a mut Vec<Price>,
-) {
-    // Balance the transactions
-    for t in transactions.iter_mut() {
-        let date = t.date.unwrap().clone();
-        let balance = t.balance(balances).unwrap();
-        if balance.len() == 2 {
-            let vec = balance.iter().map(|(_, x)| x.abs()).collect::<Vec<Money>>();
-            prices.push(Price {
-                date: date,
-                commodity: vec[0].clone(),
-                price: vec[1].clone(),
-            });
-        }
     }
 }
 

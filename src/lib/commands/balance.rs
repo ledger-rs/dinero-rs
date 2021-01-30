@@ -4,8 +4,7 @@ use std::path::PathBuf;
 use colored::Colorize;
 
 use crate::filter;
-use crate::models;
-use crate::models::{Account, Balance, HasName, Ledger, Money, Price};
+use crate::models::{Account, Balance, HasName, Ledger};
 use crate::parser::Tokenizer;
 use crate::Error;
 use std::convert::TryFrom;
@@ -19,16 +18,17 @@ pub fn execute(
     show_total: bool,
     depth: Option<usize>,
     query: Vec<String>,
+    real: bool,
 ) -> Result<(), Error> {
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
     let items = tokenizer.tokenize()?;
-    let mut ledger = Ledger::try_from(items)?;
+    let ledger = Ledger::try_from(items)?;
 
     let mut balances: HashMap<Rc<Account>, Balance> = HashMap::new();
 
     for t in ledger.transactions.iter() {
-        for p in t.postings.iter() {
-            if !filter::filter(&query, t, p) {
+        for p in t.postings_iter() {
+            if !filter::filter(&query, t, p, real) {
                 continue;
             }
             let mut cur_bal = balances

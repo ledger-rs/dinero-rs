@@ -1,11 +1,13 @@
+use std::collections::HashSet;
+
+use lazy_static::lazy_static;
+use regex::Regex;
+
 use crate::models::{Comment, Currency, Origin};
 use crate::parser::chars::LineType;
 use crate::parser::tokenizers::comment;
 use crate::parser::{chars, Tokenizer};
-use crate::{Error, ParserError};
-use lazy_static::lazy_static;
-use regex::Regex;
-use std::collections::HashSet;
+use crate::ParserError;
 
 pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Currency, ParserError> {
     lazy_static! {
