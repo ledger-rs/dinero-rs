@@ -40,6 +40,8 @@ pub fn execute(
         }
     }
 
+    // Remove the ones with balance zero
+
     // For printing this out, take into account whether it is a flat report or not
     // if it is not, the parent balances have to be updated
     let mut vec_balances: Vec<(&str, Balance)>;
@@ -73,11 +75,13 @@ pub fn execute(
         }
         vec_balances = new_balances
             .iter()
+            .filter(|x| !x.1.is_zero())
             .map(|x| (x.0.clone(), x.1.clone()))
             .collect()
     } else {
         vec_balances = balances
             .iter()
+            .filter(|x| !x.1.is_zero())
             .map(|x| (x.0.get_name(), x.1.clone()))
             .collect();
     }
