@@ -23,7 +23,17 @@ after_success: |
   if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
     cargo tarpaulin --out Xml
     bash <(curl -s https://codecov.io/bash)
-  fi
-  # Want to test this
-  grep -oEi "version = \"(\d+\.\d+.\d+)\"" Cargo.toml
 
+    # If this build is not from a tag, create one
+    if [[ "$TRAVIS_TAG" == "" ]]; then
+      # Build a tag
+      # This prints the version number
+      export version=$(grep -E "version = \"([0-9]+\.[0-9]+.[0-9]+)\"" Cargo.toml | grep -Eo -m 1 "[0-9]+\.[0-9]+.[0-9]+")
+      export line_number=$(grep -En "version = \"([0-9]+\.[0-9]+.[0-9]+)\"" Cargo.toml | grep -Eo -m 1 "[0-9]+" | head -n 1)
+      sed -i "${line_number}s/.*/version = \"${version}-build-${TRAVIS_BUILD_NUMBER}\"/" Cargo.toml 
+      git tag -a -m "automated tag from Travis" ${version}-build-${TRAVIS_BUILD_NUMBER}
+      git push -f --tags https://${GITHUB_TOKEN}@github.com/frosklis/dinero-rs.git
+    elif [[ "$TRAVIS_TAG" != *"build"* ]]; then
+      cargo publish --token ${CARGO_TOKEN}
+    fi 
+  fi
