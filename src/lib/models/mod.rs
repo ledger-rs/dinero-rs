@@ -16,7 +16,7 @@ pub use transaction::{
 
 use crate::models::transaction::Cost;
 use crate::parser::ParsedLedger;
-use crate::{Error, List};
+use crate::{Error, LedgerError, List};
 use std::rc::Rc;
 
 mod account;
@@ -230,7 +230,13 @@ impl<'a> TryFrom<ParsedLedger> for Ledger {
         // Balance the transactions
         for t in transactions.iter_mut() {
             let date = t.date.unwrap().clone();
-            let balance = t.balance(&mut balances)?;
+            let balance = match t.balance(&mut balances) {
+                Ok(balance) => balance,
+                Err(e) => {
+                    eprintln!("{:?}", t);
+                    return Err(e);
+                }
+            };
             if balance.len() == 2 {
                 let vec = balance.iter().map(|(_, x)| x.abs()).collect::<Vec<Money>>();
                 prices.push(Price {
