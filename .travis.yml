@@ -33,5 +33,7 @@ after_success: |
       sed -i "${line_number}s/.*/version = \"${version}-build-${TRAVIS_BUILD_NUMBER}\"/" Cargo.toml 
       git tag -a -m "automated tag from Travis" ${version}-build-${TRAVIS_BUILD_NUMBER}
       git push -f --tags https://${GITHUB_TOKEN}@github.com/frosklis/dinero-rs.git
-    fi
+    elif [[ "$TRAVIS_TAG" != *"build"* ]]; then
+      cargo publish --token ${CARGO_TOKEN}
+    fi 
   fi
