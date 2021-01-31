@@ -250,6 +250,7 @@ impl Transaction<Posting> {
                 let account_bal = balances.get(p.account.deref()).unwrap().clone();
                 let amount_bal = Balance::from(balance.clone()) - account_bal;
                 let money = amount_bal.to_money()?;
+                // balances.insert(p.account.clone(), Balance::from(money.clone()));
                 transaction_balance = transaction_balance + Balance::from(money.clone());
                 postings.push(Posting {
                     account: p.account.clone(),
