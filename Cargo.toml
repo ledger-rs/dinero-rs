@@ -1,6 +1,6 @@
 [package]
 name = "dinero-rs"
-version = "0.6.0"
+version = "0.6.1"
 authors = ["Claudio Noguera <claudio.noguera@gmail.com>"]
 edition = "2018"
 readme = "README.md"
@@ -13,7 +13,11 @@ repository = "https://github.com/frosklis/dinero-rs"
 [lib]
 name = "dinero"
 path = "src/lib/mod.rs"
-
+[[bin]]
+name = "dinero"
+test = false
+bench = false
+path = "src/main.rs"
 [dependencies]
 num = "0.3.1"
 glob = "0.3.0"
