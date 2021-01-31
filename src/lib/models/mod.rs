@@ -228,7 +228,7 @@ impl ParsedLedger {
             let balance = match t.balance(&mut balances, no_checks) {
                 Ok(balance) => balance,
                 Err(e) => {
-                    eprintln!("{:?}", t); // todo improve this message by implementing display
+                    eprintln!("{}", t);
                     return Err(e.into());
                 }
             };

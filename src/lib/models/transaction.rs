@@ -8,8 +8,10 @@ use chrono::NaiveDate;
 use num::rational::Rational64;
 
 use crate::models::balance::Balance;
-use crate::models::{Account, Comment, Money};
+use crate::models::{Account, Comment, HasName, Money};
 use crate::LedgerError;
+use std::fmt;
+use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Clone)]
 pub struct Transaction<PostingType> {
@@ -193,8 +195,12 @@ impl Transaction<Posting> {
                 if !skip_balance_check {
                     if let Some(balance) = &p.balance {
                         if Balance::from(balance.clone()) != expected_balance {
-                            eprintln!("Found: {}", balance);
-                            eprintln!("Expected: {}", expected_balance);
+                            eprintln!("Found:       {}", balance);
+                            eprintln!("Expected:    {}", expected_balance);
+                            eprintln!(
+                                "Difference:  {}",
+                                expected_balance - Balance::from(balance.clone())
+                            );
                             return Err(LedgerError::TransactionIsNotBalanced);
                         }
                     }
@@ -244,6 +250,7 @@ impl Transaction<Posting> {
                 let account_bal = balances.get(p.account.deref()).unwrap().clone();
                 let amount_bal = Balance::from(balance.clone()) - account_bal;
                 let money = amount_bal.to_money()?;
+                // balances.insert(p.account.clone(), Balance::from(money.clone()));
                 transaction_balance = transaction_balance + Balance::from(money.clone());
                 postings.push(Posting {
                     account: p.account.clone(),
@@ -288,5 +295,27 @@ impl Transaction<Posting> {
             self.postings = postings;
             Ok(Balance::new())
         }
+    }
+}
+
+impl Display for Transaction<Posting> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let mut message = String::new();
+        message.push_str(format!("{} {}", self.date.unwrap(), self.description).as_str());
+        for p in self.postings_iter() {
+            if p.amount.as_ref().is_some() {
+                message.push_str(
+                    format!(
+                        "\n\t{:50}{}",
+                        p.account.get_name(),
+                        p.amount.as_ref().unwrap()
+                    )
+                    .as_str(),
+                );
+            } else {
+                message.push_str(format!("\n\t{:50}", p.account.get_name()).as_str());
+            }
+        }
+        write!(f, "{}", message)
     }
 }

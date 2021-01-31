@@ -159,7 +159,6 @@ fn main() {
         }
     }
     let opt: Opt = Opt::from_iter(args.iter());
-
     // Print options
     // println!("{:?}", opt.cmd);
     if let Err(e) = match opt.cmd {
@@ -167,7 +166,11 @@ fn main() {
             options,
             flat,
             no_total,
-        } => balance::execute(
+        } => {
+            if options.force_color {
+                env::set_var("CLICOLOR_FORCE", "1");
+            }
+            balance::execute(
             options.input_file,
             flat,
             !no_total,
@@ -175,18 +178,30 @@ fn main() {
             options.query,
             options.real,
             options.no_balance_check,
-        ),
-        Command::Register(options) => register::execute(
+        )},
+        Command::Register(options) => {
+            if options.force_color {
+                env::set_var("CLICOLOR_FORCE", "1");
+            }
+            register::execute(
             options.input_file,
             options.query,
             options.real,
             options.no_balance_check,
-        ),
+        )},
         Command::Commodities(options) => {
+if options.force_color {
+    env::set_var("CLICOLOR_FORCE", "1");
+}
+
             commodities::execute(options.input_file, options.no_balance_check)
         }
         Command::Prices(options) => prices::execute(options.input_file, options.no_balance_check),
         Command::Accounts(options) => {
+if options.force_color {
+    env::set_var("CLICOLOR_FORCE", "1");
+}
+
             accounts::execute(options.input_file, options.no_balance_check)
         }
         Command::Check { input } => check::execute(input),
