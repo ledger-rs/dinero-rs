@@ -1,0 +1,29 @@
+language: rust
+rust:
+  - stable
+  - beta
+  - nightly
+cache: cargo
+jobs:
+  allow_failures:
+    - rust: nightly
+  fast_finish: true
+
+before_script: |
+  if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
+    cargo install cargo-tarpaulin
+  fi
+
+script:
+- cargo clean
+- cargo build
+- cargo test
+
+after_success: |
+  if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
+    cargo tarpaulin --out Xml
+    bash <(curl -s https://codecov.io/bash)
+  fi
+  # Want to test this
+  grep -oEi "version = \"(\d+\.\d+.\d+)\"" Cargo.toml
+

@@ -29,6 +29,11 @@ fn test_fail() {
 "
         .to_string(),
     );
-    let parsed = tokenizer.tokenize().unwrap();
-    println!("{:?}", parsed.to_ledger(false));
+    let parsed = tokenizer.tokenize();
+    // It parses
+    assert!(parsed.is_ok());
+
+    // But to a wrong ledger
+    let ledger = parsed.unwrap().to_ledger(false);
+    assert!(ledger.is_err());
 }
