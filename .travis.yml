@@ -24,6 +24,5 @@ after_success: |
     cargo tarpaulin --out Xml
     bash <(curl -s https://codecov.io/bash)
   fi
-  # Want to test this
-  grep -oEi "version = \"(\d+\.\d+.\d+)\"" Cargo.toml
-  ls
+  # This prints the version number
+  grep -E "version = \"([0-9]+\.[0-9]+.[0-9]+)\"" Cargo.toml | grep -E "[0-9]+\.[0-9]+.[0-9]+"
