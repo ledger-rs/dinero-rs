@@ -12,6 +12,8 @@ before_script: |
   if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
     cargo install cargo-tarpaulin
   fi
+  # Want to test this
+  grep -oEi "version = \"(\d+\.\d+.\d+)\"" Cargo.toml
 
 script:
 - cargo clean
