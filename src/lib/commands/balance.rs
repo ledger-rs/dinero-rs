@@ -67,9 +67,11 @@ pub fn execute(
         vec.sort_by(|a, b| a.matches(":").count().cmp(&b.matches(":").count()));
 
         for account in vec.iter() {
+            let mut prefix = account.clone();
+            prefix.push(':'); // It is important to add this see issue #8
             let balance = new_balances
                 .iter()
-                .filter(|x| x.0.starts_with(account.as_str()))
+                .filter(|x| (x.0 == account) | x.0.starts_with(&prefix))
                 .fold(Balance::new(), |acc, new| acc + new.1.clone());
             new_balances.insert(account.as_str().clone(), balance);
         }
