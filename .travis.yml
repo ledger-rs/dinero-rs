@@ -34,6 +34,7 @@ after_success: |
       git tag -a -m "automated tag from Travis" ${version}-build-${TRAVIS_BUILD_NUMBER}
       git push -f --tags https://${GITHUB_TOKEN}@github.com/frosklis/dinero-rs.git
     elif [[ "$TRAVIS_TAG" != *"build"* ]]; then
+      rm cobertura.xml
       cargo publish --token ${CARGO_TOKEN}
     fi 
   fi
