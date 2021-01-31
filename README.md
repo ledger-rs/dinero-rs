@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.com/frosklis/dinero-rs.svg?branch=master)](https://travis-ci.com/frosklis/dinero-rs)
+[![codecov](https://codecov.io/gh/frosklis/dinero-rs/branch/master/graph/badge.svg?token=QC4LG2ZMZJ)](https://codecov.io/gh/frosklis/dinero-rs)
 
 Port to Rust of John Wiegley's wonderful [ledger-cli](https://www.ledger-cli.org/), the command line accounting tool.
 
