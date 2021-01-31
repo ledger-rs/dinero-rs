@@ -195,8 +195,12 @@ impl Transaction<Posting> {
                 if !skip_balance_check {
                     if let Some(balance) = &p.balance {
                         if Balance::from(balance.clone()) != expected_balance {
-                            eprintln!("Found: {}", balance);
-                            eprintln!("Expected: {}", expected_balance);
+                            eprintln!("Found:       {}", balance);
+                            eprintln!("Expected:    {}", expected_balance);
+                            eprintln!(
+                                "Difference:  {}",
+                                expected_balance - Balance::from(balance.clone())
+                            );
                             return Err(LedgerError::TransactionIsNotBalanced);
                         }
                     }
@@ -298,14 +302,18 @@ impl Display for Transaction<Posting> {
         let mut message = String::new();
         message.push_str(format!("{} {}", self.date.unwrap(), self.description).as_str());
         for p in self.postings_iter() {
-            message.push_str(
-                format!(
-                    "\n\t{:50}, {}",
-                    p.account.get_name(),
-                    p.amount.as_ref().unwrap()
-                )
-                .as_str(),
-            )
+            if p.amount.as_ref().is_some() {
+                message.push_str(
+                    format!(
+                        "\n\t{:50}{}",
+                        p.account.get_name(),
+                        p.amount.as_ref().unwrap()
+                    )
+                    .as_str(),
+                );
+            } else {
+                message.push_str(format!("\n\t{:50}", p.account.get_name()).as_str());
+            }
         }
         write!(f, "{}", message)
     }
