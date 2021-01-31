@@ -1,4 +1,6 @@
+use dinero::models::{Account, HasName};
 use dinero::parser::Tokenizer;
+use std::ops::Deref;
 
 #[test]
 fn test_account_names() {
@@ -51,4 +53,16 @@ fn test_account_names() {
         println!("Test case #{}", i);
         assert_eq!(num_accounts, 2, "There should be two accounts");
     }
+}
+
+#[test]
+fn test_spaces_in_account_names() {
+    let mut tokenizer = Tokenizer::from("account An account name with spaces   ".to_string());
+    let parsed = tokenizer.tokenize().unwrap();
+    let account = parsed
+        .accounts
+        .iter()
+        .map(|x| x.1.deref())
+        .collect::<Vec<&Account>>()[0];
+    assert_eq!(account.get_name(), "An account name with spaces");
 }
