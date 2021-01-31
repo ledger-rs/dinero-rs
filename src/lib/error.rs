@@ -50,7 +50,8 @@ impl From<ParserError> for Error {
 impl From<LedgerError> for Error {
     fn from(error: LedgerError) -> Self {
         eprintln!("{:?}", error);
-        todo!()
+        // TODO prettier error conversion
+        Error { message: vec![] }
     }
 }
 
