@@ -8,8 +8,10 @@ use chrono::NaiveDate;
 use num::rational::Rational64;
 
 use crate::models::balance::Balance;
-use crate::models::{Account, Comment, Money};
+use crate::models::{Account, Comment, HasName, Money};
 use crate::LedgerError;
+use std::fmt;
+use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Clone)]
 pub struct Transaction<PostingType> {
@@ -288,5 +290,23 @@ impl Transaction<Posting> {
             self.postings = postings;
             Ok(Balance::new())
         }
+    }
+}
+
+impl Display for Transaction<Posting> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let mut message = String::new();
+        message.push_str(format!("{} {}", self.date.unwrap(), self.description).as_str());
+        for p in self.postings_iter() {
+            message.push_str(
+                format!(
+                    "\n\t{:50}, {}",
+                    p.account.get_name(),
+                    p.amount.as_ref().unwrap()
+                )
+                .as_str(),
+            )
+        }
+        write!(f, "{}", message)
     }
 }
