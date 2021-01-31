@@ -72,6 +72,10 @@ struct CommonOpts {
     /// Use only real postings rather than real and virtual
     #[structopt(long = "--real")]
     real: bool,
+    /// Ignore balance assertions
+    #[structopt(long = "--no-balance-check")]
+    no_balance_check: bool,
+
     /// TODO Date format
     #[structopt(long = "--date-format")]
     date_format: Option<String>,
@@ -82,6 +86,7 @@ struct CommonOpts {
     /// TODO force pager
     #[structopt(long = "--force-pager")]
     force_pager: bool,
+
     /// TODO effective
     #[structopt(long = "--effective")]
     effective: bool,
@@ -169,13 +174,21 @@ fn main() {
             options.depth,
             options.query,
             options.real,
+            options.no_balance_check,
         ),
-        Command::Register(options) => {
-            register::execute(options.input_file, options.query, options.real)
+        Command::Register(options) => register::execute(
+            options.input_file,
+            options.query,
+            options.real,
+            options.no_balance_check,
+        ),
+        Command::Commodities(options) => {
+            commodities::execute(options.input_file, options.no_balance_check)
         }
-        Command::Commodities(options) => commodities::execute(options.input_file),
-        Command::Prices(options) => prices::execute(options.input_file),
-        Command::Accounts(options) => accounts::execute(options.input_file),
+        Command::Prices(options) => prices::execute(options.input_file, options.no_balance_check),
+        Command::Accounts(options) => {
+            accounts::execute(options.input_file, options.no_balance_check)
+        }
         Command::Check { input } => check::execute(input),
     } {
         eprintln!("{}", e);
