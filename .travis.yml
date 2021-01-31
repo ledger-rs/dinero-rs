@@ -3,6 +3,7 @@ rust:
   - stable
   - beta
   - nightly
+cache: cargo
 jobs:
   allow_failures:
     - rust: nightly
@@ -12,8 +13,6 @@ before_script: |
   if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
     cargo install cargo-tarpaulin
   fi
-  # Want to test this
-  grep -oEi "version = \"(\d+\.\d+.\d+)\"" Cargo.toml
 
 script:
 - cargo clean
@@ -25,3 +24,6 @@ after_success: |
     cargo tarpaulin --out Xml
     bash <(curl -s https://codecov.io/bash)
   fi
+  # Want to test this
+  grep -oEi "version = \"(\d+\.\d+.\d+)\"" Cargo.toml
+
