@@ -38,7 +38,7 @@ pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Account, ParserError> {
                     2 =>
                     // description
                     {
-                        name = m.as_str().to_string()
+                        name = m.as_str().trim().to_string()
                     }
                     _ => (),
                 }
