@@ -37,7 +37,7 @@ pub struct LedgerMasterData {
 
 #[derive(Debug, Clone)]
 pub struct Ledger {
-    pub(crate) accounts: List<Account>,
+    pub accounts: List<Account>,
     pub(crate) commodities: List<Currency>,
     pub(crate) transactions: Vec<Transaction<Posting>>,
     pub(crate) prices: Vec<Price>,
