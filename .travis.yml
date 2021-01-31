@@ -26,4 +26,4 @@ after_success: |
   fi
   # Want to test this
   grep -oEi "version = \"(\d+\.\d+.\d+)\"" Cargo.toml
-
+  ls
