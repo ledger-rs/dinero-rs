@@ -4,10 +4,9 @@ use std::path::PathBuf;
 use colored::Colorize;
 
 use crate::filter;
-use crate::models::{Account, Balance, HasName, Ledger};
+use crate::models::{Account, Balance, HasName};
 use crate::parser::Tokenizer;
 use crate::Error;
-use std::convert::TryFrom;
 use std::ops::Deref;
 use std::rc::Rc;
 
@@ -19,10 +18,11 @@ pub fn execute(
     depth: Option<usize>,
     query: Vec<String>,
     real: bool,
+    no_balance_check: bool,
 ) -> Result<(), Error> {
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
     let items = tokenizer.tokenize()?;
-    let ledger = Ledger::try_from(items)?;
+    let ledger = items.to_ledger(no_balance_check)?;
 
     let mut balances: HashMap<Rc<Account>, Balance> = HashMap::new();
 

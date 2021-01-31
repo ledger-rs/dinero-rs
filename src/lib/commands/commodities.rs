@@ -1,15 +1,13 @@
-use crate::models::{Currency, HasName, Ledger};
+use crate::models::{Currency, HasName};
 use crate::parser::Tokenizer;
 use crate::Error;
-use std::convert::TryFrom;
 use std::ops::Deref;
 use std::path::PathBuf;
 
-pub fn execute(path: PathBuf) -> Result<(), Error> {
+pub fn execute(path: PathBuf, no_balance_check: bool) -> Result<(), Error> {
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
     let items = tokenizer.tokenize()?;
-    let ledger = Ledger::try_from(items)?;
-
+    let ledger = items.to_ledger(no_balance_check)?;
     let mut commodities = ledger
         .commodities
         .iter()

@@ -175,6 +175,7 @@ impl Transaction<Posting> {
     pub fn balance(
         &mut self,
         balances: &mut HashMap<Rc<Account>, Balance>,
+        skip_balance_check: bool,
     ) -> Result<Balance, LedgerError> {
         let mut transaction_balance = Balance::new();
         match total_balance(self.virtual_postings_balance.as_ref()).can_be_zero() {
@@ -182,15 +183,20 @@ impl Transaction<Posting> {
             false => return Err(LedgerError::TransactionIsNotBalanced),
         }
         // 1. update the amount of every posting if it has a balance
+        let mut fill_account = &Rc::new(Account::from("this will never be used"));
         let mut postings: Vec<Posting> = Vec::new();
         for p in self.postings.iter() {
             // If it has money, update the balance
             if let Some(money) = &p.amount {
                 let expected_balance =
                     balances.get(p.account.deref()).unwrap().clone() + Balance::from(money.clone());
-                if let Some(balance) = &p.balance {
-                    if Balance::from(balance.clone()) != expected_balance {
-                        return Err(LedgerError::TransactionIsNotBalanced);
+                if !skip_balance_check {
+                    if let Some(balance) = &p.balance {
+                        if Balance::from(balance.clone()) != expected_balance {
+                            eprintln!("Found: {}", balance);
+                            eprintln!("Expected: {}", expected_balance);
+                            return Err(LedgerError::TransactionIsNotBalanced);
+                        }
                     }
                 }
                 balances.insert(p.account.clone(), expected_balance);
@@ -218,19 +224,13 @@ impl Transaction<Posting> {
                                     Money::Money { amount, .. } => amount.clone(),
                                 };
                                 let money = Money::Money {
-                                    amount: units
-                                        * (if p.amount.as_ref().unwrap().is_negative() {
-                                            -1
-                                        } else {
-                                            1
-                                        }),
+                                    amount: units,
                                     currency: currency.clone(),
                                 };
                                 Balance::from(money)
                             }
                         },
                     };
-
                 postings.push(Posting {
                     account: p.account.clone(),
                     amount: p.amount.clone(),
@@ -238,7 +238,8 @@ impl Transaction<Posting> {
                     cost: p.cost.clone(),
                     kind: PostingType::Real,
                 });
-            } else if let Some(balance) = &p.balance {
+            } else if &p.balance.is_some() & !skip_balance_check {
+                let balance = p.balance.as_ref().unwrap();
                 // update the amount
                 let account_bal = balances.get(p.account.deref()).unwrap().clone();
                 let amount_bal = Balance::from(balance.clone()) - account_bal;
@@ -251,6 +252,8 @@ impl Transaction<Posting> {
                     cost: p.cost.clone(),
                     kind: PostingType::Real,
                 });
+            } else {
+                fill_account = &p.account;
             }
         }
 
@@ -266,24 +269,24 @@ impl Transaction<Posting> {
                 false => Err(LedgerError::TransactionIsNotBalanced),
             }
         } else {
-            // Delete the empty posting
-            match self.postings.last().unwrap().amount {
-                Some(_) => Err(LedgerError::EmptyPostingShouldBeLast),
-                None => {
-                    let account = &self.postings.last().unwrap().account;
-                    for (_, money) in (-transaction_balance).iter() {
-                        postings.push(Posting {
-                            account: account.clone(),
-                            amount: Some(money.clone()),
-                            balance: None,
-                            cost: None,
-                            kind: PostingType::Real,
-                        });
-                    }
-                    self.postings = postings;
-                    Ok(Balance::new())
-                }
+            // Fill the empty posting
+            // let account = &self.postings.last().unwrap().account;
+            for (_, money) in (-transaction_balance).iter() {
+                let expected_balance =
+                    balances.get(fill_account).unwrap().clone() + Balance::from(money.clone());
+
+                balances.insert(fill_account.clone(), expected_balance);
+
+                postings.push(Posting {
+                    account: fill_account.clone(),
+                    amount: Some(money.clone()),
+                    balance: None,
+                    cost: None,
+                    kind: PostingType::Real,
+                });
             }
+            self.postings = postings;
+            Ok(Balance::new())
         }
     }
 }

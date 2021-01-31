@@ -1,5 +1,4 @@
 use std::collections::{HashMap, HashSet};
-use std::convert::TryFrom;
 
 use num::rational::Rational64;
 
@@ -16,7 +15,7 @@ pub use transaction::{
 
 use crate::models::transaction::Cost;
 use crate::parser::ParsedLedger;
-use crate::{Error, LedgerError, List};
+use crate::{Error, List};
 use std::rc::Rc;
 
 mod account;
@@ -54,19 +53,16 @@ impl Ledger {
         }
     }
 }
-
-impl<'a> TryFrom<ParsedLedger> for Ledger {
-    type Error = Error;
-
+impl ParsedLedger {
     /// Creates a proper ledger from a parsed ledger
-    fn try_from(mut parsedledger: ParsedLedger) -> Result<Self, Self::Error> {
+    pub fn to_ledger(mut self, no_checks: bool) -> Result<Ledger, Error> {
         let mut commodity_strs = HashSet::<String>::new();
         let mut account_strs = HashSet::<String>::new();
 
         //
         // 1. Populate the directive lists
         //
-        for transaction in parsedledger.transactions.iter() {
+        for transaction in self.transactions.iter() {
             for p in transaction.postings.iter() {
                 account_strs.insert(p.account.clone());
 
@@ -82,7 +78,7 @@ impl<'a> TryFrom<ParsedLedger> for Ledger {
                 }
             }
         }
-        for price in parsedledger.prices.iter() {
+        for price in self.prices.iter() {
             commodity_strs.insert(price.clone().commodity);
             commodity_strs.insert(price.clone().other_commodity);
         }
@@ -92,30 +88,28 @@ impl<'a> TryFrom<ParsedLedger> for Ledger {
         //
         // Commodities
         for alias in commodity_strs {
-            match parsedledger.commodities.get(&alias) {
+            match self.commodities.get(&alias) {
                 Ok(_) => {} // do nothing
-                Err(_) => parsedledger
-                    .commodities
-                    .insert(Currency::from(alias.as_str())),
+                Err(_) => self.commodities.insert(Currency::from(alias.as_str())),
             }
         }
         // Accounts
         for alias in account_strs {
-            match parsedledger.accounts.get(&alias) {
+            match self.accounts.get(&alias) {
                 Ok(_) => {} // do nothing
-                Err(_) => parsedledger.accounts.insert(Account::from(alias.as_str())),
+                Err(_) => self.accounts.insert(Account::from(alias.as_str())),
             }
         }
         // TODO payees
 
         // 3. Prices from price statements
         let mut prices: Vec<Price> = Vec::new();
-        for price in parsedledger.prices.iter() {
+        for price in self.prices.iter() {
             prices.push(Price {
                 date: price.date,
                 commodity: Money::Money {
                     amount: Rational64::new(1, 1),
-                    currency: parsedledger
+                    currency: self
                         .commodities
                         .get(price.commodity.as_str())
                         .unwrap()
@@ -123,7 +117,7 @@ impl<'a> TryFrom<ParsedLedger> for Ledger {
                 },
                 price: Money::Money {
                     amount: price.other_quantity,
-                    currency: parsedledger
+                    currency: self
                         .commodities
                         .get(price.other_commodity.as_str())
                         .unwrap()
@@ -136,7 +130,7 @@ impl<'a> TryFrom<ParsedLedger> for Ledger {
         // 4. Get the right postings
         //
         let mut transactions = Vec::new();
-        for parsed in parsedledger.transactions.iter() {
+        for parsed in self.transactions.iter() {
             match parsed.transaction_type {
                 TransactionType::Real => {}
                 TransactionType::Automated => {
@@ -157,24 +151,24 @@ impl<'a> TryFrom<ParsedLedger> for Ledger {
 
             // Go posting by posting
             for p in parsed.postings.iter() {
-                let account = parsedledger.accounts.get(&p.account)?;
+                let account = self.accounts.get(&p.account)?;
 
                 let mut posting: Posting = Posting::new(account, p.kind);
 
                 // Modify posting with amounts
                 if let Some(c) = &p.money_currency {
                     posting.amount = Some(Money::from((
-                        parsedledger.commodities.get(&c.as_str()).unwrap().clone(),
+                        self.commodities.get(&c.as_str()).unwrap().clone(),
                         p.money_amount.unwrap(),
                     )));
                 }
                 if let Some(c) = &p.cost_currency {
-                    let posting_currency = parsedledger
+                    let posting_currency = self
                         .commodities
                         .get(&p.money_currency.as_ref().unwrap().as_str())
                         .unwrap();
                     let amount = Money::from((
-                        parsedledger.commodities.get(c.as_str()).unwrap().clone(),
+                        self.commodities.get(c.as_str()).unwrap().clone(),
                         p.cost_amount.unwrap(),
                     ));
                     posting.cost = match p.cost_type.as_ref().unwrap() {
@@ -190,14 +184,14 @@ impl<'a> TryFrom<ParsedLedger> for Ledger {
                             }
                         },
                         price: Money::from((
-                            parsedledger.commodities.get(c.as_str()).unwrap().clone(),
+                            self.commodities.get(c.as_str()).unwrap().clone(),
                             p.cost_amount.unwrap(),
                         )),
                     })
                 }
                 if let Some(c) = &p.balance_currency {
                     posting.balance = Some(Money::from((
-                        parsedledger.commodities.get(c.as_str()).unwrap().clone(),
+                        self.commodities.get(c.as_str()).unwrap().clone(),
                         p.balance_amount.unwrap(),
                     )));
                 }
@@ -223,18 +217,19 @@ impl<'a> TryFrom<ParsedLedger> for Ledger {
 
         // Populate balances
         let mut balances: HashMap<Rc<Account>, Balance> = HashMap::new();
-        for account in parsedledger.accounts.values() {
+        for account in self.accounts.values() {
             balances.insert(account.clone(), Balance::new());
         }
 
         // Balance the transactions
         for t in transactions.iter_mut() {
             let date = t.date.unwrap().clone();
-            let balance = match t.balance(&mut balances) {
+            // output_balances(&balances);
+            let balance = match t.balance(&mut balances, no_checks) {
                 Ok(balance) => balance,
                 Err(e) => {
-                    eprintln!("{:?}", t);
-                    return Err(e);
+                    eprintln!("{:?}", t); // todo improve this message by implementing display
+                    return Err(e.into());
                 }
             };
             if balance.len() == 2 {
@@ -248,8 +243,8 @@ impl<'a> TryFrom<ParsedLedger> for Ledger {
         }
 
         Ok(Ledger {
-            accounts: parsedledger.accounts,
-            commodities: parsedledger.commodities,
+            accounts: self.accounts,
+            commodities: self.commodities,
             transactions,
             prices,
         })
@@ -278,4 +273,15 @@ pub trait HasAliases {
 
 pub trait FromDirective {
     fn is_from_directive(&self) -> bool;
+}
+
+fn _output_balances(bal: &HashMap<Rc<Account>, Balance>) {
+    let mut s = String::new();
+    for (k, v) in bal.iter() {
+        if v.is_zero() {
+            continue;
+        }
+        s.push_str(format!("{}: {}\n", k.get_name(), v).as_str());
+    }
+    println!("{}", s);
 }
