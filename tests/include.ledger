@@ -13,7 +13,7 @@
     Expenses:Travel      200 EUR
     Assets:Checking account   $-210.12
 
-include include2.ledger
+include demo.ledger
 
 
 2021-01-27 * ACME, inc.
