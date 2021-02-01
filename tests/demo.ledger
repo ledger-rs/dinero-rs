@@ -1,0 +1,33 @@
+; A simple demo file with comments
+! Comments can also be like this
+# or like this
+
+2021-01-01 * Groceries
+    Expenses:Groceries   $100
+    Assets:Checking account
+
+2021-01-03 * Clothing
+    Expenses:Groceries   $69.37
+    Assets:Checking account   $-69.37
+
+2021-01-15 * Flights
+    Expenses:Travel      200 EUR
+    Assets:Checking account   $-210.12
+
+2021-01-16 * Alphabet Inc.
+    Assets:Shares        2 GOOGL @ $957.37
+    Assets:Checking account
+
+2021-01-16 * ACME.
+    Assets:Shares        2 ACME @@ $957.37
+    Assets:Checking account
+
+2021-01-27 * ACME, inc.
+    Income:Salary     $-100
+    Assets:Checking account
+
+commodity €
+    alias EUR
+commodity USD
+    alias $
+P 2021-01-23 AAPL 139.07 USD
