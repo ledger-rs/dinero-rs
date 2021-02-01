@@ -10,7 +10,7 @@ pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Tag, ParserError> {
     lazy_static! {
         static ref RE: Regex = Regex::new(format!("{}{}",
         r"(tag) +"        , // directive commodity
-        r"(.*)"                 , // description
+        r"(.*)"           , // description
         ).as_str()).unwrap();
     }
     let mystr = chars::get_line(tokenizer);
@@ -33,7 +33,7 @@ pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Tag, ParserError> {
                     2 =>
                     // description
                     {
-                        name = m.as_str().to_string()
+                        name = m.as_str().trim().to_string()
                     }
                     _ => (),
                 }
@@ -68,4 +68,17 @@ pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Tag, ParserError> {
         check,
         assert,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::HasName;
+
+    #[test]
+    fn test_spaces_in_tag_names() {
+        let mut tokenizer = Tokenizer::from("tag   A tag name with spaces   ".to_string());
+        let tag = parse(&mut tokenizer).unwrap();
+        assert_eq!(tag.get_name(), "A tag name with spaces");
+    }
 }

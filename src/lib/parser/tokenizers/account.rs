@@ -94,3 +94,16 @@ pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Account, ParserError> {
     };
     Ok(account)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::HasName;
+
+    #[test]
+    fn test_spaces_in_account_names() {
+        let mut tokenizer = Tokenizer::from("account An account name with spaces   ".to_string());
+        let account = parse(&mut tokenizer).unwrap();
+        assert_eq!(account.get_name(), "An account name with spaces");
+    }
+}
