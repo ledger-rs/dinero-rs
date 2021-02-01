@@ -172,26 +172,36 @@ impl Transaction<Posting> {
     }
 
     /// Balances the transaction
-    /// There are two groups of postings that have to balance: the real postings and the [virtual postings]
-    /// but not the (virtual postings)
+    /// There are two groups of postings that have to balance:
+    /// - the *real postings*
+    /// - the *virtual postings* that must balance, but not the virtual postings
+    /// Real postings can have things like cost or balance assertions. However virtual postings
+    /// can't.
+    ///
+    /// Because balance assertions depend on previous transactions, this function receives a
+    /// balances Hashmap as a parameter. If the skip_balance_check flag is set to true, balance
+    /// assertions are skipped.
     pub fn balance(
         &mut self,
         balances: &mut HashMap<Rc<Account>, Balance>,
         skip_balance_check: bool,
     ) -> Result<Balance, LedgerError> {
         let mut transaction_balance = Balance::new();
+
+        // 1. Check the virtual postings
         match total_balance(self.virtual_postings_balance.as_ref()).can_be_zero() {
             true => {}
             false => return Err(LedgerError::TransactionIsNotBalanced),
         }
-        // 1. update the amount of every posting if it has a balance
+
+        // 1. Iterate over postings
         let mut fill_account = &Rc::new(Account::from("this will never be used"));
         let mut postings: Vec<Posting> = Vec::new();
         for p in self.postings.iter() {
             // If it has money, update the balance
             if let Some(money) = &p.amount {
-                let expected_balance =
-                    balances.get(p.account.deref()).unwrap().clone() + Balance::from(money.clone());
+                let expected_balance = balances.get(p.account.deref()).unwrap().clone()  // What we had 
+                        + Balance::from(money.clone()); // What we add
                 if !skip_balance_check {
                     if let Some(balance) = &p.balance {
                         if Balance::from(balance.clone()) != expected_balance {
@@ -205,10 +215,15 @@ impl Transaction<Posting> {
                         }
                     }
                 }
+
+                // Update the balance of the account
                 balances.insert(p.account.clone(), expected_balance);
-                transaction_balance = transaction_balance
+
+                // Update the balance of the transaction
+                transaction_balance = transaction_balance   // What we had
                     + match &p.cost {
-                        None => Balance::from(p.amount.as_ref().unwrap().clone()),
+                        None => Balance::from(money.clone()),
+                    // If it has a cost, the secondary currency is added for the balance
                         Some(cost) => match cost {
                             Cost::Total { amount } => {
                                 if p.amount.as_ref().unwrap().is_negative() {
@@ -237,29 +252,35 @@ impl Transaction<Posting> {
                             }
                         },
                     };
+
+                // Add the posting
                 postings.push(Posting {
                     account: p.account.clone(),
                     amount: p.amount.clone(),
-                    balance: None,
+                    balance: p.balance.clone(),
                     cost: p.cost.clone(),
                     kind: PostingType::Real,
                 });
             } else if &p.balance.is_some() & !skip_balance_check {
+                // There is a balance
                 let balance = p.balance.as_ref().unwrap();
+                
                 // update the amount
                 let account_bal = balances.get(p.account.deref()).unwrap().clone();
                 let amount_bal = Balance::from(balance.clone()) - account_bal;
                 let money = amount_bal.to_money()?;
-                // balances.insert(p.account.clone(), Balance::from(money.clone()));
                 transaction_balance = transaction_balance + Balance::from(money.clone());
+                // update the account balance
+                balances.insert(p.account.clone(), Balance::from(balance.clone()));
                 postings.push(Posting {
                     account: p.account.clone(),
                     amount: Some(money),
-                    balance: None,
+                    balance: p.balance.clone(),
                     cost: p.cost.clone(),
                     kind: PostingType::Real,
                 });
             } else {
+                // We do nothing, but this is the account for the empty post
                 fill_account = &p.account;
             }
         }
