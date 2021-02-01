@@ -1,3 +1,4 @@
+use crate::models::HasName;
 use chrono::NaiveDate;
 use num::rational::Rational64;
 
@@ -14,4 +15,10 @@ pub struct Tag {
     pub name: String,
     pub check: Vec<String>,
     pub assert: Vec<String>,
+}
+
+impl HasName for Tag {
+    fn get_name(&self) -> &str {
+        self.name.as_str()
+    }
 }

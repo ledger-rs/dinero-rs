@@ -75,7 +75,7 @@ impl HasName for Account {
     }
 }
 
-impl<'a> Account {
+impl Account {
     /// Depth of the account, useful for filters and other
     pub fn depth(&self) -> usize {
         self.name
