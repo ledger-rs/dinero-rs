@@ -30,6 +30,5 @@ fn test_bad_ledgerrc() {
     .iter()
     .map(|x| x.to_string())
     .collect();
-    let res = dinero::run_app(args);
-    println!("{:?}", res);
+    let _res = dinero::run_app(args);
 }
