@@ -106,4 +106,19 @@ mod tests {
         let account = parse(&mut tokenizer).unwrap();
         assert_eq!(account.get_name(), "An account name with spaces");
     }
+
+    #[test]
+    fn test_parse_account() {
+        let mut tokenizer = Tokenizer::from("account Assets:Checking account
+    alias checking
+    note An account for everyday expenses
+    ; this line will be ignored
+    alias checking account
+    isin 123456789
+    payee Employer
+    ".to_string());
+    let account = parse(&mut tokenizer).unwrap();
+    assert!(!account.default, "Not a default account");
+    assert_eq!(account.get_name(), "Assets:Checking account");
+    }
 }
