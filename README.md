@@ -7,4 +7,10 @@ Dinero (spanish for money) is a command line tool that can deal with ledger file
 
 I use ledger-cli extensively for my personal finances. My goal is to be able to run all the commands I use the most with my own tool while at the same time learning Rust.
 
-Loosely inspired by [Rudolf Schmidt's port](https://github.com/rudolfschmidt/acc)
+Currently supported are:
+- Balance reports
+- Register reports
+
+Report filtering by account name and by date.
+
+Run ```dinero --help``` for a list of available commands and options.
