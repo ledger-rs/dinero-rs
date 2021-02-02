@@ -32,7 +32,7 @@ pub fn filter(options: &CommonOpts, transaction: &Transaction<Posting>, posting:
         return true;
     }
     for p in predicate {
-        match name.find(p) {
+        match name.find(&p.to_lowercase()) {
             None => continue,
             Some(_) => return true,
         }
