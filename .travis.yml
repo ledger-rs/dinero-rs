@@ -16,7 +16,7 @@ before_script: |
   if [[ "$TRAVIS_EVENT_TYPE" == cron ]]; then
     for TAG in $(git tag | grep -)
     do
-      git push https://${GITHUB_TOKEN}@github.com/frosklis/dinero-rs.git --delete $TAG 
+      git push --delete https://${GITHUB_TOKEN}@github.com/frosklis/dinero-rs.git  $TAG 
     done
   fi 
 
