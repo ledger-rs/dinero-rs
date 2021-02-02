@@ -1,34 +1,25 @@
-#[test]
-fn test_balance() {
-    let args: Vec<String> = vec![
-        "executable",
-        "bal",
-        "-f",
-        "tests/demo.ledger",
-        "--init-file",
-        "tests/example_ledgerrc",
-        "--real",
-    ]
-    .iter()
-    .map(|x| x.to_string())
-    .collect();
-    let res = dinero::run_app(args);
-    assert!(res.is_ok());
-}
+use assert_cmd::Command;
 
 #[test]
-#[should_panic(
-    expected = "Bad config file \"tests/example_bad_ledgerrc\"\nThis line should be a comment but isn\'t, it is bad on purpose."
-)]
-fn test_bad_ledgerrc() {
-    let args: Vec<String> = vec![
-        "executable",
-        "bal",
-        "--init-file",
-        "tests/example_bad_ledgerrc",
-    ]
-    .iter()
-    .map(|x| x.to_string())
-    .collect();
-    let _res = dinero::run_app(args);
+fn date_filters() {
+    let assert_1 = Command::cargo_bin("dinero")
+        .unwrap()
+        .args(&["bal", "-f", "tests/demo.ledger"])
+        .assert();
+    let mut output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    assert_eq!(output.lines().into_iter().count(), 18);
+    let assert_2 = Command::cargo_bin("dinero")
+        .unwrap()
+        .args(&[
+            "bal",
+            "-f",
+            "tests/demo.ledger",
+            "-e",
+            "2021-01-17",
+            "-b",
+            "2021-01-15",
+        ])
+        .assert();
+    output = String::from_utf8(assert_2.get_output().to_owned().stdout).unwrap();
+    assert_eq!(output.lines().into_iter().count(), 13);
 }
