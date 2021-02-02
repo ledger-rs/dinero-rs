@@ -176,7 +176,7 @@ pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
     let opt: Opt = Opt::from_iter(args.iter());
 
     // Print options
-    println!("{:?}", opt.cmd);
+    // println!("{:?}", opt.cmd);
     if let Err(e) = match opt.cmd {
         Command::Balance {
             options,
