@@ -1,19 +1,17 @@
-use std::path::PathBuf;
-
 use colored::Colorize;
 
-use crate::filter;
 use crate::models::Balance;
 use crate::parser::Tokenizer;
 use crate::Error;
+use crate::{filter, CommonOpts};
 
 /// Register report
-pub fn execute(
-    path: PathBuf,
-    query: Vec<String>,
-    real: bool,
-    no_balance_check: bool,
-) -> Result<(), Error> {
+pub fn execute(options: &CommonOpts) -> Result<(), Error> {
+    // Get options from options
+    let path = options.input_file.clone();
+    let no_balance_check: bool = options.no_balance_check;
+
+    // Now work
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
     let items = tokenizer.tokenize()?;
     let ledger = items.to_ledger(no_balance_check)?;
@@ -23,7 +21,7 @@ pub fn execute(
     for t in ledger.transactions.iter() {
         let mut counter = 0;
         for p in t.postings.iter() {
-            if !filter::filter(&query, t, p, real) {
+            if !filter::filter(&options, t, p) {
                 continue;
             }
             counter += 1;
