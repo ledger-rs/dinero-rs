@@ -18,6 +18,7 @@ fn date_filters() {
             "2021-01-17",
             "-b",
             "2021-01-15",
+            "--force-color",
         ])
         .assert();
     output = String::from_utf8(assert_2.get_output().to_owned().stdout).unwrap();

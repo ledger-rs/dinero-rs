@@ -287,12 +287,28 @@ mod tests {
     #[should_panic(
         expected = "Bad config file \"tests/example_bad_ledgerrc\"\nThis line should be a comment but isn\'t, it is bad on purpose."
     )]
-    fn test_bad_ledgerrc() {
+    fn bad_ledgerrc() {
         let args: Vec<String> = vec![
             "executable",
             "bal",
             "--init-file",
             "tests/example_bad_ledgerrc",
+        ]
+        .iter()
+        .map(|x| x.to_string())
+        .collect();
+        let _res = run_app(args);
+    }
+    #[test]
+    #[should_panic(
+        expected = "Bad config file \"tests/example_bad_ledgerrc2\"\n- This does not parse either. And it shouldn't."
+    )]
+    fn other_bad_ledgerrc() {
+        let args: Vec<String> = vec![
+            "executable",
+            "bal",
+            "--init-file",
+            "tests/example_bad_ledgerrc2",
         ]
         .iter()
         .map(|x| x.to_string())
