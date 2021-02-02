@@ -3,10 +3,16 @@ use std::collections::HashMap;
 use std::env;
 use std::fs::read_to_string;
 use std::path::{Path, PathBuf};
-
 use structopt::StructOpt;
+use two_timer;
+
+use lazy_static::lazy_static;
+use regex::Regex;
 
 use crate::commands::{accounts, balance, check, commodities, prices, register};
+use crate::Error;
+use chrono::NaiveDate;
+use colored::Colorize;
 
 #[derive(Debug, StructOpt)]
 enum Command {
@@ -53,10 +59,10 @@ struct Opt {
 }
 
 #[derive(Debug, StructOpt)]
-struct CommonOpts {
+pub struct CommonOpts {
     /// Input file
     #[structopt(name = "FILE", short = "f", long = "file", parse(from_os_str))]
-    input_file: PathBuf,
+    pub(crate) input_file: PathBuf,
 
     /// Init file
     #[structopt(long = "--init-file", parse(from_os_str))]
@@ -64,17 +70,26 @@ struct CommonOpts {
 
     /// Depth
     #[structopt(short = "d", long = "depth")]
-    depth: Option<usize>,
+    pub(crate) depth: Option<usize>,
 
     /// The pattern to look for
     #[structopt(multiple = true, takes_value = true)]
-    query: Vec<String>,
+    pub(crate) query: Vec<String>,
     /// Use only real postings rather than real and virtual
     #[structopt(long = "--real")]
-    real: bool,
+    pub(crate) real: bool,
+    #[structopt(short = "b", long = "begin", parse(try_from_str = date_parser))]
+    pub(crate) begin: Option<NaiveDate>,
+    #[structopt(short = "e", long = "end", parse(try_from_str = date_parser))]
+    pub(crate) end: Option<NaiveDate>,
+    #[structopt(short = "p", long = "period")]
+    period: Option<String>,
+    #[structopt(long = "now", parse(try_from_str = date_parser))]
+    now: Option<NaiveDate>,
+
     /// Ignore balance assertions
     #[structopt(long = "--no-balance-check")]
-    no_balance_check: bool,
+    pub(crate) no_balance_check: bool,
 
     /// TODO Date format
     #[structopt(long = "--date-format")]
@@ -103,7 +118,7 @@ struct CommonOpts {
 }
 
 pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
-    println!("{:?}", args);
+    // println!("{:?}", args);
     let mut possible_paths: Vec<String> = Vec::new();
     for i in 0..args.len() {
         if args[i] == "--init-file" {
@@ -159,8 +174,9 @@ pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
         }
     }
     let opt: Opt = Opt::from_iter(args.iter());
+
     // Print options
-    // println!("{:?}", opt.cmd);
+    println!("{:?}", opt.cmd);
     if let Err(e) = match opt.cmd {
         Command::Balance {
             options,
@@ -170,26 +186,13 @@ pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
             if options.force_color {
                 env::set_var("CLICOLOR_FORCE", "1");
             }
-            balance::execute(
-                options.input_file,
-                flat,
-                !no_total,
-                options.depth,
-                options.query,
-                options.real,
-                options.no_balance_check,
-            )
+            balance::execute(&options, flat, !no_total)
         }
         Command::Register(options) => {
             if options.force_color {
                 env::set_var("CLICOLOR_FORCE", "1");
             }
-            register::execute(
-                options.input_file,
-                options.query,
-                options.real,
-                options.no_balance_check,
-            )
+            register::execute(&options)
         }
         Command::Commodities(options) => {
             if options.force_color {
@@ -212,4 +215,53 @@ pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
         return Err(());
     }
     Ok(())
+}
+
+/// A parser for date expressions
+fn date_parser(date: &str) -> Result<NaiveDate, Error> {
+    lazy_static! {
+        static ref RE: Regex = Regex::new(r"(\d{4})[/-](\d\d?)$").unwrap();
+    }
+    if RE.is_match(date) {
+        let captures = RE.captures(date).unwrap();
+        Ok(NaiveDate::from_ymd(
+            captures.get(1).unwrap().as_str().parse::<i32>().unwrap(),
+            captures.get(2).unwrap().as_str().parse::<u32>().unwrap(),
+            1,
+        ))
+    } else {
+        match two_timer::parse(date, None) {
+            Ok((t1, _t2, _b)) => Ok(t1.date()),
+            Err(e) => {
+                eprintln!("{:?}", e);
+                Err(Error {
+                    message: vec![format!("Invalid date {}", date)
+                        .as_str()
+                        .bold()
+                        .bright_red()],
+                })
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn command_line_dates() {
+        assert_eq!(
+            date_parser("2010-5-3").unwrap(),
+            NaiveDate::from_ymd(2010, 5, 3)
+        );
+        assert_eq!(
+            date_parser("2010").unwrap(),
+            NaiveDate::from_ymd(2010, 1, 1)
+        );
+        assert_eq!(
+            date_parser("2010-09").unwrap(),
+            NaiveDate::from_ymd(2010, 9, 1)
+        );
+    }
 }

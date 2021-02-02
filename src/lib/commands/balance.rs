@@ -3,23 +3,19 @@ use std::path::PathBuf;
 
 use colored::Colorize;
 
-use crate::filter;
 use crate::models::{Account, Balance, HasName};
 use crate::parser::Tokenizer;
 use crate::Error;
+use crate::{filter, CommonOpts};
 use std::ops::Deref;
 use std::rc::Rc;
 
 /// Balance report
-pub fn execute(
-    path: PathBuf,
-    flat: bool,
-    show_total: bool,
-    depth: Option<usize>,
-    query: Vec<String>,
-    real: bool,
-    no_balance_check: bool,
-) -> Result<(), Error> {
+pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(), Error> {
+    // Get the options
+    let path: PathBuf = options.input_file.clone();
+    let depth = options.depth;
+    let no_balance_check = options.no_balance_check;
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
     let items = tokenizer.tokenize()?;
     let ledger = items.to_ledger(no_balance_check)?;
@@ -28,7 +24,7 @@ pub fn execute(
 
     for t in ledger.transactions.iter() {
         for p in t.postings_iter() {
-            if !filter::filter(&query, t, p, real) {
+            if !filter::filter(&options, t, p) {
                 continue;
             }
             let mut cur_bal = balances
