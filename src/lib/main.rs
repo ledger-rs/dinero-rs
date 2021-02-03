@@ -263,6 +263,7 @@ mod tests {
             date_parser("2010-09").unwrap(),
             NaiveDate::from_ymd(2010, 9, 1)
         );
+        assert!(date_parser("this is not a date").is_err());
     }
 
     #[test]
