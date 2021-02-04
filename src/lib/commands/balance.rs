@@ -3,10 +3,12 @@ use std::path::PathBuf;
 
 use colored::Colorize;
 
-use crate::models::{Account, Balance, HasName};
+use crate::models::{conversion, Account, Balance, Currency, HasName, Money};
 use crate::parser::Tokenizer;
 use crate::Error;
 use crate::{filter, CommonOpts};
+use chrono::Utc;
+use num::rational::Rational64;
 use std::ops::Deref;
 use std::rc::Rc;
 
@@ -85,6 +87,24 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
     }
 
     // Print the balances by account
+    let mut multipliers = HashMap::new();
+    if let Some(currency_string) = &options.exchange {
+        if let Ok(currency) = ledger.commodities.get(currency_string) {
+            multipliers = conversion(
+                currency.clone(),
+                Utc::now().naive_local().date(),
+                &ledger.prices,
+            );
+            let mut updated_balances = Vec::new();
+            for (acc, balance) in vec_balances.iter() {
+                updated_balances.push((
+                    acc.clone(),
+                    convert_balance(balance, &multipliers, currency),
+                ));
+            }
+            vec_balances = updated_balances;
+        }
+    }
 
     vec_balances.sort_by(|a, b| a.0.cmp(b.0));
     for (account, bal) in vec_balances.iter() {
@@ -121,11 +141,20 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
     // Print the total
     if show_total {
         // Calculate it
-        let total_balance = balances
+        let mut total_balance = balances
             .iter()
             .fold(Balance::new(), |acc, x| acc + x.1.to_owned());
         print!("{}", "--------------------");
-
+        if multipliers.len() > 0 {
+            total_balance = convert_balance(
+                &total_balance,
+                &multipliers,
+                ledger
+                    .commodities
+                    .get(options.exchange.as_ref().unwrap().as_str())
+                    .unwrap(),
+            );
+        }
         if total_balance.is_zero() {
             print!("\n{:>20}", "0");
         } else {
@@ -141,4 +170,25 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
 
     // We're done :)
     Ok(())
+}
+
+fn convert_balance(
+    balance: &Balance,
+    multipliers: &HashMap<Rc<Currency>, Rational64>,
+    currency: &Currency,
+) -> Balance {
+    let mut new_balance = Balance::new();
+    for (curr, money) in balance.iter() {
+        if let Some(mult) = multipliers.get(curr.clone().unwrap().as_ref()) {
+            new_balance = new_balance
+                + Money::Money {
+                    amount: money.get_amount() * mult.clone(),
+                    currency: Rc::new(currency.clone()),
+                }
+                .into()
+        } else {
+            new_balance = new_balance + money.clone().into();
+        }
+    }
+    new_balance
 }

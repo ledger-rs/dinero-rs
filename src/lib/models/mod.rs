@@ -8,6 +8,7 @@ pub use currency::Currency;
 pub use models::{ParsedPrice, Tag};
 pub use money::Money;
 pub use payee::Payee;
+pub use price::conversion;
 pub use price::{Price, PriceType};
 pub use transaction::{
     Cleared, Posting, PostingType, Transaction, TransactionStatus, TransactionType,
