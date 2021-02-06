@@ -262,14 +262,42 @@ fn cmp(this: &Option<Duration>, other: &Option<Duration>) -> Ordering {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use std::path::PathBuf;
-//
-//     #[test]
-//     fn test_parse_account() {
-//         let path = PathBuf::from("tests/demo.ledger");
-//         let mut tokenizer = Tokenizer::from(&path);
-//     }
-// }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::{Account, Balance};
+    use crate::parser::Tokenizer;
+    use chrono::Utc;
+    use std::ops::Deref;
+    use std::path::PathBuf;
+
+    #[test]
+    fn test_graph() {
+        // Copy from balance command
+        let path = PathBuf::from("tests/demo.ledger");
+        let mut tokenizer = Tokenizer::from(&path);
+        let items = tokenizer.tokenize().unwrap();
+        let ledger = items.to_ledger(false).unwrap();
+
+        let mut balances: HashMap<Rc<Account>, Balance> = HashMap::new();
+
+        for t in ledger.transactions.iter() {
+            for p in t.postings_iter() {
+                let mut cur_bal = balances
+                    .get(p.account.deref())
+                    .unwrap_or(&Balance::new())
+                    .to_owned();
+                cur_bal = cur_bal + Balance::from(p.amount.as_ref().unwrap().clone());
+                balances.insert(p.account.clone(), cur_bal.to_owned());
+            }
+        }
+
+        let currency = ledger.commodities.get("EUR").unwrap();
+        let multipliers = conversion(
+            currency.clone(),
+            Utc::now().naive_local().date(),
+            &ledger.prices,
+        );
+        assert_eq!(multipliers.len(), 4);
+    }
+}
