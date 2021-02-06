@@ -276,9 +276,9 @@ mod tests {
             "executable",
             "bal",
             "-f",
-            "tests/demo.ledger",
+            "examples/demo.ledger",
             "--init-file",
-            "tests/example_ledgerrc",
+            "examples/example_ledgerrc",
             "--real",
         ]
         .iter()
@@ -290,14 +290,14 @@ mod tests {
 
     #[test]
     #[should_panic(
-        expected = "Bad config file \"tests/example_bad_ledgerrc\"\nThis line should be a comment but isn\'t, it is bad on purpose."
+        expected = "Bad config file \"examples/example_bad_ledgerrc\"\nThis line should be a comment but isn\'t, it is bad on purpose."
     )]
     fn bad_ledgerrc() {
         let args: Vec<String> = vec![
             "executable",
             "bal",
             "--init-file",
-            "tests/example_bad_ledgerrc",
+            "examples/example_bad_ledgerrc",
         ]
         .iter()
         .map(|x| x.to_string())
@@ -306,14 +306,14 @@ mod tests {
     }
     #[test]
     #[should_panic(
-        expected = "Bad config file \"tests/example_bad_ledgerrc2\"\n- This does not parse either. And it shouldn't."
+        expected = "Bad config file \"examples/example_bad_ledgerrc2\"\n- This does not parse either. And it shouldn't."
     )]
     fn other_bad_ledgerrc() {
         let args: Vec<String> = vec![
             "executable",
             "bal",
             "--init-file",
-            "tests/example_bad_ledgerrc2",
+            "examples/example_bad_ledgerrc2",
         ]
         .iter()
         .map(|x| x.to_string())
