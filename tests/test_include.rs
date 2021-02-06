@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 #[test]
 fn test_include() {
-    let p1 = PathBuf::from("tests/include.ledger".to_string());
+    let p1 = PathBuf::from("examples/include.ledger".to_string());
     let mut tokenizer: Tokenizer = Tokenizer::from(&p1);
     let res = tokenizer.tokenize();
     assert!(res.is_ok());
@@ -12,7 +12,7 @@ fn test_include() {
 
 #[test]
 fn test_build_ledger_from_demo() {
-    let p1 = PathBuf::from("tests/demo.ledger".to_string());
+    let p1 = PathBuf::from("examples/demo.ledger".to_string());
     let mut tokenizer: Tokenizer = Tokenizer::from(&p1);
     let items = tokenizer.tokenize().unwrap();
     let ledger = items.to_ledger(false);
