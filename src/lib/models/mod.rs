@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use num::rational::Rational64;
+use num::rational::BigRational;
 
 pub use account::Account;
 pub use balance::Balance;
@@ -8,6 +8,7 @@ pub use currency::Currency;
 pub use models::{ParsedPrice, Tag};
 pub use money::Money;
 pub use payee::Payee;
+pub use price::conversion;
 pub use price::{Price, PriceType};
 pub use transaction::{
     Cleared, Posting, PostingType, Transaction, TransactionStatus, TransactionType,
@@ -16,6 +17,7 @@ pub use transaction::{
 use crate::models::transaction::Cost;
 use crate::parser::ParsedLedger;
 use crate::{Error, List};
+use num::BigInt;
 use std::rc::Rc;
 
 mod account;
@@ -53,6 +55,7 @@ impl Ledger {
         }
     }
 }
+
 impl ParsedLedger {
     /// Creates a proper ledger from a parsed ledger
     pub fn to_ledger(mut self, no_checks: bool) -> Result<Ledger, Error> {
@@ -107,16 +110,13 @@ impl ParsedLedger {
         for price in self.prices.iter() {
             prices.push(Price {
                 date: price.date,
-                commodity: Money::Money {
-                    amount: Rational64::new(1, 1),
-                    currency: self
-                        .commodities
-                        .get(price.commodity.as_str())
-                        .unwrap()
-                        .clone(),
-                },
+                commodity: self
+                    .commodities
+                    .get(price.commodity.as_str())
+                    .unwrap()
+                    .clone(),
                 price: Money::Money {
-                    amount: price.other_quantity,
+                    amount: price.other_quantity.clone(),
                     currency: self
                         .commodities
                         .get(price.other_commodity.as_str())
@@ -159,7 +159,7 @@ impl ParsedLedger {
                 if let Some(c) = &p.money_currency {
                     posting.amount = Some(Money::from((
                         self.commodities.get(&c.as_str()).unwrap().clone(),
-                        p.money_amount.unwrap(),
+                        p.money_amount.clone().unwrap(),
                     )));
                 }
                 if let Some(c) = &p.cost_currency {
@@ -169,30 +169,35 @@ impl ParsedLedger {
                         .unwrap();
                     let amount = Money::from((
                         self.commodities.get(c.as_str()).unwrap().clone(),
-                        p.cost_amount.unwrap(),
+                        p.cost_amount.clone().unwrap(),
                     ));
                     posting.cost = match p.cost_type.as_ref().unwrap() {
-                        PriceType::Total => Some(Cost::Total { amount }),
-                        PriceType::PerUnit => Some(Cost::PerUnit { amount }),
+                        PriceType::Total => Some(Cost::Total {
+                            amount: amount.clone(),
+                        }),
+                        PriceType::PerUnit => Some(Cost::PerUnit {
+                            amount: amount.clone(),
+                        }),
                     };
                     prices.push(Price {
                         date: transaction.date.unwrap(),
-                        commodity: match p.cost_type.as_ref().unwrap() {
-                            PriceType::Total => posting.amount.as_ref().unwrap().abs(),
-                            PriceType::PerUnit => {
-                                Money::from((posting_currency.clone(), Rational64::new(1, 1)))
-                            }
+                        commodity: posting_currency.clone(),
+                        price: Money::Money {
+                            amount: p.cost_amount.clone().unwrap()
+                                / match p.cost_type.as_ref().unwrap() {
+                                    PriceType::Total => {
+                                        posting.amount.as_ref().unwrap().get_amount()
+                                    }
+                                    PriceType::PerUnit => BigRational::from(BigInt::from(1)),
+                                },
+                            currency: amount.get_commodity().unwrap().clone(),
                         },
-                        price: Money::from((
-                            self.commodities.get(c.as_str()).unwrap().clone(),
-                            p.cost_amount.unwrap(),
-                        )),
                     })
                 }
                 if let Some(c) = &p.balance_currency {
                     posting.balance = Some(Money::from((
                         self.commodities.get(c.as_str()).unwrap().clone(),
-                        p.balance_amount.unwrap(),
+                        p.balance_amount.clone().unwrap(),
                     )));
                 }
                 match posting.kind {
@@ -234,10 +239,17 @@ impl ParsedLedger {
             };
             if balance.len() == 2 {
                 let vec = balance.iter().map(|(_, x)| x.abs()).collect::<Vec<Money>>();
+
+                let commodity = vec[0].get_commodity().unwrap().clone();
+                let price = Money::Money {
+                    amount: vec[1].get_amount() / vec[0].get_amount(),
+                    currency: vec[1].get_commodity().unwrap().clone(),
+                };
+
                 prices.push(Price {
                     date,
-                    commodity: vec[0].clone(),
-                    price: vec[1].clone(),
+                    commodity,
+                    price,
                 });
             }
         }
