@@ -99,6 +99,7 @@ pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Account, ParserError> {
 mod tests {
     use super::*;
     use crate::models::HasName;
+    use crate::List;
 
     #[test]
     fn test_spaces_in_account_names() {
@@ -109,16 +110,37 @@ mod tests {
 
     #[test]
     fn test_parse_account() {
-        let mut tokenizer = Tokenizer::from("account Assets:Checking account
+        let mut tokenizer = Tokenizer::from(
+            "account Assets:Checking account
     alias checking
     note An account for everyday expenses
     ; this line will be ignored
     alias checking account
     isin 123456789
     payee Employer
-    ".to_string());
-    let account = parse(&mut tokenizer).unwrap();
-    assert!(!account.default, "Not a default account");
-    assert_eq!(account.get_name(), "Assets:Checking account");
+    "
+            .to_string(),
+        );
+        let account = parse(&mut tokenizer).unwrap();
+        assert!(!account.default, "Not a default account");
+        assert_eq!(account.get_name(), "Assets:Checking account");
+    }
+
+    #[test]
+    fn get_account_from_alias() {
+        let mut tokenizer = Tokenizer::from(
+            "account Assets:MyAccount
+    alias myAccount
+    "
+            .to_string(),
+        );
+        let account = parse(&mut tokenizer).unwrap();
+        assert!(!account.default, "Not a default account");
+        assert_eq!(account.get_name(), "Assets:MyAccount");
+
+        let mut accounts = List::<Account>::new();
+        accounts.insert(account);
+
+        assert!(accounts.get("myAccount").is_ok())
     }
 }
