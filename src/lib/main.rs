@@ -273,7 +273,7 @@ mod tests {
     #[test]
     fn test_balance() {
         let args: Vec<String> = vec![
-            "executable",
+            "testing",
             "bal",
             "-f",
             "examples/demo.ledger",
@@ -294,7 +294,7 @@ mod tests {
     )]
     fn bad_ledgerrc() {
         let args: Vec<String> = vec![
-            "executable",
+            "testing",
             "bal",
             "--init-file",
             "examples/example_bad_ledgerrc",
