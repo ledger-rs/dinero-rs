@@ -91,6 +91,10 @@ pub struct CommonOpts {
     #[structopt(long = "--no-balance-check")]
     pub(crate) no_balance_check: bool,
 
+    /// Display the report in the selected currency
+    #[structopt(short = "-X")]
+    pub(crate) exchange: Option<String>,
+
     /// TODO Date format
     #[structopt(long = "--date-format")]
     date_format: Option<String>,

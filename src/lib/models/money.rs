@@ -4,11 +4,12 @@ use std::ops::{Add, Mul, Neg};
 use std::rc::Rc;
 
 use num;
-use num::rational::Rational64;
-use num::{Signed, Zero};
+use num::rational::BigRational;
+use num::{BigInt, Signed, Zero};
 
 use crate::models::balance::Balance;
 use crate::models::{Currency, HasName};
+use std::str::FromStr;
 
 /// Money representation: an amount and a currency
 ///
@@ -19,21 +20,22 @@ use crate::models::{Currency, HasName};
 /// # Examples
 /// ```rust
 /// # use dinero::models::{Money, Balance, Currency};
-/// # use num::rational::Rational64;
+/// # use num::rational::BigRational;
 /// # use std::rc::Rc;
+/// use num::BigInt;
 /// #
 /// let usd = Rc::new(Currency::from("usd"));
 /// let eur = Rc::new(Currency::from("eur"));
 ///
 /// let zero = Money::new();
-/// let m1 = Money::from((eur.clone(), Rational64::new(100,1)));
-/// let m2 = Money::from((eur.clone(), Rational64::new(200,1)));
-/// # let m3 = Money::from((eur.clone(), Rational64::new(300,1)));
+/// let m1 = Money::from((eur.clone(), BigRational::from(BigInt::from(100))));
+/// let m2 = Money::from((eur.clone(), BigRational::from(BigInt::from(200))));
+/// # let m3 = Money::from((eur.clone(), BigRational::from(BigInt::from(300))));
 /// let b1 = m1.clone() + m2; // 300 euros
 /// # assert_eq!(*b1.balance.get(&Some(eur.clone())).unwrap(), m3);
 ///
 /// // Multicurrency works as well
-/// let d1 = Money::from((usd.clone(), Rational64::new(50,1)));
+/// let d1 = Money::from((usd.clone(), BigRational::from(BigInt::from(50))));
 /// let b2 = d1.clone() + m1.clone(); // 100 euros and 50 usd
 /// # assert_eq!(b2.balance.len(), 2);
 /// # assert_eq!(*b2.balance.get(&Some(eur.clone())).unwrap(), m1);
@@ -43,7 +45,7 @@ use crate::models::{Currency, HasName};
 pub enum Money {
     Zero,
     Money {
-        amount: num::rational::Rational64,
+        amount: num::rational::BigRational,
         currency: Rc<Currency>,
     },
 }
@@ -76,9 +78,9 @@ impl Money {
             Money::Money { currency, .. } => Some(currency.clone()),
         }
     }
-    pub fn get_amount(&self) -> Rational64 {
+    pub fn get_amount(&self) -> BigRational {
         match self {
-            Money::Zero => Rational64::new(0, 1),
+            Money::Zero => BigRational::new(BigInt::from(0), BigInt::from(1)),
             Money::Money { amount, .. } => amount.clone(),
         }
     }
@@ -95,8 +97,39 @@ impl Display for Money {
         match self {
             Money::Zero => write!(f, "{}", "0"),
             Money::Money { amount, currency } => {
-                let value = amount.numer().clone() as f64 / amount.denom().clone() as f64;
-                write!(f, "{} {}", value, currency.get_name())
+                // num = trunc + fract
+                let decimals: usize = currency.get_precision();
+                let base: i32 = 10;
+                let mut integer_part = amount.trunc();
+                let decimal_part = (amount.fract() * BigInt::from(base.pow(decimals as u32 + 2)))
+                    .abs()
+                    .trunc();
+                let mut decimal_str =
+                    format!("{:0width$}", decimal_part.numer(), width = decimals + 2);
+                decimal_str.truncate(decimals + 1);
+
+                let mut decimal = if u64::from_str(&decimal_str).unwrap() % 10 >= 5 {
+                    u64::from_str(&decimal_str).unwrap() / 10 + 1
+                } else {
+                    u64::from_str(&decimal_str).unwrap() / 10
+                };
+                let len = format!("{}", decimal).len();
+                if len == decimals + 1 {
+                    decimal = 0;
+                    if integer_part.is_positive() {
+                        integer_part += BigInt::from(1);
+                    } else {
+                        integer_part -= BigInt::from(1);
+                    }
+                }
+                decimal_str = format!("{:0width$}", decimal, width = decimals);
+                write!(
+                    f,
+                    "{}.{} {}",
+                    integer_part.numer(),
+                    decimal_str,
+                    currency.get_name()
+                )
             }
         }
     }
@@ -125,10 +158,10 @@ impl PartialEq for Money {
     }
 }
 
-impl Mul<Rational64> for Money {
+impl Mul<BigRational> for Money {
     type Output = Money;
 
-    fn mul(self, rhs: Rational64) -> Self::Output {
+    fn mul(self, rhs: BigRational) -> Self::Output {
         match self {
             Money::Zero => Money::new(),
             Money::Money { amount, currency } => Money::from((currency, amount * rhs)),
@@ -136,15 +169,15 @@ impl Mul<Rational64> for Money {
     }
 }
 
-impl From<(Rc<Currency>, Rational64)> for Money {
-    fn from(cur_amount: (Rc<Currency>, Rational64)) -> Self {
+impl From<(Rc<Currency>, BigRational)> for Money {
+    fn from(cur_amount: (Rc<Currency>, BigRational)) -> Self {
         let (currency, amount) = cur_amount;
         Money::Money { amount, currency }
     }
 }
 
-impl From<(Currency, Rational64)> for Money {
-    fn from(cur_amount: (Currency, Rational64)) -> Self {
+impl From<(Currency, BigRational)> for Money {
+    fn from(cur_amount: (Currency, BigRational)) -> Self {
         let (currency, amount) = cur_amount;
         Money::Money {
             amount,

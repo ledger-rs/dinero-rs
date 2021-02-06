@@ -2,12 +2,13 @@ use std::str::FromStr;
 
 use chrono::NaiveDate;
 use lazy_static::lazy_static;
-use num::rational::Rational64;
+use num::rational::BigRational;
 use regex::Regex;
 
 use crate::models::ParsedPrice;
 use crate::parser::{chars, Tokenizer};
 use crate::ParserError;
+use num::BigInt;
 
 pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<ParsedPrice, ParserError> {
     lazy_static! {
@@ -32,7 +33,7 @@ pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<ParsedPrice, ParserErro
     let mut date: NaiveDate = NaiveDate::from_num_days_from_ce(0);
     let mut commodity: String = String::new();
     let mut other_commodity: String = String::new();
-    let mut other_quantity: Rational64 = Rational64::from_integer(1);
+    let mut other_quantity: BigRational = BigRational::from_integer(BigInt::from(1));
 
     for (i, cap) in caps.iter().enumerate() {
         match cap {
@@ -73,7 +74,7 @@ pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<ParsedPrice, ParserErro
     })
 }
 
-fn parse_amount(input: &str) -> Result<Rational64, ParserError> {
+fn parse_amount(input: &str) -> Result<BigRational, ParserError> {
     let mut num = String::new();
     let mut den = "1".to_string();
     let mut decimal = false;
@@ -97,8 +98,8 @@ fn parse_amount(input: &str) -> Result<Rational64, ParserError> {
             _ => break,
         }
     }
-    Ok(Rational64::new(
-        match i64::from_str(num.as_str()) {
+    Ok(BigRational::new(
+        match BigInt::from_str(num.as_str()) {
             Ok(n) => n,
             Err(_) => {
                 return Err(ParserError::UnexpectedInput(Some(
@@ -106,7 +107,7 @@ fn parse_amount(input: &str) -> Result<Rational64, ParserError> {
                 )))
             }
         },
-        match i64::from_str(den.as_str()) {
+        match BigInt::from_str(den.as_str()) {
             Ok(d) => d,
             Err(_) => return Err(ParserError::UnexpectedInput(None)),
         },
