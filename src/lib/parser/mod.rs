@@ -53,6 +53,7 @@ impl ParsedLedger {
         self.transactions.append(&mut other.transactions);
         self.comments.append(&mut other.comments);
         self.transactions.append(&mut other.transactions);
+        self.prices.append(&mut other.prices);
     }
 
     pub fn len(&self) -> usize {
@@ -130,7 +131,9 @@ impl<'a> Tokenizer<'a> {
                     Some(c) => match c {
                         ';' | '!' | '*' | '%' | '#' => ledger.comments.push(comment::parse(self)),
                         c if c.is_numeric() => ledger.transactions.push(transaction::parse(self)?),
-                        '=' => ledger.transactions.push(transaction::parse_automated_transaction(self)?),
+                        '=' => ledger
+                            .transactions
+                            .push(transaction::parse_automated_transaction(self)?),
                         'i' => {
                             // This is the special case
                             let mut new_ledger = include::parse(self)?;
@@ -246,7 +249,12 @@ impl<'a> Tokenizer<'a> {
 
     pub fn next(&mut self) -> char {
         if self.position >= self.content.len() {
-            eprintln!("{}", self.error(ParserError::UnexpectedInput(Some("end of file".to_string()))));
+            eprintln!(
+                "{}",
+                self.error(ParserError::UnexpectedInput(Some(
+                    "end of file".to_string()
+                )))
+            );
             panic!();
         }
         let c: char = self.content[self.position];

@@ -46,6 +46,6 @@ fn include_glob() {
         .unwrap()
         .args(&["prices", "-f", "examples/include.ledger"])
         .assert();
-    let mut output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
     assert!(output.lines().into_iter().count() > 100);
 }
