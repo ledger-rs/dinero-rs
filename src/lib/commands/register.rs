@@ -35,7 +35,7 @@ pub fn execute(options: &CommonOpts) -> Result<(), Error> {
     };
     for t in ledger.transactions.iter() {
         let mut counter = 0;
-        for p in t.postings.iter() {
+        for p in t.postings_iter() {
             if !filter::filter(&options, t, p) {
                 continue;
             }

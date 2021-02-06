@@ -105,7 +105,7 @@ impl<PostingType> Transaction<PostingType> {
             transaction_type: t_type,
         }
     }
-    /// Iterator over all the postings
+    /// Iterator over all the postings, including the virtual ones
     pub fn postings_iter(
         &self,
     ) -> Chain<Chain<Iter<'_, PostingType>, Iter<'_, PostingType>>, Iter<'_, PostingType>> {

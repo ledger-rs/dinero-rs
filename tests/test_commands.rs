@@ -56,3 +56,25 @@ fn commodity_alias() {
     }
     assert_eq!(outputs[0], outputs[1], "output mismatch");
 }
+
+#[test]
+/// Check that the register report is showing virtual postings
+fn virtual_postings() {
+    let assert_1 = Command::cargo_bin("dinero")
+        .unwrap()
+        .args(&["reg", "-f", "examples/virtual_postings.ledger"])
+        .assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    assert_eq!(output.lines().into_iter().count(), 7);
+}
+
+#[test]
+/// Check that the virtual postings are being filtered out
+fn real_filter() {
+    let assert_1 = Command::cargo_bin("dinero")
+        .unwrap()
+        .args(&["reg", "-f", "examples/virtual_postings.ledger", "--real"])
+        .assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    assert_eq!(output.lines().into_iter().count(), 4);
+}
