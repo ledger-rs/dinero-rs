@@ -5,7 +5,8 @@ use crate::parser::{chars, Tokenizer};
 use crate::{Error, ParserError};
 use chrono::NaiveDate;
 use lazy_static::lazy_static;
-use num::rational::Rational64;
+use num::rational::BigRational;
+use num::BigInt;
 use regex::Regex;
 use std::str::FromStr;
 
@@ -123,12 +124,12 @@ pub(crate) fn parse_generic<'a>(
 #[derive(Debug, Clone)]
 pub struct Posting {
     pub account: String,
-    pub money_amount: Option<Rational64>,
+    pub money_amount: Option<BigRational>,
     pub money_currency: Option<String>,
-    pub cost_amount: Option<Rational64>,
+    pub cost_amount: Option<BigRational>,
     pub cost_currency: Option<String>,
     pub cost_type: Option<PriceType>,
-    pub balance_amount: Option<Rational64>,
+    pub balance_amount: Option<BigRational>,
     pub balance_currency: Option<String>,
     pub comments: Vec<Comment>,
     pub amount_expr: Option<String>,
@@ -287,9 +288,9 @@ fn parse_posting(
     Ok(posting)
 }
 
-fn parse_money(tokenizer: &mut Tokenizer) -> Result<(Rational64, String), ParserError> {
+fn parse_money(tokenizer: &mut Tokenizer) -> Result<(BigRational, String), ParserError> {
     let currency: String;
-    let amount: Rational64;
+    let amount: BigRational;
 
     match tokenizer.get_char() {
         Some(c) if c.is_numeric() | (c == '.') | (c == '-') => {
@@ -321,7 +322,7 @@ fn parse_money(tokenizer: &mut Tokenizer) -> Result<(Rational64, String), Parser
     Ok((amount, currency))
 }
 
-fn parse_amount(tokenizer: &mut Tokenizer) -> Result<Rational64, ParserError> {
+fn parse_amount(tokenizer: &mut Tokenizer) -> Result<BigRational, ParserError> {
     let mut num = String::new();
     let mut den = "1".to_string();
     let mut decimal = false;
@@ -347,8 +348,8 @@ fn parse_amount(tokenizer: &mut Tokenizer) -> Result<Rational64, ParserError> {
         tokenizer.position += 1;
         tokenizer.line_position += 1;
     }
-    Ok(Rational64::new(
-        match i64::from_str(num.as_str()) {
+    Ok(BigRational::new(
+        match BigInt::from_str(num.as_str()) {
             Ok(n) => n,
             Err(_) => {
                 // eprintln!("I fail here 341.");
@@ -357,7 +358,7 @@ fn parse_amount(tokenizer: &mut Tokenizer) -> Result<Rational64, ParserError> {
                 )));
             }
         },
-        match i64::from_str(den.as_str()) {
+        match BigInt::from_str(den.as_str()) {
             Ok(d) => d,
             Err(_) => return Err(ParserError::UnexpectedInput(None)),
         },

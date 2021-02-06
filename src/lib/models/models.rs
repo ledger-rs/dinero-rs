@@ -1,13 +1,13 @@
 use crate::models::HasName;
 use chrono::NaiveDate;
-use num::rational::Rational64;
+use num::rational::BigRational;
 
 #[derive(Debug, Clone)]
 pub struct ParsedPrice {
     pub(crate) date: NaiveDate,
     pub(crate) commodity: String,
     pub(crate) other_commodity: String,
-    pub(crate) other_quantity: Rational64,
+    pub(crate) other_quantity: BigRational,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
