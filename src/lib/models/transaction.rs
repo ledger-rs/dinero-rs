@@ -5,11 +5,12 @@ use std::rc::Rc;
 use std::slice::Iter;
 
 use chrono::NaiveDate;
-use num::rational::Rational64;
+use num::rational::BigRational;
 
 use crate::models::balance::Balance;
 use crate::models::{Account, Comment, HasName, Money};
 use crate::LedgerError;
+use num::BigInt;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
@@ -136,18 +137,18 @@ fn total_balance(postings: &Vec<Posting>) -> Balance {
                         Money::Money { currency, .. } => currency,
                     };
                     let units = match amount {
-                        Money::Zero => Rational64::new(0, 1),
+                        Money::Zero => BigRational::new(BigInt::from(0), BigInt::from(1)),
                         Money::Money { amount, .. } => amount.clone(),
                     } * match p.amount.as_ref().unwrap() {
-                        Money::Zero => Rational64::new(0, 1),
+                        Money::Zero => BigRational::new(BigInt::from(0), BigInt::from(1)),
                         Money::Money { amount, .. } => amount.clone(),
                     };
                     let money = Money::Money {
                         amount: units
                             * (if p.amount.as_ref().unwrap().is_negative() {
-                                -1
+                                -BigInt::from(1)
                             } else {
-                                1
+                                BigInt::from(1)
                             }),
                         currency: currency.clone(),
                     };
@@ -238,10 +239,10 @@ impl Transaction<Posting> {
                                     Money::Money { currency, .. } => currency,
                                 };
                                 let units = match amount {
-                                    Money::Zero => Rational64::new(0, 1),
+                                    Money::Zero => BigRational::from(BigInt::from(0)),
                                     Money::Money { amount, .. } => amount.clone(),
                                 } * match p.amount.as_ref().unwrap() {
-                                    Money::Zero => Rational64::new(0, 1),
+                                    Money::Zero => BigRational::from(BigInt::from(0)),
                                     Money::Money { amount, .. } => amount.clone(),
                                 };
                                 let money = Money::Money {
@@ -264,7 +265,7 @@ impl Transaction<Posting> {
             } else if &p.balance.is_some() & !skip_balance_check {
                 // There is a balance
                 let balance = p.balance.as_ref().unwrap();
-                
+
                 // update the amount
                 let account_bal = balances.get(p.account.deref()).unwrap().clone();
                 let amount_bal = Balance::from(balance.clone()) - account_bal;

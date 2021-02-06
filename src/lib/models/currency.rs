@@ -53,6 +53,11 @@ pub struct Currency {
     pub(crate) format: Option<String>,
     pub(crate) default: bool,
 }
+impl Currency {
+    pub fn get_precision(&self) -> usize {
+        2 as usize
+    }
+}
 
 impl Display for Currency {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {

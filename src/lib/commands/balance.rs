@@ -8,7 +8,7 @@ use crate::parser::Tokenizer;
 use crate::Error;
 use crate::{filter, CommonOpts};
 use chrono::Utc;
-use num::rational::Rational64;
+use num::rational::BigRational;
 use std::ops::Deref;
 use std::rc::Rc;
 
@@ -174,7 +174,7 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
 
 fn convert_balance(
     balance: &Balance,
-    multipliers: &HashMap<Rc<Currency>, Rational64>,
+    multipliers: &HashMap<Rc<Currency>, BigRational>,
     currency: &Currency,
 ) -> Balance {
     let mut new_balance = Balance::new();

@@ -1,6 +1,7 @@
 use crate::models::{Currency, HasName, Money};
 use chrono::{Duration, NaiveDate};
-use num::rational::Rational64;
+use num::rational::BigRational;
+use num::BigInt;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt;
@@ -11,28 +12,19 @@ use std::rc::Rc;
 #[derive(Debug, Clone)]
 pub struct Price {
     pub date: NaiveDate,
-    pub commodity: Money,
+    pub commodity: Rc<Currency>,
     pub price: Money,
 }
 
 impl Price {
     pub fn get_price(&self) -> Money {
-        Money::Money {
-            currency: self.price.get_commodity().unwrap(),
-            amount: self.price.get_amount() / self.commodity.get_amount(),
-        }
+        self.price.clone()
     }
 }
 
 impl Display for Price {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{} {} {}",
-            self.date,
-            self.commodity.get_commodity().unwrap(),
-            self.get_price()
-        )
+        write!(f, "{} {} {}", self.date, self.commodity, self.get_price())
     }
 }
 
@@ -68,7 +60,7 @@ pub fn conversion(
     currency: Rc<Currency>,
     date: NaiveDate,
     prices: &Vec<Price>,
-) -> HashMap<Rc<Currency>, Rational64> {
+) -> HashMap<Rc<Currency>, BigRational> {
     // Build the graph
     let source = Node {
         currency: currency.clone(),
@@ -119,16 +111,18 @@ pub fn conversion(
     // Return not the paths but the multipliers
     let mut multipliers = HashMap::new();
     for (k, v) in paths.iter() {
-        let mut mult = Rational64::new(1, 1);
-        let currency = k.currency.clone();
-        for edge in v.iter() {
+        let mut mult = BigRational::new(BigInt::from(1), BigInt::from(1));
+        let mut currency = k.currency.clone();
+        for edge in v.iter().rev() {
             if currency == edge.from.currency {
                 mult *= edge.price.get_price().get_amount();
+                currency = edge.to.currency.clone();
             } else {
                 mult /= edge.price.get_price().get_amount();
+                currency = edge.from.currency.clone();
             }
         }
-        multipliers.insert(currency, mult);
+        multipliers.insert(k.currency.clone(), mult);
     }
     multipliers
 }
@@ -175,19 +169,12 @@ impl Graph {
             if p.date > source.date {
                 continue;
             };
-            let commodities = if p.price.get_commodity().unwrap().get_name()
-                < p.commodity.get_commodity().unwrap().get_name()
-            {
-                (
-                    p.price.get_commodity().unwrap(),
-                    p.commodity.get_commodity().unwrap(),
-                )
-            } else {
-                (
-                    p.commodity.get_commodity().unwrap(),
-                    p.price.get_commodity().unwrap(),
-                )
-            };
+            let commodities =
+                if p.price.get_commodity().unwrap().get_name() < p.commodity.as_ref().get_name() {
+                    (p.price.get_commodity().unwrap(), p.commodity.clone())
+                } else {
+                    (p.commodity.clone(), p.price.get_commodity().unwrap())
+                };
             match prices_nodup.get(&commodities) {
                 None => {
                     prices_nodup.insert(commodities.clone(), p.clone());
@@ -224,10 +211,7 @@ impl Graph {
             );
         }
         for (_, p) in prices_nodup.iter() {
-            let from = nodes
-                .get(p.commodity.get_commodity().unwrap().as_ref())
-                .unwrap()
-                .clone();
+            let from = nodes.get(p.commodity.as_ref()).unwrap().clone();
             let to = nodes
                 .get(p.price.get_commodity().unwrap().as_ref())
                 .unwrap()
