@@ -1,5 +1,6 @@
 use dinero::parser::Tokenizer;
 
+use assert_cmd::Command;
 use std::path::PathBuf;
 
 #[test]
@@ -36,4 +37,15 @@ fn test_fail() {
     // But to a wrong ledger
     let ledger = parsed.unwrap().to_ledger(false);
     assert!(ledger.is_err());
+}
+
+#[test]
+/// Test whether glob expressions in include are working
+fn include_glob() {
+    let assert_1 = Command::cargo_bin("dinero")
+        .unwrap()
+        .args(&["prices", "-f", "examples/include.ledger"])
+        .assert();
+    let mut output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    assert!(output.lines().into_iter().count() > 100);
 }

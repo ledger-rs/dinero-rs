@@ -19,3 +19,5 @@ include demo.ledger
 2021-01-27 * ACME, inc.
     Income:Salary     $-100
     Assets:Checking account
+
+include quotes/*.dat
