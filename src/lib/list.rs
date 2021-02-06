@@ -75,7 +75,7 @@ impl<'a, T: Eq + Hash + HasName + Clone + FromDirective + HasAliases + Debug> Li
     }
     pub fn get(&self, index: &str) -> Result<&Rc<T>, LedgerError> {
         match self.list.get(&index.to_lowercase()) {
-            None => match self.aliases.get(index) {
+            None => match self.aliases.get(&index.to_lowercase()) {
                 None => Err(LedgerError::AliasNotInList(format!(
                     "{} {:?} not found",
                     std::any::type_name::<T>(),
