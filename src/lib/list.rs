@@ -6,7 +6,15 @@ use std::rc::Rc;
 
 use crate::models::{FromDirective, HasAliases, HasName};
 use crate::LedgerError;
-
+/// A list of things with aliases
+///
+/// This structure is used to hold master elements of the ledger than can be aliases such as
+/// commodities or accounts
+///
+/// It provides methods for:
+/// - Adding new elements to the list
+/// - Adding new aliases to existing elements
+/// - Retrieving elements
 #[derive(Debug, Clone)]
 pub struct List<T> {
     aliases: HashMap<String, String>,
@@ -26,21 +34,24 @@ impl<'a, T: Eq + Hash + HasName + Clone + FromDirective + HasAliases + Debug> Li
         List { aliases, list }
     }
 
+    /// Inserts an ```element``` in the list
     pub fn insert(&mut self, element: T) {
-        let found = self.list.get(element.get_name());
+        let found = self.list.get(&element.get_name().to_lowercase());
         match found {
             Some(_) => (), // do nothing
             None => {
-                let name = element.get_name().to_string();
+                // Change the name which will be used as key to lowercase
+                let name = element.get_name().to_string().to_lowercase();
                 for alias in element.get_aliases().iter() {
-                    self.aliases.insert(alias.clone(), name.clone());
+                    self.aliases.insert(alias.to_lowercase(), name.clone());
                 }
                 self.list.insert(name.clone(), Rc::new(element));
             }
         }
     }
+    /// Add an alias
     pub fn add_alias(&mut self, alias: String, for_element: &'a T) {
-        let element = self.aliases.get(&alias);
+        let element = self.aliases.get(&alias.to_lowercase());
         match element {
             Some(x) => panic!(
                 "Repeated alias {} for {} and {}",
@@ -50,20 +61,20 @@ impl<'a, T: Eq + Hash + HasName + Clone + FromDirective + HasAliases + Debug> Li
             ),
             None => {
                 self.aliases
-                    .insert(alias, for_element.get_name().to_string());
+                    .insert(alias.to_lowercase(), for_element.get_name().to_lowercase());
             }
         }
         ()
     }
 
     pub fn element_in_list(&self, element: &T) -> bool {
-        match self.aliases.get(element.get_name()) {
+        match self.aliases.get(&element.get_name().to_lowercase()) {
             None => false,
             Some(_) => true,
         }
     }
     pub fn get(&self, index: &str) -> Result<&Rc<T>, LedgerError> {
-        match self.list.get(index) {
+        match self.list.get(&index.to_lowercase()) {
             None => match self.aliases.get(index) {
                 None => Err(LedgerError::AliasNotInList(format!(
                     "{} {:?} not found",
