@@ -25,7 +25,7 @@ fn date_filters() {
     assert_eq!(output.lines().into_iter().count(), 13);
 }
 
-/// A test for issue 18
+/// A test for [issue 18](https://github.com/frosklis/dinero-rs/issues/18)
 #[test]
 fn exchange() {
     let mut outputs = Vec::new();
@@ -39,4 +39,20 @@ fn exchange() {
     for i in 1..100 {
         assert_eq!(outputs[i], outputs[0], "output mismatch");
     }
+}
+
+/// A test for [issue 17](https://github.com/frosklis/dinero-rs/issues/17)
+/// the aliases should not care about uppercase / lowercase
+#[test]
+fn commodity_alias() {
+    let mut outputs = Vec::new();
+    let aliases = vec!["EUR", "eur"];
+    for alias in aliases {
+        let assert = Command::cargo_bin("dinero")
+            .unwrap()
+            .args(&["bal", "-f", "tests/demo.ledger", "-X", alias])
+            .assert();
+        outputs.push(String::from_utf8(assert.get_output().to_owned().stdout).unwrap());
+    }
+    assert_eq!(outputs[0], outputs[1], "output mismatch");
 }
