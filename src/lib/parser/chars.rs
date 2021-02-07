@@ -75,6 +75,7 @@ pub(super) fn get_line(tokenizer: &mut Tokenizer) -> String {
     }
     retval.iter().collect()
 }
+
 /// Returns a word (whatever is between spaces)
 pub(super) fn get_string(tokenizer: &mut Tokenizer) -> String {
     consume_whitespaces(tokenizer);
@@ -86,14 +87,17 @@ pub(super) fn get_string(tokenizer: &mut Tokenizer) -> String {
         } else if *c == '"' {
             if retval.len() == 0 {
                 quote = true
-            } else if quote {tokenizer.position += 1;
+            } else if quote {
+                tokenizer.position += 1;
                 tokenizer.line_position += 1;
                 break;
             }
-        } else if (c.is_whitespace() | c.is_numeric() | (*c == '.') | (*c == '-')) & !quote {
+        } else if (c.is_whitespace() | c.is_numeric() | (*c == '.') | (*c == '-') | (*c == ';'))
+            & !quote
+        {
             break;
         } else {
-        retval.push(*c);
+            retval.push(*c);
         }
         tokenizer.position += 1;
         tokenizer.line_position += 1;

@@ -51,7 +51,7 @@ fn include_glob() {
 }
 
 #[test]
-fn test_comment_no_spaces() {
+fn comment_no_spaces() {
     let mut tokenizer: Tokenizer = Tokenizer::from(
         "
 2000-01-01 * Sell shares
@@ -65,7 +65,7 @@ fn test_comment_no_spaces() {
     assert!(ledger.is_ok());
 }
 #[test]
-fn test_comment_spaces() {
+fn comment_spaces() {
     let mut tokenizer: Tokenizer = Tokenizer::from(
         "
 2000-01-01 * Sell shares
