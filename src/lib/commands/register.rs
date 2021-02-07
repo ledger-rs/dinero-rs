@@ -25,7 +25,7 @@ pub fn execute(options: &CommonOpts) -> Result<(), Error> {
     let w_date: usize = 11;
     let mut w_amount: usize = 21;
     let mut w_balance: usize = 21;
-    let w_description: usize = 34;
+    let w_description: usize = 42;
     let w_account: usize = if w_date + w_description + w_amount + w_balance >= width {
         w_amount = 17;
         w_balance = 17;
@@ -74,14 +74,16 @@ pub fn execute(options: &CommonOpts) -> Result<(), Error> {
                     width = w_amount
                 ),
             }
-            for (i, (_, money)) in balance.iter().enumerate() {
-                if i > 0 {
+            let mut  more_than_one_line:bool = false;
+            for (_, money) in balance.iter() {
+                if more_than_one_line {
                     print!(
                         "{:width$}",
                         "",
                         width = w_date + w_description + w_account + w_amount
                     );
                 }
+                more_than_one_line = true;
                 match money.is_positive() {
                     true => println!("{:>width$}", format!("{}", money), width = w_balance),
                     false => println!("{:>width$}", format!("{}", money).red(), width = w_balance),
