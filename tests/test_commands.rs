@@ -1,5 +1,5 @@
 use assert_cmd::Command;
-
+use dinero::run_app;
 #[test]
 fn date_filters() {
     let assert_1 = Command::cargo_bin("dinero")
@@ -77,4 +77,17 @@ fn real_filter() {
         .assert();
     let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
     assert_eq!(output.lines().into_iter().count(), 4);
+
+    let args: Vec<String> = vec![
+        "testing",
+        "reg",
+        "-f",
+        "examples/virtual_postings.ledger",
+        "--real",
+    ]
+    .iter()
+    .map(|x| x.to_string())
+    .collect();
+    let res = run_app(args);
+    assert!(res.is_ok());
 }
