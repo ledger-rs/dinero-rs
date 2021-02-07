@@ -30,7 +30,14 @@ fn date_filters() {
 fn exchange() {
     let mut outputs = Vec::new();
     for _ in 0..100 {
-        let args = &["bal", "-f", "examples/demo.ledger", "-X", "EUR"];
+        let args = &[
+            "bal",
+            "-f",
+            "examples/demo.ledger",
+            "-X",
+            "EUR",
+            "--force-color",
+        ];
         let assert = Command::cargo_bin("dinero").unwrap().args(args).assert();
         outputs.push(String::from_utf8(assert.get_output().to_owned().stdout).unwrap());
         test_args(args);
