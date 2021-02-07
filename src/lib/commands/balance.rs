@@ -38,8 +38,6 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
         }
     }
 
-    // Remove the ones with balance zero
-
     // For printing this out, take into account whether it is a flat report or not
     // if it is not, the parent balances have to be updated
     let mut vec_balances: Vec<(&str, Balance)>;
@@ -47,7 +45,6 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
     let mut new_balances = HashMap::new();
     let mut vec: Vec<String>;
     if !flat {
-        // vec_balances = complete_balance(&balances);
         for (acc, bal) in balances.iter() {
             let mut pattern = "".to_string();
             for part in acc.get_name().split(":") {
@@ -66,7 +63,7 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
 
         for account in vec.iter() {
             let mut prefix = account.clone();
-            prefix.push(':'); // It is important to add this see issue #8
+            prefix.push(':'); // It is important to add this see [issue #8](https://github.com/frosklis/dinero-rs/issues/8)
             let balance = new_balances
                 .iter()
                 .filter(|x| (x.0 == account) | x.0.starts_with(&prefix))
@@ -139,7 +136,7 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
     }
 
     // Print the total
-    if show_total {
+    if show_total & (vec_balances.len() > 1) {
         // Calculate it
         let mut total_balance = balances
             .iter()
