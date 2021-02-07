@@ -49,3 +49,32 @@ fn include_glob() {
     let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
     assert!(output.lines().into_iter().count() > 100);
 }
+
+#[test]
+fn comment_no_spaces() {
+    let mut tokenizer: Tokenizer = Tokenizer::from(
+        "
+2000-01-01 * Sell shares
+    Assets:Shares      -3.25 ACME @@ 326 USD;@ 100 USD
+    Assets:Checking     326 USD
+        "
+        .to_string(),
+    );
+    let items = tokenizer.tokenize().unwrap();
+    let ledger = items.to_ledger(false);
+    assert!(ledger.is_ok());
+}
+#[test]
+fn comment_spaces() {
+    let mut tokenizer: Tokenizer = Tokenizer::from(
+        "
+2000-01-01 * Sell shares
+    Assets:Shares      -3.25 ACME @@ 326 USD  ;@ 100 USD
+    Assets:Checking     326 USD
+        "
+        .to_string(),
+    );
+    let items = tokenizer.tokenize().unwrap();
+    let ledger = items.to_ledger(false);
+    assert!(ledger.is_ok());
+}

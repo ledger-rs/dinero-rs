@@ -288,6 +288,7 @@ fn parse_posting(
     Ok(posting)
 }
 
+/// Parses money
 fn parse_money(tokenizer: &mut Tokenizer) -> Result<(BigRational, String), ParserError> {
     let currency: String;
     let amount: BigRational;
