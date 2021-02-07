@@ -273,7 +273,7 @@ mod tests {
     #[test]
     fn test_balance() {
         let args: Vec<String> = vec![
-            "executable",
+            "testing",
             "bal",
             "-f",
             "examples/demo.ledger",
@@ -294,7 +294,7 @@ mod tests {
     )]
     fn bad_ledgerrc() {
         let args: Vec<String> = vec![
-            "executable",
+            "testing",
             "bal",
             "--init-file",
             "examples/example_bad_ledgerrc",
@@ -310,7 +310,7 @@ mod tests {
     )]
     fn other_bad_ledgerrc() {
         let args: Vec<String> = vec![
-            "executable",
+            "testing",
             "bal",
             "--init-file",
             "examples/example_bad_ledgerrc2",
@@ -318,6 +318,15 @@ mod tests {
         .iter()
         .map(|x| x.to_string())
         .collect();
+        let _res = run_app(args);
+    }
+    #[test]
+    #[should_panic]
+    fn file_does_not_exist() {
+        let args: Vec<String> = vec!["testing", "bal", "-f", "this_file_does_not_exist.ledger"]
+            .iter()
+            .map(|x| x.to_string())
+            .collect();
         let _res = run_app(args);
     }
 }

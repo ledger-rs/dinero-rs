@@ -29,14 +29,6 @@ mod payee;
 mod price;
 mod transaction;
 
-/// The structure that defines everything there is in a ledger, one should be able to build a ledger
-/// from Items resulting from the parsing action
-#[derive(Debug, Clone)]
-pub struct LedgerMasterData {
-    pub(crate) accounts: List<Account>,
-    pub(crate) commodities: List<Currency>,
-}
-
 #[derive(Debug, Clone)]
 pub struct Ledger {
     pub accounts: List<Account>,

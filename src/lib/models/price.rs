@@ -162,7 +162,7 @@ impl Graph {
                     prices_nodup.insert(commodities.clone(), p.clone());
                 }
                 Some(x) => {
-                    if x.date > p.date {
+                    if x.date < p.date {
                         prices_nodup.insert(commodities.clone(), p.clone());
                     }
                 }

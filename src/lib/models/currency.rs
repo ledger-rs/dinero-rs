@@ -52,10 +52,17 @@ pub struct Currency {
     pub(crate) aliases: HashSet<String>,
     pub(crate) format: Option<String>,
     pub(crate) default: bool,
+    pub(crate) precision: Option<usize>,
 }
 impl Currency {
     pub fn get_precision(&self) -> usize {
-        2 as usize
+        match self.precision {
+            Some(p) => p,
+            None => 2,
+        }
+    }
+    pub fn set_precision(&mut self, precision: usize) {
+        self.precision = Some(precision);
     }
 }
 
@@ -84,6 +91,7 @@ impl<'a> From<&'a str> for Currency {
             aliases: Default::default(),
             format: None,
             default: false,
+            precision: None,
         }
     }
 }

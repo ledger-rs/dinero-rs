@@ -1,12 +1,12 @@
-2021-01-01 * Groceries
+2021-01-01 * Groceries 1
     Expenses:Groceries   $100
     (Budget:Food)        $-100
     Assets:Checking account
 
-2021-01-01 * Groceries
+2021-01-02 * Groceries 2
     Budget:Food    $50
     Assets:Checking account
 
-2021-01-01 * Groceries not balanced
+2021-01-03 * Groceries virtual balanced
     [Budget:Food]      $200
     [Bugget:Savings]  $-200

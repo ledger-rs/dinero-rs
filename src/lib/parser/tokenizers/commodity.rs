@@ -87,6 +87,7 @@ pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Currency, ParserError> 
         aliases,
         format,
         default,
+        precision: None,
     };
     Ok(currency)
 }
