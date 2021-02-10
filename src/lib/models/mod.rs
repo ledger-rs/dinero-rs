@@ -1,9 +1,9 @@
-use std::collections::{HashMap, HashSet};
-
 use num::rational::BigRational;
+use std::collections::{HashMap, HashSet};
 
 pub use account::Account;
 pub use balance::Balance;
+pub use comment::Comment;
 pub use currency::Currency;
 pub use models::{ParsedPrice, Tag};
 pub use money::Money;
@@ -22,6 +22,7 @@ use std::rc::Rc;
 
 mod account;
 mod balance;
+mod comment;
 mod currency;
 mod models;
 mod money;
@@ -253,11 +254,6 @@ impl ParsedLedger {
             prices,
         })
     }
-}
-
-#[derive(Debug, Clone)]
-pub struct Comment {
-    pub comment: String,
 }
 
 #[derive(Copy, Clone, Debug)]
