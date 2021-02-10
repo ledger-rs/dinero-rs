@@ -98,6 +98,14 @@ mod tests {
         assert_eq!(tags.len(), 0, "There should no tags");
     }
     #[test]
+    fn not_a_tag() {
+        let comment = Comment {
+            comment: "not a tag whatsoever".to_string(),
+        };
+        let tags = comment.get_tags();
+        assert_eq!(tags.len(), 0, "There should no tags");
+    }
+    #[test]
     fn tag_value() {
         let comment = Comment {
             comment: "tag: value".to_string(),
