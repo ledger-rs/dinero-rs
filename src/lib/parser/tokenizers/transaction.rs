@@ -110,7 +110,7 @@ pub(crate) fn parse_generic<'a>(
                         let len = transaction.postings.len();
                         transaction.postings[len - 1].comments.push(comment);
                     }
-                    false => transaction.comments.push(comment::parse(tokenizer)),
+                    false => transaction.comments.push(comment),
                 }
             }
             c if c.is_numeric() => {
