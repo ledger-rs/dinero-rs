@@ -98,23 +98,38 @@ pub(crate) fn parse_generic<'a>(
         }
     }
 
+    // Have a flag so that it can be known whether a comment belongs to the transaction or to the
+    // posting
+    let mut parsed_posting = false;
     while let LineType::Indented = chars::consume_whitespaces_and_lines(tokenizer) {
         match tokenizer.get_char().unwrap() {
-            ';' => transaction.comments.push(comment::parse(tokenizer)),
+            ';' => {
+                let comment = comment::parse(tokenizer);
+                match parsed_posting {
+                    true => {
+                        let len = transaction.postings.len();
+                        transaction.postings[len - 1].comments.push(comment);
+                    }
+                    false => transaction.comments.push(comment),
+                }
+            }
             c if c.is_numeric() => {
                 return Err(tokenizer.error(ParserError::UnexpectedInput(Some(
                     "Expecting account name".to_string(),
                 ))));
             }
-            _ => match parse_posting(tokenizer, transaction.transaction_type) {
-                // Although here we already know the kind of the posting (virtual, real),
-                // we deal with that in the next phase of parsing
-                Ok(posting) => transaction.postings.push(posting),
-                Err(e) => {
-                    eprintln!("Error while parsing posting.");
-                    return Err(tokenizer.error(e));
+            _ => {
+                match parse_posting(tokenizer, transaction.transaction_type) {
+                    // Although here we already know the kind of the posting (virtual, real),
+                    // we deal with that in the next phase of parsing
+                    Ok(posting) => transaction.postings.push(posting),
+                    Err(e) => {
+                        eprintln!("Error while parsing posting.");
+                        return Err(tokenizer.error(e));
+                    }
                 }
-            },
+                parsed_posting = true;
+            }
         }
     }
 

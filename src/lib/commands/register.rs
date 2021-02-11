@@ -74,7 +74,7 @@ pub fn execute(options: &CommonOpts) -> Result<(), Error> {
                     width = w_amount
                 ),
             }
-            let mut  more_than_one_line:bool = false;
+            let mut more_than_one_line: bool = false;
             for (_, money) in balance.iter() {
                 if more_than_one_line {
                     print!(

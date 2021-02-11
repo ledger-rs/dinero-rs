@@ -15,6 +15,7 @@ pub struct Tag {
     pub name: String,
     pub check: Vec<String>,
     pub assert: Vec<String>,
+    pub value: Option<String>,
 }
 
 impl HasName for Tag {
