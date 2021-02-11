@@ -14,6 +14,8 @@ use num::BigInt;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
+use super::Tag;
+
 #[derive(Debug, Clone)]
 pub struct Transaction<PostingType> {
     pub status: TransactionStatus,
@@ -28,6 +30,7 @@ pub struct Transaction<PostingType> {
     pub virtual_postings_balance: Vec<PostingType>,
     pub comments: Vec<Comment>,
     pub transaction_type: TransactionType,
+    pub tags: Vec<Tag>,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -65,6 +68,7 @@ pub struct Posting {
     pub balance: Option<Money>,
     pub cost: Option<Cost>,
     pub kind: PostingType,
+    pub tags: Vec<Tag>,
 }
 
 impl Posting {
@@ -75,6 +79,7 @@ impl Posting {
             balance: None,
             cost: None,
             kind: kind,
+            tags: vec![],
         }
     }
     pub fn set_amount(&mut self, money: Money) {
@@ -103,6 +108,7 @@ impl<PostingType> Transaction<PostingType> {
             virtual_postings_balance: vec![],
             comments: vec![],
             transaction_type: t_type,
+            tags: vec![],
         }
     }
     /// Iterator over all the postings, including the virtual ones
@@ -261,6 +267,7 @@ impl Transaction<Posting> {
                     balance: p.balance.clone(),
                     cost: p.cost.clone(),
                     kind: PostingType::Real,
+                    tags: self.tags.clone(),
                 });
             } else if &p.balance.is_some() & !skip_balance_check {
                 // There is a balance
@@ -279,6 +286,7 @@ impl Transaction<Posting> {
                     balance: p.balance.clone(),
                     cost: p.cost.clone(),
                     kind: PostingType::Real,
+                    tags: p.tags.clone(),
                 });
             } else {
                 // We do nothing, but this is the account for the empty post
@@ -312,6 +320,7 @@ impl Transaction<Posting> {
                     balance: None,
                     cost: None,
                     kind: PostingType::Real,
+                    tags: self.tags.clone(),
                 });
             }
             self.postings = postings;

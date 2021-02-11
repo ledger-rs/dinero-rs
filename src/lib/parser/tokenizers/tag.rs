@@ -9,7 +9,7 @@ use crate::ParserError;
 pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Tag, ParserError> {
     lazy_static! {
         static ref RE: Regex = Regex::new(format!("{}{}",
-        r"(tag) +"        , // directive commodity
+        r"(tag) +"        , // tag directive
         r"(.*)"           , // description
         ).as_str()).unwrap();
     }
@@ -67,6 +67,7 @@ pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Tag, ParserError> {
         name,
         check,
         assert,
+        value: None,
     })
 }
 

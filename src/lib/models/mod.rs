@@ -1,9 +1,9 @@
-use std::collections::{HashMap, HashSet};
-
 use num::rational::BigRational;
+use std::collections::{HashMap, HashSet};
 
 pub use account::Account;
 pub use balance::Balance;
+pub use comment::Comment;
 pub use currency::Currency;
 pub use models::{ParsedPrice, Tag};
 pub use money::Money;
@@ -22,6 +22,7 @@ use std::rc::Rc;
 
 mod account;
 mod balance;
+mod comment;
 mod currency;
 mod models;
 mod money;
@@ -140,13 +141,18 @@ impl ParsedLedger {
             transaction.note = parsed.note.clone();
             transaction.date = parsed.date;
             transaction.effective_date = parsed.effective_date;
-
+            for comment in parsed.comments.iter() {
+                transaction.tags.append(&mut comment.get_tags());
+            }
             // Go posting by posting
             for p in parsed.postings.iter() {
                 let account = self.accounts.get(&p.account)?;
 
                 let mut posting: Posting = Posting::new(account, p.kind);
-
+                posting.tags = transaction.tags.clone();
+                for comment in p.comments.iter() {
+                    posting.tags.append(&mut comment.get_tags());
+                }
                 // Modify posting with amounts
                 if let Some(c) = &p.money_currency {
                     posting.amount = Some(Money::from((
@@ -253,11 +259,6 @@ impl ParsedLedger {
             prices,
         })
     }
-}
-
-#[derive(Debug, Clone)]
-pub struct Comment {
-    pub comment: String,
 }
 
 #[derive(Copy, Clone, Debug)]

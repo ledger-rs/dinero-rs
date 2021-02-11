@@ -3,14 +3,17 @@
 # or like this
 
 2021-01-01 * Groceries
+    ; :fruit:
     Expenses:Groceries   $100
     Assets:Checking account
 
 2021-01-03 * Clothing
+    ; :skirt:
     Expenses:Clothes   $69.37
     Assets:Checking account   $-69.37
 
 2021-01-15 * Flights
+    ; destination: spain
     Expenses:Travel      200 EUR
     Assets:Checking account   $-210.12
 

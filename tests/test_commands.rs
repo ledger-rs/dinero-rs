@@ -82,3 +82,26 @@ fn real_filter() {
 
     test_args(args);
 }
+
+#[test]
+/// Check that the tag filter works
+fn tag_filter() {
+    let args = &["bal", "-f", "examples/demo.ledger", "--flat", "%fruit"];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    assert_eq!(output.lines().into_iter().count(), 4);
+
+    test_args(args);
+}
+
+
+#[test]
+/// Check that the tag filter works
+fn account_filter() {
+    let args = &["bal", "-f", "examples/demo.ledger", "--flat", "travel"];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    assert_eq!(output.lines().into_iter().count(), 1);
+
+    test_args(args);
+}
