@@ -141,13 +141,18 @@ impl ParsedLedger {
             transaction.note = parsed.note.clone();
             transaction.date = parsed.date;
             transaction.effective_date = parsed.effective_date;
-
+            for comment in transaction.comments.iter() {
+                transaction.tags.append(&mut comment.get_tags());
+            }
             // Go posting by posting
             for p in parsed.postings.iter() {
                 let account = self.accounts.get(&p.account)?;
 
                 let mut posting: Posting = Posting::new(account, p.kind);
-
+                posting.tags = transaction.tags.clone();
+                for comment in p.comments.iter() {
+                    posting.tags.append(&mut comment.get_tags());
+                }
                 // Modify posting with amounts
                 if let Some(c) = &p.money_currency {
                     posting.amount = Some(Money::from((
