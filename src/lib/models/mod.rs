@@ -141,7 +141,7 @@ impl ParsedLedger {
             transaction.note = parsed.note.clone();
             transaction.date = parsed.date;
             transaction.effective_date = parsed.effective_date;
-            for comment in transaction.comments.iter() {
+            for comment in parsed.comments.iter() {
                 transaction.tags.append(&mut comment.get_tags());
             }
             // Go posting by posting
