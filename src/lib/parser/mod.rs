@@ -263,9 +263,7 @@ impl<'a> Tokenizer<'a> {
                 self.line_position = 0;
                 self.line_index += 1;
             }
-            _ => {
-                self.line_position += 1;
-            }
+            _ => self.line_position += 1,
         }
         self.position += 1;
         c
@@ -290,5 +288,14 @@ mod tests {
         let mut tokenizer = Tokenizer::from(content);
         let items = tokenizer.tokenize().unwrap();
         assert_eq!(items.len(), 0, "Should be empty")
+    }
+
+    #[test]
+    #[should_panic]
+    fn next_panic_gracefully() {
+        let content = "this is my content".to_string();
+        let mut tokenizer = Tokenizer::from(content);
+        tokenizer.position = 100; // deliberately a large number
+        tokenizer.next(); // This should panic
     }
 }

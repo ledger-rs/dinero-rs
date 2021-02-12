@@ -94,7 +94,6 @@ fn tag_filter() {
     test_args(args);
 }
 
-
 #[test]
 /// Check that the tag filter works
 fn account_filter() {
@@ -102,6 +101,69 @@ fn account_filter() {
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
     let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
     assert_eq!(output.lines().into_iter().count(), 1);
+
+    test_args(args);
+}
+
+#[test]
+/// Check the accounts command
+fn accounts_command() {
+    let args = &["accounts", "-f", "examples/demo.ledger"];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    assert_eq!(output.lines().into_iter().count(), 6);
+
+    test_args(args);
+}
+
+#[test]
+/// Check the check command
+fn check_command() {
+    let args = &["check", "-f", "examples/demo.ledger"];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    assert_eq!(output.lines().into_iter().count(), 1);
+
+    test_args(args);
+}
+
+#[test]
+/// Check the check command
+fn check_command_bad_file() {
+    let args = &["check", "-f", "examples/demo_bad.ledger"];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    let output_err = String::from_utf8(assert_1.get_output().to_owned().stderr).unwrap();
+    assert_eq!(output.lines().into_iter().count(), 1);
+    assert_eq!(output_err.lines().into_iter().count(), 4);
+}
+
+#[test]
+#[should_panic]
+/// Check the check command
+fn test_command_bad_file() {
+    let args = &["check", "-f", "examples/demo_bad.ledger"];
+    test_args(args);
+}
+
+#[test]
+/// Check the prices command
+fn prices_command() {
+    let args = &["prices", "-f", "examples/demo.ledger"];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    assert_eq!(output.lines().into_iter().count(), 4);
+
+    test_args(args);
+}
+
+#[test]
+/// Check the commodities command
+fn commodities_command() {
+    let args = &["commodities", "-f", "examples/demo.ledger"];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    assert_eq!(output.lines().into_iter().count(), 5);
 
     test_args(args);
 }

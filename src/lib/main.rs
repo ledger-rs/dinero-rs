@@ -41,10 +41,8 @@ enum Command {
     /// List commodities
     #[structopt(alias = "currencies")]
     Commodities(CommonOpts),
-    Check {
-        #[structopt(name = "FILE", short = "f", long = "file", parse(from_os_str))]
-        input: PathBuf,
-    },
+    /// Simply check the file is fine
+    Check(CommonOpts),
 }
 
 #[derive(Debug, StructOpt)]
@@ -213,9 +211,12 @@ pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
 
             accounts::execute(options.input_file, options.no_balance_check)
         }
-        Command::Check { input } => check::execute(input),
+        Command::Check(options) => check::execute(options.input_file),
     } {
-        eprintln!("{}", e);
+        let err_str = format!("{}", e);
+        if err_str.len() > 0 {
+            eprintln!("{}", err_str);
+        }
         return Err(());
     }
     Ok(())
