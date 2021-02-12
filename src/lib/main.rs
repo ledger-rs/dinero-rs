@@ -214,7 +214,9 @@ pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
         Command::Check(options) => check::execute(options.input_file),
     } {
         let err_str = format!("{}", e);
-        if err_str.len() > 0 {eprintln!("{}", err_str);}
+        if err_str.len() > 0 {
+            eprintln!("{}", err_str);
+        }
         return Err(());
     }
     Ok(())

@@ -127,7 +127,6 @@ fn check_command() {
     test_args(args);
 }
 
-
 #[test]
 /// Check the check command
 fn check_command_bad_file() {
@@ -147,4 +146,24 @@ fn test_command_bad_file() {
     test_args(args);
 }
 
+#[test]
+/// Check the prices command
+fn prices_command() {
+    let args = &["prices", "-f", "examples/demo.ledger"];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    assert_eq!(output.lines().into_iter().count(), 4);
 
+    test_args(args);
+}
+
+#[test]
+/// Check the commodities command
+fn commodities_command() {
+    let args = &["commodities", "-f", "examples/demo.ledger"];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    assert_eq!(output.lines().into_iter().count(), 5);
+
+    test_args(args);
+}
