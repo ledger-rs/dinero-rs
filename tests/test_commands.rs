@@ -128,3 +128,23 @@ fn check_command() {
 }
 
 
+#[test]
+/// Check the check command
+fn check_command_bad_file() {
+    let args = &["check", "-f", "examples/demo_bad.ledger"];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    let output_err = String::from_utf8(assert_1.get_output().to_owned().stderr).unwrap();
+    assert_eq!(output.lines().into_iter().count(), 1);
+    assert_eq!(output_err.lines().into_iter().count(), 4);
+}
+
+#[test]
+#[should_panic]
+/// Check the check command
+fn test_command_bad_file() {
+    let args = &["check", "-f", "examples/demo_bad.ledger"];
+    test_args(args);
+}
+
+

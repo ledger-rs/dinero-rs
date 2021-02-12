@@ -42,7 +42,7 @@ enum Command {
     #[structopt(alias = "currencies")]
     Commodities(CommonOpts),
     /// Simply check the file is fine
-    Check(CommonOpts)
+    Check(CommonOpts),
 }
 
 #[derive(Debug, StructOpt)]
@@ -213,7 +213,8 @@ pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
         }
         Command::Check(options) => check::execute(options.input_file),
     } {
-        eprintln!("{}", e);
+        let err_str = format!("{}", e);
+        if err_str.len() > 0 {eprintln!("{}", err_str);}
         return Err(());
     }
     Ok(())
