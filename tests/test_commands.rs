@@ -94,7 +94,6 @@ fn tag_filter() {
     test_args(args);
 }
 
-
 #[test]
 /// Check that the tag filter works
 fn account_filter() {
@@ -106,7 +105,6 @@ fn account_filter() {
     test_args(args);
 }
 
-
 #[test]
 /// Check the accounts command
 fn accounts_command() {
@@ -117,3 +115,16 @@ fn accounts_command() {
 
     test_args(args);
 }
+
+#[test]
+/// Check the check command
+fn check_command() {
+    let args = &["check", "-f", "examples/demo.ledger"];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    assert_eq!(output.lines().into_iter().count(), 1);
+
+    test_args(args);
+}
+
+
