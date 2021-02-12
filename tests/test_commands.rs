@@ -105,3 +105,15 @@ fn account_filter() {
 
     test_args(args);
 }
+
+
+#[test]
+/// Check the accounts command
+fn accounts_command() {
+    let args = &["accounts", "-f", "examples/demo.ledger"];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    assert_eq!(output.lines().into_iter().count(), 6);
+
+    test_args(args);
+}
