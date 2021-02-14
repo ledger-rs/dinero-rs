@@ -132,78 +132,6 @@ impl ParsedLedger {
             prices.append(&mut new_prices);
         }
 
-        // 5. Go over the transactions again and see if there is something we need to do with them
-        for automated in automated_transactions.iter() {
-            for t in transactions.iter_mut() {
-                let mut extra_postings = vec![];
-                let mut extra_virtual_postings = vec![];
-                let mut extra_virtual_postings_balance = vec![];
-                for p in t.postings_iter() {
-                    if p.amount.is_none() {
-                        continue;
-                    }
-                    if filter_predicate(&vec![automated.description.clone()], p) {
-                        for comment in t.comments.iter() {
-                            p.to_owned().tags.append(&mut comment.get_tags());
-                        }
-                        for auto_posting in automated.postings_iter() {
-                            let account_alias = auto_posting.account.clone();
-                            match self.accounts.get(&account_alias) {
-                                Ok(_) => {} // do nothing
-                                Err(_) => {
-                                    self.accounts.insert(Account::from(account_alias.as_str()))
-                                }
-                            }
-                            let account = self.accounts.get(&account_alias).unwrap();
-                            let money = match &auto_posting.money_currency {
-                                None => None,
-                                Some(alias) => {
-                                    if alias == "" {
-                                        Some(Money::from((
-                                            p.amount.clone().unwrap().get_commodity().unwrap(),
-                                            p.amount.clone().unwrap().get_amount()
-                                                * auto_posting.money_amount.clone().unwrap(),
-                                        )))
-                                    } else {
-                                        match self.commodities.get(&alias) {
-                                            Ok(_) => {} // do nothing
-                                            Err(_) => self
-                                                .commodities
-                                                .insert(Currency::from(alias.as_str())),
-                                        }
-                                        Some(Money::from((
-                                            self.commodities.get(alias).unwrap().clone(),
-                                            auto_posting.money_amount.clone().unwrap(),
-                                        )))
-                                    }
-                                }
-                            };
-                            let posting = Posting {
-                                account: account.clone(),
-                                amount: money,
-                                balance: None,
-                                cost: None,
-                                kind: auto_posting.kind,
-                                tags: vec![],
-                            };
-                            println!("{:?}", posting);
-                            match auto_posting.kind {
-                                PostingType::Real => extra_postings.push(posting),
-                                PostingType::Virtual => extra_virtual_postings.push(posting),
-                                PostingType::VirtualMustBalance => {
-                                    extra_virtual_postings_balance.push(posting)
-                                }
-                            }
-                        }
-                        // todo!("Need to work on transaction automation");
-                    }
-                }
-                t.postings.append(&mut extra_postings);
-                t.virtual_postings.append(&mut extra_virtual_postings);
-                t.virtual_postings_balance
-                    .append(&mut extra_virtual_postings_balance);
-            }
-        }
         // Now sort the transactions vector by date
         transactions.sort_by(|a, b| a.date.unwrap().cmp(&b.date.unwrap()));
 
@@ -241,6 +169,113 @@ impl ParsedLedger {
             }
         }
 
+        // 5. Go over the transactions again and see if there is something we need to do with them
+        if automated_transactions.len() > 0 {
+            for automated in automated_transactions.iter() {
+                for t in transactions.iter_mut() {
+                    let mut extra_postings = vec![];
+                    let mut extra_virtual_postings = vec![];
+                    let mut extra_virtual_postings_balance = vec![];
+                    for p in t.postings_iter() {
+                        if p.amount.is_none() {
+                            continue;
+                        }
+                        if filter_predicate(&vec![automated.description.clone()], p) {
+                            for comment in t.comments.iter() {
+                                p.to_owned().tags.append(&mut comment.get_tags());
+                            }
+                            for auto_posting in automated.postings_iter() {
+                                let account_alias = auto_posting.account.clone();
+                                match self.accounts.get(&account_alias) {
+                                    Ok(_) => {} // do nothing
+                                    Err(_) => {
+                                        self.accounts.insert(Account::from(account_alias.as_str()))
+                                    }
+                                }
+                                let account = self.accounts.get(&account_alias).unwrap();
+                                let money = match &auto_posting.money_currency {
+                                    None => None,
+                                    Some(alias) => {
+                                        if alias == "" {
+                                            Some(Money::from((
+                                                p.amount.clone().unwrap().get_commodity().unwrap(),
+                                                p.amount.clone().unwrap().get_amount()
+                                                    * auto_posting.money_amount.clone().unwrap(),
+                                            )))
+                                        } else {
+                                            match self.commodities.get(&alias) {
+                                                Ok(_) => {} // do nothing
+                                                Err(_) => self
+                                                    .commodities
+                                                    .insert(Currency::from(alias.as_str())),
+                                            }
+                                            Some(Money::from((
+                                                self.commodities.get(alias).unwrap().clone(),
+                                                auto_posting.money_amount.clone().unwrap(),
+                                            )))
+                                        }
+                                    }
+                                };
+                                let posting = Posting {
+                                    account: account.clone(),
+                                    amount: money,
+                                    balance: None,
+                                    cost: None,
+                                    kind: auto_posting.kind,
+                                    tags: vec![],
+                                };
+                                // println!("{:?}", posting);
+                                match auto_posting.kind {
+                                    PostingType::Real => extra_postings.push(posting),
+                                    PostingType::Virtual => extra_virtual_postings.push(posting),
+                                    PostingType::VirtualMustBalance => {
+                                        extra_virtual_postings_balance.push(posting)
+                                    }
+                                }
+                            }
+                            // todo!("Need to work on transaction automation");
+                        }
+                    }
+                    t.postings.append(&mut extra_postings);
+                    t.virtual_postings.append(&mut extra_virtual_postings);
+                    t.virtual_postings_balance
+                        .append(&mut extra_virtual_postings_balance);
+                }
+            }
+            // Populate balances
+            let mut balances: HashMap<Rc<Account>, Balance> = HashMap::new();
+            for account in self.accounts.values() {
+                balances.insert(account.clone(), Balance::new());
+            }
+
+            // Balance the transactions
+            for t in transactions.iter_mut() {
+                let date = t.date.unwrap().clone();
+                // output_balances(&balances);
+                let balance = match t.balance(&mut balances, no_checks) {
+                    Ok(balance) => balance,
+                    Err(e) => {
+                        eprintln!("{}", t);
+                        return Err(e.into());
+                    }
+                };
+                if balance.len() == 2 {
+                    let vec = balance.iter().map(|(_, x)| x.abs()).collect::<Vec<Money>>();
+
+                    let commodity = vec[0].get_commodity().unwrap().clone();
+                    let price = Money::Money {
+                        amount: vec[1].get_amount() / vec[0].get_amount(),
+                        currency: vec[1].get_commodity().unwrap().clone(),
+                    };
+
+                    prices.push(Price {
+                        date,
+                        commodity,
+                        price,
+                    });
+                }
+            }
+        }
         Ok(Ledger {
             accounts: self.accounts,
             commodities: self.commodities,
