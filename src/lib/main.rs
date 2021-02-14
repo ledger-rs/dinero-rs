@@ -225,10 +225,18 @@ pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
 /// A parser for date expressions
 fn date_parser(date: &str) -> Result<NaiveDate, Error> {
     lazy_static! {
-        static ref RE: Regex = Regex::new(r"(\d{4})[/-](\d\d?)$").unwrap();
+        static ref RE_MONTH: Regex = Regex::new(r"(\d{4})[/-](\d\d?)$").unwrap();
+        static ref RE_DATE: Regex = Regex::new(r"(\d{4})[/-](\d\d?)[/-](\d\d?)$").unwrap();
     }
-    if RE.is_match(date) {
-        let captures = RE.captures(date).unwrap();
+    if RE_DATE.is_match(date) {
+        let captures = RE_DATE.captures(date).unwrap();
+        Ok(NaiveDate::from_ymd(
+            captures.get(1).unwrap().as_str().parse::<i32>().unwrap(),
+            captures.get(2).unwrap().as_str().parse::<u32>().unwrap(),
+            captures.get(3).unwrap().as_str().parse::<u32>().unwrap(),
+        ))
+    } else if RE_MONTH.is_match(date) {
+        let captures = RE_MONTH.captures(date).unwrap();
         Ok(NaiveDate::from_ymd(
             captures.get(1).unwrap().as_str().parse::<i32>().unwrap(),
             captures.get(2).unwrap().as_str().parse::<u32>().unwrap(),
@@ -268,6 +276,23 @@ mod tests {
             date_parser("2010-09").unwrap(),
             NaiveDate::from_ymd(2010, 9, 1)
         );
+        assert_eq!(
+            date_parser("2020-09-05").unwrap(),
+            NaiveDate::from_ymd(2020, 9, 5)
+        );
+        assert_eq!(
+            date_parser("2017-12-05").unwrap(),
+            NaiveDate::from_ymd(2017, 12, 5)
+        );
+        assert_eq!(
+            date_parser("2020-01-12").unwrap(),
+            NaiveDate::from_ymd(2020, 1, 12)
+        );
+        assert_eq!(
+            date_parser("2010-09").unwrap(),
+            NaiveDate::from_ymd(2010, 9, 1)
+        );
+        assert!(date_parser("2020-13-12").is_err());
         assert!(date_parser("this is not a date").is_err());
     }
 
