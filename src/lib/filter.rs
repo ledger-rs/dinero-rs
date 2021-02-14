@@ -28,13 +28,13 @@ pub fn filter(options: &CommonOpts, transaction: &Transaction<Posting>, posting:
     }
     return filter_predicate(predicate, posting);
 }
-pub fn filter_predicate(predicate: &Vec<String>,posting: &Posting) -> bool {
- 
+pub fn filter_predicate(predicate: &Vec<String>, posting: &Posting) -> bool {
     let name = posting.account.get_name().to_lowercase();
     if predicate.len() == 0 {
         return true;
     }
-    for p in predicate {
+    for pred in predicate {
+        let p = pred.trim();
         if p.starts_with("%") {
             // look in the posting tags
             for tag in posting.tags.iter() {

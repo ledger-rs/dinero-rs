@@ -34,7 +34,7 @@ pub(crate) fn parse_generic<'a>(
         r"(.*)"                             , // description
         r"(  ;.*)?"                         , // note
         ).as_str()).unwrap();
-        static ref RE_AUTOMATED: Regex = Regex::new(format!("{}",r"(.*)" ).as_str()).unwrap();
+        static ref RE_AUTOMATED: Regex = Regex::new(format!("{}",r"=(.*)" ).as_str()).unwrap();
     }
     let mystr = chars::get_line(tokenizer);
     let caps = match real {
@@ -284,18 +284,15 @@ fn parse_posting(
                     posting.money_amount = Some(money.0);
                     posting.money_currency = Some(money.1);
                 }
-                Err(e) => {
-                    // eprintln!("I fail here 260");
-                    match transaction_type {
-                        TransactionType::Real | TransactionType::Periodic => return Err(e),
-                        TransactionType::Automated => {
-                            posting.amount_expr = Some(chars::get_line(tokenizer));
+                Err(e) => match transaction_type {
+                    TransactionType::Real | TransactionType::Periodic => return Err(e),
+                    TransactionType::Automated => {
+                        posting.amount_expr = Some(chars::get_line(tokenizer));
 
-                            tokenizer.line_index -= 1;
-                            tokenizer.position -= 1;
-                        }
+                        tokenizer.line_index -= 1;
+                        tokenizer.position -= 1;
                     }
-                }
+                },
             },
         }
         chars::consume_whitespaces(tokenizer);
