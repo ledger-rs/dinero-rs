@@ -1,5 +1,5 @@
 use assert_cmd::Command;
-use common::test_args;
+use common::{test_args, test_err};
 mod common;
 #[test]
 fn date_filters() {
@@ -166,4 +166,15 @@ fn commodities_command() {
     assert_eq!(output.lines().into_iter().count(), 5);
 
     test_args(args);
+}
+
+#[test]
+/// If this fails it means that it created an extra posting
+fn automated_fail() {
+    let args = &["reg", "-f", "examples/automated_fail.ledger"];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output_err = String::from_utf8(assert_1.get_output().to_owned().stderr).unwrap();
+    assert_eq!(output_err.lines().into_iter().count(), 5);
+
+    test_err(args);
 }
