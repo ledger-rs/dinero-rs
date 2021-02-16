@@ -6,7 +6,7 @@ fn date_filters() {
     let args1 = &["bal", "-f", "examples/demo.ledger"];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args1).assert();
     let mut output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
-    assert_eq!(output.lines().into_iter().count(), 18);
+    assert_eq!(output.lines().into_iter().count(), 17);
     test_args(args1);
     let args2 = &[
         "bal",
@@ -20,7 +20,7 @@ fn date_filters() {
     ];
     let assert_2 = Command::cargo_bin("dinero").unwrap().args(args2).assert();
     output = String::from_utf8(assert_2.get_output().to_owned().stdout).unwrap();
-    assert_eq!(output.lines().into_iter().count(), 13);
+    assert_eq!(output.lines().into_iter().count(), 12);
 
     test_args(args2);
 }
