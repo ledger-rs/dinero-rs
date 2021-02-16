@@ -104,7 +104,11 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
     }
 
     vec_balances.sort_by(|a, b| a.0.cmp(b.0));
-    for (account, bal) in vec_balances.iter() {
+    let num_bal = vec_balances.len();
+    // for (index, (account, bal)) in vec_balances.iter().enumerate() {
+    let mut index = 0;
+    while index < num_bal {
+        let (account, bal) = &vec_balances[index];
         if let Some(depth) = depth {
             if account.split(":").count() > depth {
                 continue;
@@ -126,13 +130,37 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
         if flat {
             println!("  {}", account.blue());
         } else {
-            let n = account.split(":").count();
-            let text = account.split(":").last().unwrap();
+            let mut n = account.split(":").count();
+            let mut text = account.split(":").last().unwrap().to_string();
             for _ in 0..n {
                 print!("  ");
             }
+            // This is where it gets tricky, we need to collapse while we can
+            let mut collapse = false;
+            loop {
+                for j in (index + 1)..num_bal {
+                    let this_depth = vec_balances[j].0.split(":").count();
+                    if this_depth <= n {
+                        break;
+                    }
+                    if (this_depth == n + 1) & !collapse {
+                        collapse = true;
+                    } else if (this_depth == n + 1) & collapse {
+                        collapse = false;
+                        break;
+                    }
+                }
+                if !collapse | (index + 1 == num_bal) {
+                    break;
+                }
+                text.push(':');
+                text.push_str(&vec_balances[index + 1].0.split(":").last().unwrap());
+                index = index + 1;
+                n = n + 1;
+            }
             println!("{}", text.blue());
         }
+        index += 1;
     }
 
     // Print the total
