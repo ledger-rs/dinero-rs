@@ -37,6 +37,7 @@ pub struct Ledger {
     pub(crate) commodities: List<Currency>,
     pub(crate) transactions: Vec<Transaction<Posting>>,
     pub(crate) prices: Vec<Price>,
+    payees: List<Payee>,
 }
 
 impl Ledger {
@@ -46,6 +47,7 @@ impl Ledger {
             prices: vec![],
             transactions: vec![],
             commodities: List::<Currency>::new(),
+            payees: List::<Payee>::new(),
         }
     }
 }
@@ -55,6 +57,7 @@ impl ParsedLedger {
     pub fn to_ledger(mut self, no_checks: bool) -> Result<Ledger, Error> {
         let mut commodity_strs = HashSet::<String>::new();
         let mut account_strs = HashSet::<String>::new();
+        let mut payee_strs = HashSet::<String>::new();
 
         //
         // 1. Populate the directive lists
@@ -281,6 +284,7 @@ impl ParsedLedger {
             commodities: self.commodities,
             transactions,
             prices,
+            payees: self.payees,
         })
     }
 
