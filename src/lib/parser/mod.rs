@@ -20,6 +20,7 @@ use crate::{models, Error, List, ParserError};
 mod chars;
 mod include;
 pub mod tokenizers;
+pub mod value_expr;
 
 use tokenizers::{account, comment, commodity, payee, price, tag, transaction};
 

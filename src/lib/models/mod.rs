@@ -14,8 +14,8 @@ pub use transaction::{
     Cleared, Posting, PostingType, Transaction, TransactionStatus, TransactionType,
 };
 
-use crate::parser::tokenizers;
 use crate::parser::ParsedLedger;
+use crate::parser::{tokenizers, value_expr};
 use crate::{filter::filter_predicate, models::transaction::Cost};
 use crate::{Error, List};
 use num::BigInt;
@@ -180,9 +180,6 @@ impl ParsedLedger {
                     let mut extra_virtual_postings = vec![];
                     let mut extra_virtual_postings_balance = vec![];
                     for p in t.postings_iter() {
-                        if p.amount.is_none() {
-                            continue;
-                        }
                         if filter_predicate(&vec![automated.description.clone()], p) {
                             for comment in t.comments.iter() {
                                 p.to_owned().tags.append(&mut comment.get_tags());
@@ -197,7 +194,12 @@ impl ParsedLedger {
                                 }
                                 let account = self.accounts.get(&account_alias).unwrap();
                                 let money = match &auto_posting.money_currency {
-                                    None => None,
+                                    None => Some(value_expr::eval_value_expression(
+                                        auto_posting.amount_expr.clone().unwrap().as_str(),
+                                        p,
+                                        t,
+                                        &mut self.commodities,
+                                    )),
                                     Some(alias) => {
                                         if alias == "" {
                                             Some(Money::from((

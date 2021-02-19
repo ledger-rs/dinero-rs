@@ -1,0 +1,11 @@
+; This should fail because the added posting makes the transaction unbalanced
+
+= Income:Salary
+    (Savings)            600 EUR
+    (Free spending)      (abs(amount) - 600 EUR)
+
+2021-01-01 * Flights
+    Income:Salary      -1000 EUR
+    Assets:Checking account
+
+

@@ -1,6 +1,6 @@
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::ops::{Add, Mul, Neg};
+use std::ops::{Add, Mul, Neg, Sub};
 use std::rc::Rc;
 
 use num;
@@ -193,6 +193,15 @@ impl Add for Money {
         let b1 = Balance::from(self);
         let b2 = Balance::from(rhs);
         b1 + b2
+    }
+}
+impl Sub for Money {
+    type Output = Balance;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        let b1 = Balance::from(self);
+        let b2 = Balance::from(rhs);
+        b1 - b2
     }
 }
 
