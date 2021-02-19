@@ -232,9 +232,10 @@ fn parse_posting(
     // Amounts
     loop {
         match tokenizer.get_char() {
-            Some('(') => {   // This is a value expression
+            Some('(') => {
+                // This is a value expression
                 posting.amount_expr = Some(chars::get_value_expression(tokenizer));
-            },
+            }
             Some('\n') => break,
             None => break,
             Some(';') => {
