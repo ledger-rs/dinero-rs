@@ -1,0 +1,11 @@
+; This should fail because the added posting makes the transaction unbalanced
+
+= flights
+    [Bugdet:Holiday]   -1
+
+2021-01-01 * Flights
+    ; :holiday:
+    Expenses:Flights      200 USD
+    Assets:Checking account
+
+
