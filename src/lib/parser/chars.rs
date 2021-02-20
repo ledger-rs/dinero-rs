@@ -68,21 +68,21 @@ pub(super) fn get_value_expression(tokenizer: &mut Tokenizer) -> String {
     let mut close = 0;
 
     while let Some(c) = tokenizer.content.get(tokenizer.position) {
-        tokenizer.position += 1;
         if *c == '(' {
             open += 1;
         } else if *c == ')' {
             close += 1;
         } else if *c == '\n' {
-            tokenizer.line_index += 1;
-            tokenizer.line_position = 0;
             if open == close {
                 break;
             }
+            tokenizer.line_index += 1;
+            tokenizer.line_position = 0;
         } else if *c == ';' {
             break;
         }
         retval.push(*c);
+        tokenizer.position += 1;
     }
     retval.iter().collect()
 }

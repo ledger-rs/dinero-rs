@@ -212,6 +212,7 @@ fn parse_posting(
             // println!("{} is a virtual account {:?}", account, posting_type)
         }
     }
+
     let mut posting = Posting {
         account,
         money_amount: None,
@@ -369,7 +370,7 @@ fn parse_amount(tokenizer: &mut Tokenizer) -> Result<BigRational, ParserError> {
         match BigInt::from_str(num.as_str()) {
             Ok(n) => n,
             Err(_) => {
-                // eprintln!("I fail here 341.");
+                // eprintln!("I fail here 372."); //todo delete
                 return Err(ParserError::UnexpectedInput(Some(
                     "Wrong number format".to_string(),
                 )));

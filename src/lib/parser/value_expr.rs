@@ -134,8 +134,24 @@ fn eval(
                                 Binary::Div => lhs / rhs,
                                 _ => unreachable!(),
                             })
+                        } else if let EvalResult::Money(rhs) = right {
+                            EvalResult::Money(match op {
+                                Binary::Mult => rhs * lhs, // the other way around is not implemented
+                                Binary::Div => panic!("Can't divide number by money"),
+                                _ => unreachable!(),
+                            })
                         } else {
                             panic!("Should be numbers")
+                        }
+                    } else if let EvalResult::Money(lhs) = left {
+                        if let EvalResult::Number(rhs) = right {
+                            EvalResult::Money(match op {
+                                Binary::Mult => lhs * rhs,
+                                Binary::Div => lhs / rhs,
+                                _ => unreachable!(),
+                            })
+                        } else {
+                            panic!("rhs should be a number")
                         }
                     } else {
                         panic!("Should be numbers")
@@ -236,6 +252,7 @@ fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> Node {
                         unknown => panic!("Unknown rule: {:?}", unknown),
                     }
                 }
+                Rule::number => Node::Number(parse_big_rational(first.as_str())),
                 unknown => panic!("Unknown rule: {:?}", unknown),
             }
         }
