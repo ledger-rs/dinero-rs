@@ -2,7 +2,7 @@
 ; Different formats for currencies used, different operations
 = Income:Salary
     (Savings)            600 EUR
-    (Free spending)      (abs(amount) - 600 EUR)
+    (Free spending)      (abs(amount) - EUR 600)
 = Savings
     (Savings:Risky investments)    (amount * 0.10)
     (Savings:Deposits)             0.40
