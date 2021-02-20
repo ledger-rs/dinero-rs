@@ -62,6 +62,31 @@ pub(super) fn consume_str<'a>(
     Ok(())
 }
 
+pub(super) fn get_value_expression(tokenizer: &mut Tokenizer) -> String {
+    let mut retval: Vec<char> = Vec::new();
+    let mut open = 0;
+    let mut close = 0;
+
+    while let Some(c) = tokenizer.content.get(tokenizer.position) {
+        if *c == '(' {
+            open += 1;
+        } else if *c == ')' {
+            close += 1;
+        } else if *c == '\n' {
+            if open == close {
+                break;
+            }
+            tokenizer.line_index += 1;
+            tokenizer.line_position = 0;
+        } else if *c == ';' {
+            break;
+        }
+        retval.push(*c);
+        tokenizer.position += 1;
+    }
+    retval.iter().collect()
+}
+
 pub(super) fn get_line(tokenizer: &mut Tokenizer) -> String {
     let mut retval: Vec<char> = Vec::new();
     while let Some(c) = tokenizer.content.get(tokenizer.position) {
