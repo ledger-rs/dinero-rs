@@ -1,6 +1,6 @@
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::ops::{Add, Mul, Neg};
+use std::ops::{Add, Div, Mul, Neg, Sub};
 use std::rc::Rc;
 
 use num;
@@ -9,6 +9,7 @@ use num::{BigInt, Signed, Zero};
 
 use crate::models::balance::Balance;
 use crate::models::{Currency, HasName};
+use num::traits::Inv;
 use std::str::FromStr;
 
 /// Money representation: an amount and a currency
@@ -169,6 +170,14 @@ impl Mul<BigRational> for Money {
     }
 }
 
+impl Div<BigRational> for Money {
+    type Output = Money;
+
+    fn div(self, rhs: BigRational) -> Self::Output {
+        self * rhs.inv()
+    }
+}
+
 impl From<(Rc<Currency>, BigRational)> for Money {
     fn from(cur_amount: (Rc<Currency>, BigRational)) -> Self {
         let (currency, amount) = cur_amount;
@@ -193,6 +202,15 @@ impl Add for Money {
         let b1 = Balance::from(self);
         let b2 = Balance::from(rhs);
         b1 + b2
+    }
+}
+impl Sub for Money {
+    type Output = Balance;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        let b1 = Balance::from(self);
+        let b2 = Balance::from(rhs);
+        b1 - b2
     }
 }
 

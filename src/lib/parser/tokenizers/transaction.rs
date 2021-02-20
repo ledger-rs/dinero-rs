@@ -10,21 +10,18 @@ use num::BigInt;
 use regex::Regex;
 use std::str::FromStr;
 
-pub(crate) fn parse<'a>(tokenizer: &'a mut Tokenizer) -> Result<Transaction<Posting>, Error> {
+pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Transaction<Posting>, Error> {
     parse_generic(tokenizer, true)
 }
 
-pub(crate) fn parse_automated_transaction<'a>(
-    tokenizer: &'a mut Tokenizer,
+pub(crate) fn parse_automated_transaction(
+    tokenizer: &mut Tokenizer,
 ) -> Result<Transaction<Posting>, Error> {
     parse_generic(tokenizer, false)
 }
 
 /// Parses a transaction
-pub(crate) fn parse_generic<'a>(
-    tokenizer: &'a mut Tokenizer,
-    real: bool,
-) -> Result<Transaction<Posting>, Error> {
+fn parse_generic(tokenizer: &mut Tokenizer, real: bool) -> Result<Transaction<Posting>, Error> {
     lazy_static! {
         static ref RE_REAL: Regex = Regex::new(format!("{}{}{}{}{}{}",
         r"(\d{4}[/-]\d{2}[/-]\d{2})"        , // date
@@ -34,7 +31,7 @@ pub(crate) fn parse_generic<'a>(
         r"(.*)"                             , // description
         r"(  ;.*)?"                         , // note
         ).as_str()).unwrap();
-        static ref RE_AUTOMATED: Regex = Regex::new(format!("{}",r"(.*)" ).as_str()).unwrap();
+        static ref RE_AUTOMATED: Regex = Regex::new(format!("{}",r"=(.*)" ).as_str()).unwrap();
     }
     let mystr = chars::get_line(tokenizer);
     let caps = match real {
@@ -212,6 +209,7 @@ fn parse_posting(
             // println!("{} is a virtual account {:?}", account, posting_type)
         }
     }
+
     let mut posting = Posting {
         account,
         money_amount: None,
@@ -232,6 +230,10 @@ fn parse_posting(
     // Amounts
     loop {
         match tokenizer.get_char() {
+            Some('(') => {
+                // This is a value expression
+                posting.amount_expr = Some(chars::get_value_expression(tokenizer));
+            }
             Some('\n') => break,
             None => break,
             Some(';') => {
@@ -284,18 +286,15 @@ fn parse_posting(
                     posting.money_amount = Some(money.0);
                     posting.money_currency = Some(money.1);
                 }
-                Err(e) => {
-                    // eprintln!("I fail here 260");
-                    match transaction_type {
-                        TransactionType::Real | TransactionType::Periodic => return Err(e),
-                        TransactionType::Automated => {
-                            posting.amount_expr = Some(chars::get_line(tokenizer));
+                Err(e) => match transaction_type {
+                    TransactionType::Real | TransactionType::Periodic => return Err(e),
+                    TransactionType::Automated => {
+                        posting.amount_expr = Some(chars::get_line(tokenizer));
 
-                            tokenizer.line_index -= 1;
-                            tokenizer.position -= 1;
-                        }
+                        tokenizer.line_index -= 1;
+                        tokenizer.position -= 1;
                     }
-                }
+                },
             },
         }
         chars::consume_whitespaces(tokenizer);
@@ -368,7 +367,7 @@ fn parse_amount(tokenizer: &mut Tokenizer) -> Result<BigRational, ParserError> {
         match BigInt::from_str(num.as_str()) {
             Ok(n) => n,
             Err(_) => {
-                // eprintln!("I fail here 341.");
+                // eprintln!("I fail here 372."); //todo delete
                 return Err(ParserError::UnexpectedInput(Some(
                     "Wrong number format".to_string(),
                 )));

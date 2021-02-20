@@ -1,0 +1,19 @@
+; This should fail because the added posting makes the transaction unbalanced
+; Different formats for currencies used, different operations
+= Income:Salary
+    (Savings)            600 EUR
+    (Free spending)      (abs(amount) - EUR 600)
+= Savings
+    (Savings:Risky investments)    (amount * 0.10)
+    (Savings:Deposits)             0.40
+    (Savings:Shares)               (amount / 2)
+= Expenses:Rent
+    Expenses:Rent        EUR 553.12
+    Expenses:Utilities   (amount - 553.12 EUR)
+    Expenses:Rent        (-amount)
+2021-01-01 * Flights
+    Income:Salary      -1000 EUR
+    Assets:Checking account
+2021-01-05 * Rent
+    Expenses:Rent               705.43 EUR
+    Assets:Checking account
