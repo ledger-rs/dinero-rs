@@ -10,7 +10,7 @@
 = Expenses:Rent
     Expenses:Rent        EUR 553.12
     Expenses:Utilities   (amount - 553.12 EUR)
-    Expenses:Rent        -1
+    Expenses:Rent        (-amount)
 2021-01-01 * Flights
     Income:Salary      -1000 EUR
     Assets:Checking account

@@ -229,9 +229,10 @@ fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> Node {
             let mut inner = pair.into_inner();
             let first = inner.next().unwrap();
             match first.as_rule() {
-                Rule::unary_function => {
+                Rule::unary_function | Rule::unary => {
                     let op = match first.as_str() {
                         "abs" => Unary::Abs,
+                        "-" => Unary::Neg,
                         unknown => panic!("Unknown expr: {:?}", unknown),
                     };
                     parse_unary_expr(op, build_ast_from_expr(inner.next().unwrap()))
@@ -253,6 +254,7 @@ fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> Node {
                     }
                 }
                 Rule::number => Node::Number(parse_big_rational(first.as_str())),
+
                 unknown => panic!("Unknown rule: {:?}", unknown),
             }
         }
