@@ -21,10 +21,7 @@ pub(crate) fn parse_automated_transaction(
 }
 
 /// Parses a transaction
-pub(crate) fn parse_generic(
-    tokenizer: &mut Tokenizer,
-    real: bool,
-) -> Result<Transaction<Posting>, Error> {
+fn parse_generic(tokenizer: &mut Tokenizer, real: bool) -> Result<Transaction<Posting>, Error> {
     lazy_static! {
         static ref RE_REAL: Regex = Regex::new(format!("{}{}{}{}{}{}",
         r"(\d{4}[/-]\d{2}[/-]\d{2})"        , // date
