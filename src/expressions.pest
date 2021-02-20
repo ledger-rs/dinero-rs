@@ -4,20 +4,15 @@ value_expr = {"(" ~ ws* ~ expr ~ ws* ~ ")"}
 term = _{ variable | money | number }
 money = { (number ~ ws* ~ currency) | (currency ~ ws* ~ number) }
 currency = { LETTER+ | ("\"" ~ (!"\"" ~ ANY)+ ~ "\"")}
+regex = { "/" ~ (!"\\/" ~ ANY )* ~ "/" }
 variable = _{ date | amount | total_amount | cost | value | gain | depth | posting_number | posting_count | cleared | real | not_automated | running_total }
 
 number = { "-"? ~ bigint ~ ("." ~ bigint)? }
 bigint = _{ ASCII_DIGIT+ }
 ws = _{" "}
-/* Not yet implemented
-ternary = { expr ~ ws* ~ "?" ~ ws* ~ expr ~ ws* ~ ":" ~ ws* ~ expr}
-binary = { expr ~ ws* ~ 
-    ("<=" | ">=" | "<" | ">" | "&" | "|" ) 
-    ~ ws* ~ expr}
 
-*/
-
-expr = { or_expr }
+expr = { comparison_expr }
+comparison_expr = { or_expr ~ ws* ~ ( comparison ~ ws* ~ or_expr ) * }
 or_expr = { and_expr ~ ws* ~ ( or ~ ws* ~ and_expr ) * }
 and_expr = { additive_expr ~ ws* ~ ( or ~ ws* ~ additive_expr ) * }
 additive_expr = { multiplicative_expr ~ ws* ~ ( add ~ ws* ~ multiplicative_expr ) * }
@@ -31,10 +26,17 @@ primary = {
 
 add = { "+" | "-" }
 mult = { "*" | "/" }
-and = {"&"}
-or = {"|"}
+and = {"&" | "and"}
+or = {"|" | "or" }
 unary = { "-" | "!"}
 unary_function = { "abs" }
+comparison = { eq | ne | ge | gt | le | lt }
+eq = { "=~" }
+ne = { "!=" }
+gt = { ">" }
+ge = { ">=" }
+le = { "<=" }
+lt = { "<" }
 
 total_amount = {"T"}
 // A posting’s date, as the number of seconds past the epoch. This is always “today” for an account.

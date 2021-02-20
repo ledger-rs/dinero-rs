@@ -6,7 +6,7 @@ use std::rc::Rc;
 use std::str::FromStr;
 
 #[derive(Parser)]
-#[grammar = "grammar/value_expression.pest"]
+#[grammar = "expressions.pest"]
 pub struct ValueExpressionParser;
 
 pub fn eval_value_expression(
@@ -201,7 +201,7 @@ fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> Node {
     let rule = pair.as_rule();
     match rule {
         Rule::expr => build_ast_from_expr(pair.into_inner().next().unwrap()),
-        Rule::or_expr | Rule::and_expr | Rule::additive_expr | Rule::multiplicative_expr => {
+        Rule::comparison_expr | Rule::or_expr | Rule::and_expr | Rule::additive_expr | Rule::multiplicative_expr => {
             let mut pair = pair.into_inner();
             let lhspair = pair.next().unwrap();
             let lhs = build_ast_from_expr(lhspair);
