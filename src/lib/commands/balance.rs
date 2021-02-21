@@ -105,7 +105,6 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
 
     vec_balances.sort_by(|a, b| a.0.cmp(b.0));
     let num_bal = vec_balances.len();
-    // for (index, (account, bal)) in vec_balances.iter().enumerate() {
     let mut index = 0;
     while index < num_bal {
         let (account, bal) = &vec_balances[index];
@@ -116,7 +115,6 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
         }
 
         let mut first = true;
-
         for (_, money) in bal.balance.iter() {
             if !first {
                 println!();
@@ -126,6 +124,9 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
                 true => print!("{:>20}", format!("{}", money).red()),
                 false => print!("{:>20}", format!("{}", money)),
             }
+        }
+        if first { // This means the balance was empty
+            print!("{:>20}", "0"); 
         }
         if flat {
             println!("  {}", account.blue());
