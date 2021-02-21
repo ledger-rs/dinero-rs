@@ -9,7 +9,7 @@ use two_timer;
 use lazy_static::lazy_static;
 use regex::Regex;
 
-use crate::commands::{accounts, balance, check, commodities, prices, register};
+use crate::commands::{accounts, balance, check, commodities, payees, prices, register};
 use crate::Error;
 use chrono::NaiveDate;
 use colored::Colorize;
@@ -35,7 +35,8 @@ enum Command {
     /// List the accounts
     Accounts(CommonOpts),
     // Codes,
-    // Payees,
+    /// List the payees
+    Payees(CommonOpts),
     /// Show the exchange rates
     Prices(CommonOpts),
     /// List commodities
@@ -202,6 +203,13 @@ pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
             }
 
             commodities::execute(options.input_file, options.no_balance_check)
+        }
+        Command::Payees(options) => {
+            if options.force_color {
+                env::set_var("CLICOLOR_FORCE", "1");
+            }
+
+            payees::execute(options.input_file, options.no_balance_check)
         }
         Command::Prices(options) => prices::execute(options.input_file, options.no_balance_check),
         Command::Accounts(options) => {

@@ -1,6 +1,9 @@
 use crate::models::{FromDirective, HasAliases, HasName, Origin};
+use regex::Regex;
 use std::collections::hash_map::RandomState;
 use std::collections::HashSet;
+use std::fmt;
+use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 
 #[derive(Debug, Clone)]
@@ -16,6 +19,12 @@ impl Eq for Payee {}
 impl PartialEq for Payee {
     fn eq(&self, other: &Self) -> bool {
         self.name == other.name
+    }
+}
+
+impl Display for Payee {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name)
     }
 }
 
@@ -43,5 +52,10 @@ impl FromDirective for Payee {
 impl Hash for Payee {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.name.hash(state);
+    }
+}
+impl Payee {
+    pub fn is_match(&self, regex: Regex) -> bool {
+        regex.is_match(self.get_name())
     }
 }
