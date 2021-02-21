@@ -1,4 +1,6 @@
-use crate::models::{Cleared, Comment, PostingType, PriceType, Transaction, TransactionType};
+use crate::models::{
+    Cleared, Comment, HasName, PostingType, PriceType, Transaction, TransactionType,
+};
 use crate::parser::chars::LineType;
 use crate::parser::tokenizers::comment;
 use crate::parser::{chars, Tokenizer};
@@ -10,18 +12,18 @@ use num::BigInt;
 use regex::Regex;
 use std::str::FromStr;
 
-pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Transaction<Posting>, Error> {
+pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Transaction<RawPosting>, Error> {
     parse_generic(tokenizer, true)
 }
 
 pub(crate) fn parse_automated_transaction(
     tokenizer: &mut Tokenizer,
-) -> Result<Transaction<Posting>, Error> {
+) -> Result<Transaction<RawPosting>, Error> {
     parse_generic(tokenizer, false)
 }
 
 /// Parses a transaction
-fn parse_generic(tokenizer: &mut Tokenizer, real: bool) -> Result<Transaction<Posting>, Error> {
+fn parse_generic(tokenizer: &mut Tokenizer, real: bool) -> Result<Transaction<RawPosting>, Error> {
     lazy_static! {
         static ref RE_REAL: Regex = Regex::new(format!("{}{}{}{}{}{}",
         r"(\d{4}[/-]\d{2}[/-]\d{2})"        , // date
@@ -42,7 +44,7 @@ fn parse_generic(tokenizer: &mut Tokenizer, real: bool) -> Result<Transaction<Po
         false => RE_AUTOMATED.captures(mystr.as_str()).unwrap(),
     };
 
-    let mut transaction = Transaction::<Posting>::new(match real {
+    let mut transaction = Transaction::<RawPosting>::new(match real {
         true => TransactionType::Real,
         false => TransactionType::Automated,
     });
@@ -56,7 +58,9 @@ fn parse_generic(tokenizer: &mut Tokenizer, real: bool) -> Result<Transaction<Po
                     {
                         match real {
                             true => transaction.date = Some(parse_date(m.as_str())),
-                            false => transaction.description = m.as_str().to_string(),
+                            false => {
+                                transaction.description = m.as_str().to_string();
+                            }
                         }
                     }
                     2 =>
@@ -81,7 +85,7 @@ fn parse_generic(tokenizer: &mut Tokenizer, real: bool) -> Result<Transaction<Po
                     5 =>
                     // description
                     {
-                        transaction.description = m.as_str().to_string()
+                        transaction.description = m.as_str().to_string();
                     }
                     6 =>
                     // note
@@ -105,9 +109,20 @@ fn parse_generic(tokenizer: &mut Tokenizer, real: bool) -> Result<Transaction<Po
                 match parsed_posting {
                     true => {
                         let len = transaction.postings.len();
+
+                        for tag in comment.get_tags().iter() {
+                            if tag.get_name().to_lowercase() == "payee" {
+                                if let Some(payee) = &tag.value {
+                                    transaction.postings[len - 1].payee = payee.clone();
+                                }
+                                break;
+                            }
+                        }
                         transaction.postings[len - 1].comments.push(comment);
                     }
-                    false => transaction.comments.push(comment),
+                    false => {
+                        transaction.comments.push(comment);
+                    }
                 }
             }
             c if c.is_numeric() => {
@@ -116,7 +131,11 @@ fn parse_generic(tokenizer: &mut Tokenizer, real: bool) -> Result<Transaction<Po
                 ))));
             }
             _ => {
-                match parse_posting(tokenizer, transaction.transaction_type) {
+                match parse_posting(
+                    tokenizer,
+                    transaction.transaction_type,
+                    transaction.description.clone(),
+                ) {
                     // Although here we already know the kind of the posting (virtual, real),
                     // we deal with that in the next phase of parsing
                     Ok(posting) => transaction.postings.push(posting),
@@ -134,7 +153,7 @@ fn parse_generic(tokenizer: &mut Tokenizer, real: bool) -> Result<Transaction<Po
 }
 
 #[derive(Debug, Clone)]
-pub struct Posting {
+pub struct RawPosting {
     pub account: String,
     pub money_amount: Option<BigRational>,
     pub money_currency: Option<String>,
@@ -146,6 +165,7 @@ pub struct Posting {
     pub comments: Vec<Comment>,
     pub amount_expr: Option<String>,
     pub kind: PostingType,
+    pub payee: String,
 }
 
 /// Parses a posting
@@ -153,7 +173,8 @@ pub struct Posting {
 fn parse_posting(
     tokenizer: &mut Tokenizer,
     transaction_type: TransactionType,
-) -> Result<Posting, ParserError> {
+    default_payee: String,
+) -> Result<RawPosting, ParserError> {
     let mut account = String::new();
     let mut posting_type = PostingType::Real;
     let mut finished = false;
@@ -210,7 +231,7 @@ fn parse_posting(
         }
     }
 
-    let mut posting = Posting {
+    let mut posting = RawPosting {
         account,
         money_amount: None,
         money_currency: None,
@@ -222,6 +243,7 @@ fn parse_posting(
         comments: Vec::new(),
         amount_expr: None,
         kind: posting_type,
+        payee: default_payee.clone(),
     };
     if finished {
         return Ok(posting);

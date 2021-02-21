@@ -1,4 +1,4 @@
-use crate::models::{Account, Currency, Money, Posting, Transaction};
+use crate::models::{Account, Currency, Money, Payee, Posting, Transaction};
 use crate::pest::Parser;
 use crate::List;
 use num::{abs, BigInt, BigRational};
@@ -9,6 +9,7 @@ use std::str::FromStr;
 #[derive(Parser)]
 #[grammar = "grammar/expressions.pest"]
 pub struct ValueExpressionParser;
+
 pub fn eval_expression(
     expression: &str,
     posting: &Posting,
@@ -28,6 +29,7 @@ pub fn eval_expression(
 
     eval(&root, posting, transaction, commodities)
 }
+
 pub fn eval_value_expression(
     expression: &str,
     posting: &Posting,
@@ -45,6 +47,7 @@ pub fn eval_value_expression(
 pub enum Node {
     Amount,
     Account,
+    Payee,
     Number(BigRational),
     Money {
         currency: String,
@@ -61,12 +64,14 @@ pub enum Node {
     },
     Regex(Regex),
 }
+
 #[derive(Debug)]
 pub enum EvalResult {
     Number(BigRational),
     Money(Money),
     Boolean(bool),
     Account(Rc<Account>),
+    Payee(Rc<Payee>),
     Regex(Regex),
 }
 
@@ -79,6 +84,7 @@ pub fn eval(
     match node {
         Node::Amount => EvalResult::Money(posting.amount.clone().unwrap()),
         Node::Account => EvalResult::Account(posting.account.clone()),
+        Node::Payee => EvalResult::Payee(posting.payee.clone()),
         Node::Regex(r) => EvalResult::Regex(r.clone()),
         Node::Number(n) => EvalResult::Number(n.clone()),
         Node::Money { currency, amount } => {
@@ -122,14 +128,14 @@ pub fn eval(
             let right = eval(rhs, posting, transaction, commodities);
             match op {
                 Binary::Eq => {
-                    if let EvalResult::Account(lhs) = left {
-                        if let EvalResult::Regex(rhs) = right {
-                            EvalResult::Boolean(lhs.is_match(rhs))
-                        } else {
-                            panic!("Expected regex")
+                    if let EvalResult::Regex(rhs) = right {
+                        match left {
+                            EvalResult::Account(lhs) => EvalResult::Boolean(lhs.is_match(rhs)),
+                            EvalResult::Payee(lhs) => EvalResult::Boolean(lhs.is_match(rhs)),
+                            x => panic!("Found {:?}", x),
                         }
                     } else {
-                        panic!("Expected account")
+                        panic!("Expected regex");
                     }
                 }
                 Binary::Add | Binary::Subtract => {
@@ -301,6 +307,7 @@ fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> Node {
                     Node::Regex(regex)
                 }
                 Rule::account => Node::Account,
+                Rule::payee => Node::Payee,
 
                 unknown => panic!("Unknown rule: {:?}", unknown),
             }

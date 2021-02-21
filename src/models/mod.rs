@@ -37,7 +37,7 @@ pub struct Ledger {
     pub(crate) commodities: List<Currency>,
     pub(crate) transactions: Vec<Transaction<Posting>>,
     pub(crate) prices: Vec<Price>,
-    payees: List<Payee>,
+    pub(crate) payees: List<Payee>,
 }
 
 impl Ledger {
@@ -65,7 +65,7 @@ impl ParsedLedger {
         for transaction in self.transactions.iter() {
             for p in transaction.postings.iter() {
                 account_strs.insert(p.account.clone());
-
+                payee_strs.insert(p.payee.clone());
                 // Currencies
                 if let Some(c) = &p.money_currency {
                     commodity_strs.insert(c.clone());
@@ -100,7 +100,14 @@ impl ParsedLedger {
                 Err(_) => self.accounts.insert(Account::from(alias.as_str())),
             }
         }
-        // TODO payees
+
+        // Payees
+        for alias in payee_strs {
+            match self.payees.get(&alias) {
+                Ok(_) => {} // do nothing
+                Err(_) => self.payees.insert(Payee::from(alias.as_str())),
+            }
+        }
 
         // 3. Prices from price statements
         let mut prices: Vec<Price> = Vec::new();
@@ -129,7 +136,7 @@ impl ParsedLedger {
         let mut transactions = Vec::new();
         let mut automated_transactions = Vec::new();
         for parsed in self.transactions.iter() {
-            let (mut t, mut auto, mut new_prices) = self._transaction_to_ledger(parsed)?;
+            let (mut t, mut auto, mut new_prices) = self.clone()._transaction_to_ledger(parsed)?;
             transactions.append(&mut t);
             automated_transactions.append(&mut auto);
             prices.append(&mut new_prices);
@@ -191,13 +198,19 @@ impl ParsedLedger {
                             }
                             for auto_posting in automated.postings_iter() {
                                 let account_alias = auto_posting.account.clone();
+                                let payee_alias = auto_posting.payee.clone();
                                 match self.accounts.get(&account_alias) {
                                     Ok(_) => {} // do nothing
                                     Err(_) => {
                                         self.accounts.insert(Account::from(account_alias.as_str()))
                                     }
                                 }
+                                match self.payees.get(&payee_alias) {
+                                    Ok(_) => {} // do nothing
+                                    Err(_) => self.payees.insert(Payee::from(payee_alias.as_str())),
+                                }
                                 let account = self.accounts.get(&account_alias).unwrap();
+                                let payee = self.payees.get(&payee_alias).unwrap();
                                 let money = match &auto_posting.money_currency {
                                     None => Some(value_expr::eval_value_expression(
                                         auto_posting.amount_expr.clone().unwrap().as_str(),
@@ -226,6 +239,7 @@ impl ParsedLedger {
                                         }
                                     }
                                 };
+
                                 let posting = Posting {
                                     account: account.clone(),
                                     amount: money,
@@ -233,6 +247,7 @@ impl ParsedLedger {
                                     cost: None,
                                     kind: auto_posting.kind,
                                     tags: vec![],
+                                    payee: payee.clone(),
                                 };
                                 // println!("{:?}", posting);
                                 match auto_posting.kind {
@@ -297,11 +312,11 @@ impl ParsedLedger {
 
     fn _transaction_to_ledger(
         &self,
-        parsed: &Transaction<tokenizers::transaction::Posting>,
+        parsed: &Transaction<tokenizers::transaction::RawPosting>,
     ) -> Result<
         (
             Vec<Transaction<Posting>>,
-            Vec<Transaction<tokenizers::transaction::Posting>>,
+            Vec<Transaction<tokenizers::transaction::RawPosting>>,
             Vec<Price>,
         ),
         Error,
@@ -323,12 +338,13 @@ impl ParsedLedger {
                 // Go posting by posting
                 for p in parsed.postings.iter() {
                     let account = self.accounts.get(&p.account)?;
-
-                    let mut posting: Posting = Posting::new(account, p.kind);
+                    let payee = self.payees.get(&p.payee)?;
+                    let mut posting: Posting = Posting::new(account, p.kind, payee);
                     posting.tags = transaction.tags.clone();
                     for comment in p.comments.iter() {
                         posting.tags.append(&mut comment.get_tags());
                     }
+
                     // Modify posting with amounts
                     if let Some(c) = &p.money_currency {
                         posting.amount = Some(Money::from((

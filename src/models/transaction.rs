@@ -8,8 +8,8 @@ use chrono::NaiveDate;
 use num::rational::BigRational;
 
 use crate::models::balance::Balance;
-use crate::models::{Account, Comment, HasName, Money};
-use crate::LedgerError;
+use crate::models::{Account, Comment, HasName, Money, Origin, Payee};
+use crate::{LedgerError, List};
 use num::BigInt;
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -35,6 +35,7 @@ pub struct Transaction<PostingType> {
     pub tags: Vec<Tag>,
     filter_query: Option<String>,
 }
+
 impl<T> Transaction<T> {
     pub fn get_filter_query(&mut self) -> String {
         match self.filter_query.clone() {
@@ -46,6 +47,21 @@ impl<T> Transaction<T> {
                 res
             }
             Some(x) => x,
+        }
+    }
+    pub fn get_payee(&self, payees: &mut List<Payee>) -> Rc<Payee> {
+        match payees.get(&self.description) {
+            Ok(x) => x.clone(),
+            Err(_) => {
+                let payee = Payee {
+                    name: self.description.clone(),
+                    note: None,
+                    alias: Default::default(),
+                    origin: Origin::FromTransaction,
+                };
+                payees.insert(payee);
+                self.get_payee(payees)
+            }
         }
     }
 }
@@ -86,10 +102,11 @@ pub struct Posting {
     pub cost: Option<Cost>,
     pub kind: PostingType,
     pub tags: Vec<Tag>,
+    pub payee: Rc<Payee>,
 }
 
 impl Posting {
-    pub fn new(account: &Account, kind: PostingType) -> Posting {
+    pub fn new(account: &Account, kind: PostingType, payee: &Payee) -> Posting {
         Posting {
             account: Rc::new(account.clone()),
             amount: None,
@@ -97,6 +114,7 @@ impl Posting {
             cost: None,
             kind: kind,
             tags: vec![],
+            payee: Rc::new(payee.clone()),
         }
     }
     pub fn set_amount(&mut self, money: Money) {
@@ -229,6 +247,7 @@ impl Transaction<Posting> {
 
         // 1. Iterate over postings
         let mut fill_account = &Rc::new(Account::from("this will never be used"));
+        let mut fill_payee = &Rc::new(Payee::from("this will never be used"));
         let mut postings: Vec<Posting> = Vec::new();
         for p in self.postings.iter() {
             // If it has money, update the balance
@@ -294,6 +313,7 @@ impl Transaction<Posting> {
                     cost: p.cost.clone(),
                     kind: PostingType::Real,
                     tags: self.tags.clone(),
+                    payee: p.payee.clone(),
                 });
             } else if &p.balance.is_some() & !skip_balance_check {
                 // There is a balance
@@ -313,10 +333,12 @@ impl Transaction<Posting> {
                     cost: p.cost.clone(),
                     kind: PostingType::Real,
                     tags: p.tags.clone(),
+                    payee: p.payee.clone(),
                 });
             } else {
                 // We do nothing, but this is the account for the empty post
                 fill_account = &p.account;
+                fill_payee = &p.payee;
             }
         }
 
@@ -347,6 +369,7 @@ impl Transaction<Posting> {
                     cost: None,
                     kind: PostingType::Real,
                     tags: self.tags.clone(),
+                    payee: fill_payee.clone(),
                 });
             }
             self.postings = postings;

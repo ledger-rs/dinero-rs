@@ -59,3 +59,14 @@ impl Payee {
         regex.is_match(self.get_name())
     }
 }
+
+impl From<&str> for Payee {
+    fn from(name: &str) -> Self {
+        Payee {
+            name: String::from(name),
+            note: None,
+            alias: Default::default(),
+            origin: Origin::FromTransaction,
+        }
+    }
+}

@@ -1,16 +1,5 @@
 // Grammar specification for value expressions
 value_expr = {"(" ~ ws* ~ expr ~ ws* ~ ")"}
-term = _{ variable | money | number }
-money = { (number ~ ws* ~ currency) | (currency ~ ws* ~ number) }
-currency = { LETTER+ | ("\"" ~ (!"\"" ~ ANY)+ ~ "\"")}
-//regex = { "/" ~ (!"\\/" ~ ANY )+ ~ "/" }
-regex = { "/" ~ (!"/" ~ ANY)* ~ "/"}
-variable = _{ account | date | amount | total_amount | cost | value | gain | depth | posting_number | posting_count | cleared | real | not_automated | running_total }
-
-number = { "-"? ~ bigint ~ ("." ~ bigint)? }
-bigint = _{ ASCII_DIGIT+ }
-ws = _{" "}
-
 expr = { comparison_expr }
 comparison_expr = { or_expr ~ ws* ~ ( comparison ~ ws* ~ or_expr ) * }
 or_expr = { and_expr ~ ws* ~ ( or ~ ws* ~ and_expr ) * }
@@ -23,6 +12,17 @@ primary = {
     (unary ~ ws* ~ primary) |
     (unary_function ~ ws* ~ "(" ~ expr ~ ws* ~ ")")
     }
+
+term = _{ variable | money | number }
+money = { (number ~ ws* ~ currency) | (currency ~ ws* ~ number) }
+currency = { LETTER+ | ("\"" ~ (!"\"" ~ ANY)+ ~ "\"")}
+regex = { "/" ~ (!"/" ~ ANY)* ~ "/"}
+variable = _{ account | payee | date | amount | total_amount | cost | value | gain | depth | posting_number | posting_count | cleared | real | not_automated | running_total }
+
+number = { "-"? ~ bigint ~ ("." ~ bigint)? }
+bigint = _{ ASCII_DIGIT+ }
+ws = _{" "}
+
 
 add = { "+" | "-" }
 mult = { "*" | "/" }
@@ -39,6 +39,7 @@ le = { "<=" }
 lt = { "<" }
 
 account = {"account"}
+payee = {"payee"}
 total_amount = {"T"}
 // A posting’s date, as the number of seconds past the epoch. This is always “today” for an account.
 date = {"d"}

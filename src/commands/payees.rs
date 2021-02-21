@@ -1,4 +1,4 @@
-use crate::models::{Currency, HasName, Payee};
+use crate::models::{HasName, Payee};
 use crate::parser::Tokenizer;
 use crate::Error;
 use std::ops::Deref;

@@ -12,7 +12,7 @@ use crate::ParserError;
 pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Payee, ParserError> {
     lazy_static! {
         static ref RE: Regex = Regex::new(format!("{}{}{}",
-        r"(payee) +"        , // directive commodity
+        r"(payee) +"            , // payee directive
         r"(.*)"                 , // description
         r"(  ;.*)?"             , // note
         ).as_str()).unwrap();
@@ -31,7 +31,7 @@ pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Payee, ParserError> {
             Some(m) => {
                 match i {
                     1 =>
-                    // commodity
+                    // payee
                     {
                         detected = true;
                     }

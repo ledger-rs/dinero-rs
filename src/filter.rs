@@ -65,7 +65,7 @@ pub fn filter_predicate(
 /// # use dinero::filter::preprocess_query;
 /// let params:Vec<String> = vec!["@payee", "savings" , "and", "checking", "and", "expr", "/aeiou/"].iter().map(|x| x.to_string()).collect();
 /// let processed = preprocess_query(&params);
-/// assert_eq!(processed, "(@payee) or (account =~ /(?i)savings/) and (account =~ /(?i)checking/) or (/aeiou/)")
+/// assert_eq!(processed, "(payee =~ /(?i)payee/) or (account =~ /(?i)savings/) and (account =~ /(?i)checking/) or (/aeiou/)")
 /// ```
 pub fn preprocess_query(query: &Vec<String>) -> String {
     let mut expression = String::new();
@@ -96,7 +96,11 @@ pub fn preprocess_query(query: &Vec<String>) -> String {
             expression.push_str(term);
         } else if let Some(c) = term.chars().next() {
             match c {
-                '@' => expression.push_str(term),
+                '@' => {
+                    expression.push_str("payee =~ /(?i)"); // case insensitive
+                    expression.push_str(&term.to_string()[1..]);
+                    expression.push_str("/")
+                }
                 '%' => {
                     expression.push_str("has_tag(/(?i)"); // case insensitive
                     expression.push_str(&term.to_string()[1..]);
