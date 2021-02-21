@@ -39,7 +39,7 @@ impl<T> Transaction<T> {
     pub fn get_filter_query(&mut self) -> String {
         match self.filter_query.clone() {
             None => {
-                let mut parts: Vec<String> =
+                let parts: Vec<String> =
                     self.description.split(" ").map(|x| x.to_string()).collect();
                 let res = preprocess_query(&parts);
                 self.filter_query = Some(res.clone());
