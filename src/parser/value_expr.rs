@@ -7,7 +7,7 @@ use std::rc::Rc;
 use std::str::FromStr;
 
 #[derive(Parser)]
-#[grammar = "expressions.pest"]
+#[grammar = "grammar/expressions.pest"]
 pub struct ValueExpressionParser;
 pub fn eval_expression(
     expression: &str,
