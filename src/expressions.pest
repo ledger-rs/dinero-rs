@@ -1,11 +1,11 @@
 // Grammar specification for value expressions
-
 value_expr = {"(" ~ ws* ~ expr ~ ws* ~ ")"}
 term = _{ variable | money | number }
 money = { (number ~ ws* ~ currency) | (currency ~ ws* ~ number) }
 currency = { LETTER+ | ("\"" ~ (!"\"" ~ ANY)+ ~ "\"")}
-regex = { "/" ~ (!"\\/" ~ ANY )* ~ "/" }
-variable = _{ date | amount | total_amount | cost | value | gain | depth | posting_number | posting_count | cleared | real | not_automated | running_total }
+//regex = { "/" ~ (!"\\/" ~ ANY )+ ~ "/" }
+regex = { "/" ~ (!"/" ~ ANY)* ~ "/"}
+variable = _{ account | date | amount | total_amount | cost | value | gain | depth | posting_number | posting_count | cleared | real | not_automated | running_total }
 
 number = { "-"? ~ bigint ~ ("." ~ bigint)? }
 bigint = _{ ASCII_DIGIT+ }
@@ -18,9 +18,9 @@ and_expr = { additive_expr ~ ws* ~ ( or ~ ws* ~ additive_expr ) * }
 additive_expr = { multiplicative_expr ~ ws* ~ ( add ~ ws* ~ multiplicative_expr ) * }
 multiplicative_expr = { primary ~ ws* ~ ( mult ~ ws* ~ primary )* }
 primary = {
-    ("(" ~ ws* ~ expr ~ ws* ~ ")") | 
-    term | 
-    (unary ~ ws* ~ primary) | 
+    ("(" ~ ws* ~ expr ~ ws* ~ ")") |
+    term | regex |
+    (unary ~ ws* ~ primary) |
     (unary_function ~ ws* ~ "(" ~ expr ~ ws* ~ ")")
     }
 
@@ -29,7 +29,7 @@ mult = { "*" | "/" }
 and = {"&" | "and"}
 or = {"|" | "or" }
 unary = { "-" | "!"}
-unary_function = { "abs" }
+unary_function = { "abs" | "has_tag" }
 comparison = { eq | ne | ge | gt | le | lt }
 eq = { "=~" }
 ne = { "!=" }
@@ -38,6 +38,7 @@ ge = { ">=" }
 le = { "<=" }
 lt = { "<" }
 
+account = {"account"}
 total_amount = {"T"}
 // A posting’s date, as the number of seconds past the epoch. This is always “today” for an account.
 date = {"d"}

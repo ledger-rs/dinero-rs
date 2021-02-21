@@ -180,7 +180,12 @@ impl ParsedLedger {
                     let mut extra_virtual_postings = vec![];
                     let mut extra_virtual_postings_balance = vec![];
                     for p in t.postings_iter() {
-                        if filter_predicate(&vec![automated.description.clone()], p) {
+                        if filter_predicate(
+                            automated.clone().get_filter_query().as_str(),
+                            p,
+                            t,
+                            &mut self.commodities,
+                        )? {
                             for comment in t.comments.iter() {
                                 p.to_owned().tags.append(&mut comment.get_tags());
                             }

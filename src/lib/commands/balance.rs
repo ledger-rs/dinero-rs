@@ -20,13 +20,13 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
     let no_balance_check = options.no_balance_check;
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
     let items = tokenizer.tokenize()?;
-    let ledger = items.to_ledger(no_balance_check)?;
+    let mut ledger = items.to_ledger(no_balance_check)?;
 
     let mut balances: HashMap<Rc<Account>, Balance> = HashMap::new();
 
     for t in ledger.transactions.iter() {
         for p in t.postings_iter() {
-            if !filter::filter(&options, t, p) {
+            if !filter::filter(&options, t, p, &mut ledger.commodities)? {
                 continue;
             }
             let mut cur_bal = balances

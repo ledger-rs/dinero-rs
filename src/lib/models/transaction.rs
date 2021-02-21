@@ -15,6 +15,8 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use super::Tag;
+use crate::filter::preprocess_query;
+use regex::Regex;
 
 #[derive(Debug, Clone)]
 pub struct Transaction<PostingType> {
@@ -31,6 +33,21 @@ pub struct Transaction<PostingType> {
     pub comments: Vec<Comment>,
     pub transaction_type: TransactionType,
     pub tags: Vec<Tag>,
+    filter_query: Option<String>,
+}
+impl<T> Transaction<T> {
+    pub fn get_filter_query(&mut self) -> String {
+        match self.filter_query.clone() {
+            None => {
+                let mut parts: Vec<String> =
+                    self.description.split(" ").map(|x| x.to_string()).collect();
+                let res = preprocess_query(&parts);
+                self.filter_query = Some(res.clone());
+                res
+            }
+            Some(x) => x,
+        }
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -85,6 +102,14 @@ impl Posting {
     pub fn set_amount(&mut self, money: Money) {
         self.amount = Some(money)
     }
+    pub fn has_tag(&self, regex: Regex) -> bool {
+        for t in self.tags.iter() {
+            if regex.is_match(t.get_name()) {
+                return true;
+            }
+        }
+        false
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -109,6 +134,7 @@ impl<PostingType> Transaction<PostingType> {
             comments: vec![],
             transaction_type: t_type,
             tags: vec![],
+            filter_query: None,
         }
     }
     /// Iterator over all the postings, including the virtual ones
@@ -208,7 +234,7 @@ impl Transaction<Posting> {
             // If it has money, update the balance
             if let Some(money) = &p.amount {
                 let expected_balance = balances.get(p.account.deref()).unwrap().clone()  // What we had 
-                        + Balance::from(money.clone()); // What we add
+                    + Balance::from(money.clone()); // What we add
                 if !skip_balance_check {
                     if let Some(balance) = &p.balance {
                         if Balance::from(balance.clone()) != expected_balance {
@@ -229,36 +255,36 @@ impl Transaction<Posting> {
                 // Update the balance of the transaction
                 transaction_balance = transaction_balance   // What we had
                     + match &p.cost {
-                        None => Balance::from(money.clone()),
+                    None => Balance::from(money.clone()),
                     // If it has a cost, the secondary currency is added for the balance
-                        Some(cost) => match cost {
-                            Cost::Total { amount } => {
-                                if p.amount.as_ref().unwrap().is_negative() {
-                                    Balance::from(-amount.clone())
-                                } else {
-                                    Balance::from(amount.clone())
-                                }
+                    Some(cost) => match cost {
+                        Cost::Total { amount } => {
+                            if p.amount.as_ref().unwrap().is_negative() {
+                                Balance::from(-amount.clone())
+                            } else {
+                                Balance::from(amount.clone())
                             }
-                            Cost::PerUnit { amount } => {
-                                let currency = match amount {
-                                    Money::Zero => panic!("Cost has no currency"),
-                                    Money::Money { currency, .. } => currency,
-                                };
-                                let units = match amount {
-                                    Money::Zero => BigRational::from(BigInt::from(0)),
-                                    Money::Money { amount, .. } => amount.clone(),
-                                } * match p.amount.as_ref().unwrap() {
-                                    Money::Zero => BigRational::from(BigInt::from(0)),
-                                    Money::Money { amount, .. } => amount.clone(),
-                                };
-                                let money = Money::Money {
-                                    amount: units,
-                                    currency: currency.clone(),
-                                };
-                                Balance::from(money)
-                            }
-                        },
-                    };
+                        }
+                        Cost::PerUnit { amount } => {
+                            let currency = match amount {
+                                Money::Zero => panic!("Cost has no currency"),
+                                Money::Money { currency, .. } => currency,
+                            };
+                            let units = match amount {
+                                Money::Zero => BigRational::from(BigInt::from(0)),
+                                Money::Money { amount, .. } => amount.clone(),
+                            } * match p.amount.as_ref().unwrap() {
+                                Money::Zero => BigRational::from(BigInt::from(0)),
+                                Money::Money { amount, .. } => amount.clone(),
+                            };
+                            let money = Money::Money {
+                                amount: units,
+                                currency: currency.clone(),
+                            };
+                            Balance::from(money)
+                        }
+                    },
+                };
 
                 // Add the posting
                 postings.push(Posting {

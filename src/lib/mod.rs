@@ -4,7 +4,7 @@ extern crate pest_derive;
 
 pub mod commands;
 mod error;
-mod filter;
+pub mod filter;
 mod list;
 mod main;
 pub mod models;

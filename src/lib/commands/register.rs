@@ -13,7 +13,7 @@ pub fn execute(options: &CommonOpts) -> Result<(), Error> {
     // Now work
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
     let items = tokenizer.tokenize()?;
-    let ledger = items.to_ledger(no_balance_check)?;
+    let mut ledger = items.to_ledger(no_balance_check)?;
 
     let mut balance = Balance::new();
 
@@ -36,7 +36,7 @@ pub fn execute(options: &CommonOpts) -> Result<(), Error> {
     for t in ledger.transactions.iter() {
         let mut counter = 0;
         for p in t.postings_iter() {
-            if !filter::filter(&options, t, p) {
+            if !filter::filter(&options, t, p, &mut ledger.commodities)? {
                 continue;
             }
             counter += 1;
