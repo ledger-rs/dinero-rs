@@ -1,16 +1,17 @@
 use crate::models::{FromDirective, HasAliases, HasName, Origin};
-use regex::Regex;
 use std::collections::hash_map::RandomState;
 use std::collections::HashSet;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
+use regex::Regex;
 
 #[derive(Debug, Clone)]
 pub struct Payee {
     pub name: String,
     pub note: Option<String>,
     pub alias: HashSet<String>,
+    pub alias_regex: Vec<Regex>,
     pub(crate) origin: Origin,
 }
 
@@ -66,6 +67,7 @@ impl From<&str> for Payee {
             name: String::from(name),
             note: None,
             alias: Default::default(),
+            alias_regex: Default::default(),
             origin: Origin::FromTransaction,
         }
     }

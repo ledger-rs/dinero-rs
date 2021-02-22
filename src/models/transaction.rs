@@ -76,6 +76,7 @@ impl<T> Transaction<T> {
                     name: self.description.clone(),
                     note: None,
                     alias: Default::default(),
+                    alias_regex: vec![],
                     origin: Origin::FromTransaction,
                 };
                 payees.insert(payee);

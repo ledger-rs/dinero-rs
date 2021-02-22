@@ -1,4 +1,5 @@
 use num::rational::BigRational;
+use regex::Regex;
 use std::collections::{HashMap, HashSet};
 
 pub use account::Account;
@@ -101,10 +102,30 @@ impl ParsedLedger {
         }
 
         // Payees
+        let payees_copy = self.payees.clone();
         for alias in payee_strs {
             match self.payees.get(&alias) {
                 Ok(_) => {} // do nothing
-                Err(_) => self.payees.insert(Payee::from(alias.as_str())),
+                Err(_) => { // Payees are actually matched by regex
+                    let mut matched = false;
+                    let mut alias_to_add = "".to_string();
+                    let mut payee_to_add = None;
+                    'outer: for (_, p) in payees_copy.iter() {
+                        for p_alias in p.alias_regex.iter() {
+                            if p_alias.is_match(alias.as_str()) {
+                                // self.payees.add_alias(alias.to_string(), p);
+                                payee_to_add = Some(p);
+                                alias_to_add = alias.to_string();
+                                matched = true;
+                                break 'outer;
+                            }
+                        }
+                    }
+                    if !matched {self.payees.insert(Payee::from(alias.as_str()))}
+                    else {
+                        self.payees.add_alias(alias_to_add, payee_to_add.unwrap());
+                    }
+                },
             }
         }
 

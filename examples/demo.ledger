@@ -34,3 +34,6 @@ commodity €
 commodity USD
     alias $
 P 2021-01-23 AAPL 139.07 USD
+payee ACME, inc.
+    alias (?i)(.*acme.*)
+
