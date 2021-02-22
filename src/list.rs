@@ -1,3 +1,4 @@
+use regex::Regex;
 use std::collections::hash_map::{Iter, RandomState, Values};
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -15,6 +16,7 @@ use crate::LedgerError;
 /// - Adding new elements to the list
 /// - Adding new aliases to existing elements
 /// - Retrieving elements
+/// - Retrieving elements with a regular expression
 #[derive(Debug, Clone)]
 pub struct List<T> {
     aliases: HashMap<String, String>,
@@ -86,6 +88,22 @@ impl<'a, T: Eq + Hash + HasName + Clone + FromDirective + HasAliases + Debug> Li
             Some(x) => Ok(x),
         }
     }
+    /// Gets an element from the regex
+    pub fn get_regex(&self, regex: Regex) -> Option<&Rc<T>> {
+        // Try the list
+        for (_alias, value) in self.list.iter() {
+            if regex.is_match(value.get_name()) {
+                return Some(value);
+            }
+        }
+        for (alias, value) in self.aliases.iter() {
+            if regex.is_match(alias) {
+                return self.list.get(value);
+            }
+        }
+
+        None
+    }
 
     pub fn iter(&self) -> Iter<'_, String, Rc<T>> {
         self.list.iter()
@@ -105,5 +123,26 @@ impl<T: Clone> List<T> {
     pub fn append(&mut self, other: &List<T>) {
         self.list.extend(other.to_owned().list.into_iter());
         self.aliases.extend(other.to_owned().aliases.into_iter());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::Payee;
+    use regex::Regex;
+    #[test]
+    fn list_aliases() {
+        let name = "ACME Inc.";
+        let payee = Payee::from(name);
+        let mut list: List<Payee> = List::new();
+        list.insert(payee);
+
+        // Get ACME from the list, using a regex
+        let pattern = Regex::new("ACME").unwrap();
+        let retrieved = list.get_regex(pattern);
+
+        assert!(retrieved.is_some());
+        assert_eq!(retrieved.unwrap().get_name(), "ACME Inc.");
     }
 }
