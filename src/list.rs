@@ -69,12 +69,6 @@ impl<'a, T: Eq + Hash + HasName + Clone + FromDirective + HasAliases + Debug> Li
         ()
     }
 
-    pub fn element_in_list(&self, element: &T) -> bool {
-        match self.aliases.get(&element.get_name().to_lowercase()) {
-            None => false,
-            Some(_) => true,
-        }
-    }
     pub fn get(&self, index: &str) -> Result<&Rc<T>, LedgerError> {
         match self.list.get(&index.to_lowercase()) {
             None => match self.aliases.get(&index.to_lowercase()) {
@@ -132,11 +126,11 @@ mod tests {
     use crate::models::Payee;
     use regex::Regex;
     #[test]
-    fn list_aliases() {
+    fn list() {
         let name = "ACME Inc.";
         let payee = Payee::from(name);
         let mut list: List<Payee> = List::new();
-        list.insert(payee);
+        list.insert(payee.clone());
 
         // Get ACME from the list, using a regex
         let pattern = Regex::new("ACME").unwrap();
@@ -144,5 +138,15 @@ mod tests {
 
         assert!(retrieved.is_some());
         assert_eq!(retrieved.unwrap().get_name(), "ACME Inc.");
+        assert_eq!(list.len_alias(), 1);
+
+        // Now add and alias
+        list.add_alias("ACME is awesome".to_string(), &payee);
+        assert_eq!(list.len_alias(), 2);
+
+        // Retrieve an element that is not in the list
+        assert!(list.get_regex(Regex::new("Warner").unwrap()).is_none());
+        assert!(list.get("Warner").is_err());
+
     }
 }
