@@ -5,29 +5,29 @@
 2021-01-01 * Groceries
     ; :fruit:
     Expenses:Groceries   $100
-    Assets:Checking account
+    Assets:Bank:Checking account
 
 2021-01-03 * Clothing
     ; :skirt:
     Expenses:Clothes   $69.37
-    Assets:Checking account   $-69.37
+    Assets:Bank:Checking account   $-69.37
 
 2021-01-15 * Flights
     ; destination: spain
     Expenses:Travel      200 EUR
-    Assets:Checking account   $-210.12
+    Assets:Bank:Checking account   $-210.12
 
 2021-01-16 * Alphabet Inc.
     Assets:Shares        2 GOOGL @ $957.37
-    Assets:Checking account
+    Assets:Bank:Checking account
 
 2021-01-16 * ACME.
     Assets:Shares        2 ACME @@ $957.37
-    Assets:Checking account
+    Assets:Bank:Checking account
 
 2021-01-27 * ACME, inc.
     Income:Salary     $-100
-    Assets:Checking account
+    Assets:Bank:Checking account
 
 commodity €
     alias EUR
