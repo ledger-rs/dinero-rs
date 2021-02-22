@@ -43,7 +43,7 @@ pub fn filter_predicate(
     transaction: &Transaction<Posting>,
     commodities: &mut List<Currency>,
 ) -> Result<bool, Error> {
-    if predicate.len() == 0 {
+    if (predicate.len() == 0) | (predicate == "()") {
         return Ok(true);
     }
     let result = eval_expression(predicate, posting, transaction, commodities);
@@ -65,7 +65,7 @@ pub fn filter_predicate(
 /// # use dinero::filter::preprocess_query;
 /// let params:Vec<String> = vec!["@payee", "savings" , "and", "checking", "and", "expr", "/aeiou/"].iter().map(|x| x.to_string()).collect();
 /// let processed = preprocess_query(&params);
-/// assert_eq!(processed, "(payee =~ /(?i)payee/) or (account =~ /(?i)savings/) and (account =~ /(?i)checking/) or (/aeiou/)")
+/// assert_eq!(processed, "((payee =~ /(?i)payee/) or (account =~ /(?i)savings/) and (account =~ /(?i)checking/) and (/aeiou/))")
 /// ```
 pub fn preprocess_query(query: &Vec<String>) -> String {
     let mut expression = String::new();
