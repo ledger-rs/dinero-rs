@@ -105,7 +105,6 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
 
     vec_balances.sort_by(|a, b| a.0.cmp(b.0));
     let num_bal = vec_balances.len();
-    // for (index, (account, bal)) in vec_balances.iter().enumerate() {
     let mut index = 0;
     while index < num_bal {
         let (account, bal) = &vec_balances[index];
@@ -116,7 +115,6 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
         }
 
         let mut first = true;
-
         for (_, money) in bal.balance.iter() {
             if !first {
                 println!();
@@ -127,36 +125,47 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
                 false => print!("{:>20}", format!("{}", money)),
             }
         }
+        if first {
+            // This means the balance was empty
+            print!("{:>20}", "0");
+        }
         if flat {
             println!("  {}", account.blue());
         } else {
             let mut n = account.split(":").count();
-            let mut text = account.split(":").last().unwrap().to_string();
             for _ in 0..n {
                 print!("  ");
             }
+            // start by getting the account name
+            let mut text = account.split(":").last().unwrap().to_string();
             // This is where it gets tricky, we need to collapse while we can
-            let mut collapse = false;
-            loop {
-                for j in (index + 1)..num_bal {
-                    let this_depth = vec_balances[j].0.split(":").count();
-                    if this_depth <= n {
+            let mut collapse = true;
+            'outer: loop {
+                if (index + 1) >= num_bal {
+                    break;
+                }
+                if vec_balances[index + 1].0.split(":").count() != (n + 1) {
+                    break;
+                }
+                for j in (index + 2)..num_bal {
+                    let name = vec_balances[j].0.clone();
+                    if !name.starts_with(account) {
                         break;
                     }
-                    if (this_depth == n + 1) & !collapse {
-                        collapse = true;
-                    } else if (this_depth == n + 1) & collapse {
+                    let this_depth = name.split(":").count();
+                    if (this_depth == n + 1) {
                         collapse = false;
                         break;
                     }
                 }
-                if !collapse | (index + 1 == num_bal) {
+                if collapse {
+                    text.push(':');
+                    text.push_str(&vec_balances[index + 1].0.split(":").last().unwrap());
+                    n = n + 1;
+                    index = index + 1;
+                } else {
                     break;
                 }
-                text.push(':');
-                text.push_str(&vec_balances[index + 1].0.split(":").last().unwrap());
-                index = index + 1;
-                n = n + 1;
             }
             println!("{}", text.blue());
         }
