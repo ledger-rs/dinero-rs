@@ -23,7 +23,6 @@ pub struct List<T> {
     list: HashMap<String, Rc<T>>,
 }
 
-
 impl<'a, T: Eq + Hash + HasName + Clone + FromDirective + HasAliases + Debug> List<T> {
     pub fn new() -> Self {
         let aliases: HashMap<String, String> = HashMap::new();
@@ -142,5 +141,16 @@ mod tests {
         // Retrieve an element that is not in the list
         assert!(list.get_regex(Regex::new("Warner").unwrap()).is_none());
         assert!(list.get("Warner").is_err());
+        assert!(list.get_regex(Regex::new("awesome").unwrap()).is_some());
+    }
+    #[test]
+    #[should_panic]
+    fn list_repeated_alias() {
+        let mut list: List<Payee> = List::new();
+        list.insert(Payee::from("ACME"));
+        for _ in 0..2 {
+            let retrieved = list.get("ACME").unwrap();
+            list.add_alias("ACME, Inc.".to_string(), &retrieved.clone())
+        }
     }
 }
