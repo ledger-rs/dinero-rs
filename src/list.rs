@@ -23,11 +23,6 @@ pub struct List<T> {
     list: HashMap<String, Rc<T>>,
 }
 
-impl<T> Into<HashMap<String, Rc<T>>> for List<T> {
-    fn into(self) -> HashMap<String, Rc<T>, RandomState> {
-        self.list
-    }
-}
 
 impl<'a, T: Eq + Hash + HasName + Clone + FromDirective + HasAliases + Debug> List<T> {
     pub fn new() -> Self {
@@ -147,6 +142,5 @@ mod tests {
         // Retrieve an element that is not in the list
         assert!(list.get_regex(Regex::new("Warner").unwrap()).is_none());
         assert!(list.get("Warner").is_err());
-
     }
 }
