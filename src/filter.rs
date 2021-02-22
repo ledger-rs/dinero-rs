@@ -77,9 +77,14 @@ pub fn preprocess_query(query: &Vec<String>) -> String {
         if term.len() == 0 {
             continue;
         }
-        if (term == "and") | (term == "expr") {
-            and = term == "and";
-            expr = term == "expr";
+        if term == "and" {
+            and = true;
+            continue;
+        } else if term == "or" {
+            and = false;
+            continue;
+        } else if term == "expr" {
+            expr = true;
             continue;
         }
         let join_term = if !first {
@@ -106,6 +111,10 @@ pub fn preprocess_query(query: &Vec<String>) -> String {
                     expression.push_str(&term.to_string()[1..]);
                     expression.push_str("/)")
                 }
+                '/' => {
+                    expression.push_str("account =~ "); // case insensitive
+                    expression.push_str(term);
+                }
                 _ => {
                     expression.push_str("account =~ /(?i)"); // case insensitive
                     expression.push_str(term);
@@ -118,5 +127,5 @@ pub fn preprocess_query(query: &Vec<String>) -> String {
         expr = false;
         first = false;
     }
-    expression
+    format!("({})", expression)
 }

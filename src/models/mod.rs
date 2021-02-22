@@ -59,9 +59,8 @@ impl ParsedLedger {
         let mut account_strs = HashSet::<String>::new();
         let mut payee_strs = HashSet::<String>::new();
 
-        //
         // 1. Populate the directive lists
-        //
+
         for transaction in self.transactions.iter() {
             for p in transaction.postings.iter() {
                 account_strs.insert(p.account.clone());
@@ -135,8 +134,9 @@ impl ParsedLedger {
         //
         let mut transactions = Vec::new();
         let mut automated_transactions = Vec::new();
+
         for parsed in self.transactions.iter() {
-            let (mut t, mut auto, mut new_prices) = self.clone()._transaction_to_ledger(parsed)?;
+            let (mut t, mut auto, mut new_prices) = self._transaction_to_ledger(parsed)?;
             transactions.append(&mut t);
             automated_transactions.append(&mut auto);
             prices.append(&mut new_prices);
@@ -181,14 +181,14 @@ impl ParsedLedger {
 
         // 5. Go over the transactions again and see if there is something we need to do with them
         if automated_transactions.len() > 0 {
-            for automated in automated_transactions.iter() {
+            for automated in automated_transactions.iter_mut() {
                 for t in transactions.iter_mut() {
                     let mut extra_postings = vec![];
                     let mut extra_virtual_postings = vec![];
                     let mut extra_virtual_postings_balance = vec![];
                     for p in t.postings_iter() {
                         if filter_predicate(
-                            automated.clone().get_filter_query().as_str(),
+                            automated.get_filter_query().as_str(),
                             p,
                             t,
                             &mut self.commodities,

@@ -1,24 +1,53 @@
 // Grammar specification for value expressions
+
+// A value expression is an expression between parenthesis
 value_expr = {"(" ~ ws* ~ expr ~ ws* ~ ")"}
-expr = { comparison_expr }
-comparison_expr = { or_expr ~ ws* ~ ( comparison ~ ws* ~ or_expr ) * }
+
+// Then the expression builds up in terms of increasing preference
+expr = { or_expr }
 or_expr = { and_expr ~ ws* ~ ( or ~ ws* ~ and_expr ) * }
-and_expr = { additive_expr ~ ws* ~ ( or ~ ws* ~ additive_expr ) * }
+and_expr = { comparison_expr ~ ws* ~ ( and ~ ws* ~ comparison_expr ) * }
+comparison_expr = { additive_expr ~ ws* ~ ( comparison ~ ws* ~ additive_expr ) * }
 additive_expr = { multiplicative_expr ~ ws* ~ ( add ~ ws* ~ multiplicative_expr ) * }
 multiplicative_expr = { primary ~ ws* ~ ( mult ~ ws* ~ primary )* }
 primary = {
     ("(" ~ ws* ~ expr ~ ws* ~ ")") |
-    term | regex |
-    (unary ~ ws* ~ primary) |
-    (unary_function ~ ws* ~ "(" ~ expr ~ ws* ~ ")")
+    (unary ~ ws* ~ expr) |
+    term |
+    (function ~ ws* ~ "(" ~ ws* ~ expr ~ ws* ~ ("," ~ ws* ~ expr ~ ws*)* ~ ")")
     }
 
-term = _{ variable | money | number }
+
+term = _{ variable | money | number | regex | string }
 money = { (number ~ ws* ~ currency) | (currency ~ ws* ~ number) }
 currency = { LETTER+ | ("\"" ~ (!"\"" ~ ANY)+ ~ "\"")}
 regex = { "/" ~ (!"/" ~ ANY)* ~ "/"}
-variable = _{ account | payee | date | amount | total_amount | cost | value | gain | depth | posting_number | posting_count | cleared | real | not_automated | running_total }
+string = { "'" ~ (!"'" ~ ANY)* ~ "'"}
+variable = { 
+    "account" |
+    "payee" |
+    "date" |
+    "note" |
+    "amount" |
+    "total_amount" |
+    "cost" |
+    "value" |
+    "gain" |
+    "depth" |
+    "posting_number" |
+    "posting_count" |
+    "cleared" |
+    "real" |
+    "not_automated" |
+    "running_total" |
+    "note" |
+    // Abbreviations go later
+    "T" | "N" | "O" | "Z" | "R" | "X" |
+    "n" | "l" | "g" | "v" | "b"
+}
 
+
+// helpers
 number = { "-"? ~ bigint ~ ("." ~ bigint)? }
 bigint = _{ ASCII_DIGIT+ }
 ws = _{" "}
@@ -28,42 +57,12 @@ add = { "+" | "-" }
 mult = { "*" | "/" }
 and = {"&" | "and"}
 or = {"|" | "or" }
-unary = { "-" | "!"}
-unary_function = { "abs" | "has_tag" }
+unary = { "-" | "!" | "not" }
+function = { "abs" | "has_tag" | "to_date" | "any" | "tag" }
 comparison = { eq | ne | ge | gt | le | lt }
-eq = { "=~" }
+eq = { "=~" | "=="}
 ne = { "!=" }
 gt = { ">" }
 ge = { ">=" }
 le = { "<=" }
 lt = { "<" }
-
-account = {"account"}
-payee = {"payee"}
-total_amount = {"T"}
-// A posting’s date, as the number of seconds past the epoch. This is always “today” for an account.
-date = {"d"}
-// The posting’s amount; the balance of an account, without considering children.
-amount = {"amount" | "t"}
-// The cost of a posting; the cost of an account, without its children.
-cost = {"b"}
-// The market value of a posting or an account, without its children.
-value = {"v"}
-// The net gain (market value minus cost basis), for a posting or an account, without its children. It is the same as ‘v-b’.
-gain = {"g"}
-// The depth (“level”) of an account. If an account has one parent, its depth is one.
-depth = {"l"}
-// The index of a posting, or the count of postings affecting an account.
-posting_number = {"n"}
-// ‘1’ if a posting’s transaction has been cleared, ‘0’ otherwise.
-cleared = {"X"}
-// ‘1’ if a posting is not virtual, ‘0’ otherwise.
-real = {"R"}
-// ‘1’ if a posting is not automated, ‘0’ otherwise.
-not_automated = {"Z"}
-
-// The total of all postings seen so far, or the total of an account and all its children.
-running_total = {"O"}
-
-// The total count of postings affecting an account and all its children.
-posting_count = {"N"}

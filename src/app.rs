@@ -231,7 +231,7 @@ pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
 }
 
 /// A parser for date expressions
-fn date_parser(date: &str) -> Result<NaiveDate, Error> {
+pub fn date_parser(date: &str) -> Result<NaiveDate, Error> {
     lazy_static! {
         static ref RE_MONTH: Regex = Regex::new(r"(\d{4})[/-](\d\d?)$").unwrap();
         static ref RE_DATE: Regex = Regex::new(r"(\d{4})[/-](\d\d?)[/-](\d\d?)$").unwrap();

@@ -41,8 +41,26 @@ impl<T> Transaction<T> {
     pub fn get_filter_query(&mut self) -> String {
         match self.filter_query.clone() {
             None => {
-                let parts: Vec<String> =
-                    self.description.split(" ").map(|x| x.to_string()).collect();
+                let mut parts: Vec<String> = vec![];
+                let mut current = String::new();
+                let mut in_regex = false;
+                let mut in_string = false;
+                for c in self.description.chars() {
+                    if (c == ' ') & !in_string & !in_regex {
+                        parts.push(current.clone());
+                        current = String::new();
+                    }
+                    if c == '"' {
+                        in_string = !in_string;
+                    } else if c == '/' {
+                        in_regex = !in_regex;
+                        current.push(c);
+                    } else {
+                        current.push(c)
+                    }
+                }
+                parts.push(current.clone());
+                //self.description.split(" ").map(|x| x.to_string()).collect();
                 let res = preprocess_query(&parts);
                 self.filter_query = Some(res.clone());
                 res
@@ -128,6 +146,22 @@ impl Posting {
             }
         }
         false
+    }
+    pub fn get_tag(&self, regex: Regex) -> Option<String> {
+        for t in self.tags.iter() {
+            if regex.is_match(t.get_name()) {
+                return t.value.clone();
+            }
+        }
+        None
+    }
+    pub fn get_exact_tag(&self, regex: String) -> Option<String> {
+        for t in self.tags.iter() {
+            if regex.as_str() == t.get_name() {
+                return t.value.clone();
+            }
+        }
+        None
     }
 }
 
