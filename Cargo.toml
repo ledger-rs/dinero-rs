@@ -15,7 +15,7 @@ name = "dinero"
 path = "src/mod.rs"
 [[bin]]
 name = "dinero"
-test = true
+test = false 
 bench = false
 path = "src/main.rs"
 
