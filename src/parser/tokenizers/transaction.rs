@@ -25,13 +25,14 @@ pub(crate) fn parse_automated_transaction(
 /// Parses a transaction
 fn parse_generic(tokenizer: &mut Tokenizer, real: bool) -> Result<Transaction<RawPosting>, Error> {
     lazy_static! {
-        static ref RE_REAL: Regex = Regex::new(format!("{}{}{}{}{}{}",
+        static ref RE_REAL: Regex = Regex::new(format!("{}{}{}{}{}{}{}",
         r"(\d{4}[/-]\d{2}[/-]\d{2})"        , // date
         r"(= ?\d{4}[/-]\d{2}[/-]\d{2})? +"  , // effective_date
         r"([\*!])? +"                       , // cleared
         r"(\(.*\) )?"                       , // code
         r"(.*)"                             , // description
-        r"(  ;.*)?"                         , // note
+        r"( |.*)"                           , // payee
+        r"( ;.*)?"                          , // note
         ).as_str()).unwrap();
         static ref RE_AUTOMATED: Regex = Regex::new(format!("{}",r"=(.*)" ).as_str()).unwrap();
     }
@@ -88,6 +89,11 @@ fn parse_generic(tokenizer: &mut Tokenizer, real: bool) -> Result<Transaction<Ra
                         transaction.description = m.as_str().to_string();
                     }
                     6 =>
+                    // note
+                    {
+                        transaction.payee = Some(m.as_str().to_string())
+                    }
+                    7 =>
                     // note
                     {
                         transaction.code = Some(m.as_str().to_string())

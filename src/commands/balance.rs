@@ -140,7 +140,7 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
             let mut text = account.split(":").last().unwrap().to_string();
             // This is where it gets tricky, we need to collapse while we can
             let mut collapse = true;
-            'outer: loop {
+            loop {
                 if (index + 1) >= num_bal {
                     break;
                 }
@@ -153,7 +153,7 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
                         break;
                     }
                     let this_depth = name.split(":").count();
-                    if (this_depth == n + 1) {
+                    if this_depth == n + 1 {
                         collapse = false;
                         break;
                     }
