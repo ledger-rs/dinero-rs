@@ -33,7 +33,7 @@ After that, you can issue all the commands you want and combine them with option
 
 The most basic ones are:
 ```sh
-# Get a balance report: How much is there in all 
+# Get a balance report: How much is there in every account 
 dinero bal -f myledger.ledger
 
 # Get a list of transactions
@@ -47,6 +47,7 @@ Currently supported are:
 - Register reports
 - Account and payees reports
 - Automated transactions
+- Multicurrency transactions
 - Currency conversion
 
 Report filtering by account name and by date.
