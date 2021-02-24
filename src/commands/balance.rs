@@ -20,13 +20,13 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
     let no_balance_check = options.no_balance_check;
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
     let items = tokenizer.tokenize()?;
-    let ledger = items.to_ledger(no_balance_check)?;
+    let mut ledger = items.to_ledger(no_balance_check)?;
 
     let mut balances: HashMap<Rc<Account>, Balance> = HashMap::new();
 
     for t in ledger.transactions.iter() {
         for p in t.postings_iter() {
-            if !filter::filter(&options, t, p) {
+            if !filter::filter(&options, t, p, &mut ledger.commodities)? {
                 continue;
             }
             let mut cur_bal = balances
@@ -140,7 +140,7 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
             let mut text = account.split(":").last().unwrap().to_string();
             // This is where it gets tricky, we need to collapse while we can
             let mut collapse = true;
-            'outer: loop {
+            loop {
                 if (index + 1) >= num_bal {
                     break;
                 }
@@ -153,7 +153,7 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
                         break;
                     }
                     let this_depth = name.split(":").count();
-                    if (this_depth == n + 1) {
+                    if this_depth == n + 1 {
                         collapse = false;
                         break;
                     }
