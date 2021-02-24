@@ -30,6 +30,7 @@ after_success: |
     bash <(curl -s https://codecov.io/bash)
     # If this build is not from a tag, create one
     if [[ "$TRAVIS_TAG" == "" ]]; then
+      echo "Do nothing"
       # Build a tag
       # This prints the version number
       # export version=$(grep -E "version = \"([0-9]+\.[0-9]+.[0-9]+)\"" Cargo.toml | grep -Eo -m 1 "[0-9]+\.[0-9]+.[0-9]+")

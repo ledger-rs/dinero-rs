@@ -4,6 +4,8 @@ Changelog file for dinero-rs project, a command line application for managing fi
 ## [0.13.0] - planned
 ### Added
 - Improved documentation
+### Fixed
+- keep tags from transactions
 
 ## [0.12.0] - 2021-02-24
 ### Added
