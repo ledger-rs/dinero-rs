@@ -14,7 +14,7 @@
 
 2021-01-15 * Flights
     ; destination: spain
-    Expenses:Travel      200 EUR
+    Expenses:Unknown      200 EUR    ; this will get translated to Expenses:Flights
     Assets:Bank:Checking account   $-210.12
 
 2021-01-16 * Alphabet Inc.
@@ -36,4 +36,5 @@ commodity USD
 P 2021-01-23 AAPL 139.07 USD
 payee ACME, inc.
     alias (?i)(.*acme.*)
-
+account Expenses:Travel
+    payee Flights
