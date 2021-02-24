@@ -174,9 +174,9 @@ pub fn eval(
             let right = eval(rhs, posting, transaction, commodities, regexes);
             match op {
                 Binary::Eq => {
-                    // println!("{:?} eq {:?}", left, right); // todo delete
                     match right {
                         EvalResult::Regex(rhs) => match left {
+                            // TODO regex comparison with accounts is one source of slow speed
                             EvalResult::Account(lhs) => EvalResult::Boolean(lhs.is_match(rhs)),
                             EvalResult::Payee(lhs) => EvalResult::Boolean(lhs.is_match(rhs)),
                             EvalResult::String(lhs) => match lhs {
