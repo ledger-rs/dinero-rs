@@ -2,6 +2,8 @@ use crate::models::{Currency, Posting, PostingType, Transaction};
 use crate::parser::value_expr::{eval_expression, EvalResult};
 use crate::{CommonOpts, Error, List};
 use colored::Colorize;
+use regex::Regex;
+use std::collections::HashMap;
 
 pub fn filter(
     options: &CommonOpts,
@@ -34,7 +36,13 @@ pub fn filter(
         }
     }
 
-    filter_predicate(predicate.as_str(), posting, transaction, commodities)
+    filter_predicate(
+        predicate.as_str(),
+        posting,
+        transaction,
+        commodities,
+        &mut HashMap::new(),
+    )
 }
 
 pub fn filter_predicate(
@@ -42,11 +50,12 @@ pub fn filter_predicate(
     posting: &Posting,
     transaction: &Transaction<Posting>,
     commodities: &mut List<Currency>,
+    regexes: &mut HashMap<String, Regex>,
 ) -> Result<bool, Error> {
     if (predicate.len() == 0) | (predicate == "()") {
         return Ok(true);
     }
-    let result = eval_expression(predicate, posting, transaction, commodities);
+    let result = eval_expression(predicate, posting, transaction, commodities, regexes);
     match result {
         EvalResult::Boolean(b) => Ok(b),
         _ => Err(Error {

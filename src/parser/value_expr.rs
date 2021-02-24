@@ -8,6 +8,8 @@ use regex::Regex;
 use std::rc::Rc;
 use std::str::FromStr;
 
+use std::collections::HashMap;
+
 #[derive(Parser)]
 #[grammar = "grammar/expressions.pest"]
 pub struct ValueExpressionParser;
@@ -17,6 +19,7 @@ pub fn eval_expression(
     posting: &Posting,
     transaction: &Transaction<Posting>,
     commodities: &mut List<Currency>,
+    regexes: &mut HashMap<String, Regex>,
 ) -> EvalResult {
     let parsed = ValueExpressionParser::parse(Rule::value_expr, expression)
         .expect("unsuccessful parse") // unwrap the parse result
@@ -27,9 +30,9 @@ pub fn eval_expression(
         .unwrap();
 
     // Build the abstract syntax tree
-    let root = build_ast_from_expr(parsed);
+    let root = build_ast_from_expr(parsed, regexes);
     // println!("{:?}", expression); //todo delete
-    eval(&root, posting, transaction, commodities)
+    eval(&root, posting, transaction, commodities, regexes)
 }
 
 pub fn eval_value_expression(
@@ -37,8 +40,9 @@ pub fn eval_value_expression(
     posting: &Posting,
     transaction: &Transaction<Posting>,
     commodities: &mut List<Currency>,
+    regexes: &mut HashMap<String, Regex>,
 ) -> Money {
-    match eval_expression(expression, posting, transaction, commodities) {
+    match eval_expression(expression, posting, transaction, commodities, regexes) {
         EvalResult::Number(n) => posting.amount.clone().unwrap() * n,
         EvalResult::Money(m) => m,
         _ => panic!("Should be money"),
@@ -88,6 +92,7 @@ pub fn eval(
     posting: &Posting,
     transaction: &Transaction<Posting>,
     commodities: &mut List<Currency>,
+    regexes: &mut HashMap<String, Regex>,
 ) -> EvalResult {
     let res = match node {
         Node::Amount => EvalResult::Money(posting.amount.clone().unwrap()),
@@ -110,7 +115,7 @@ pub fn eval(
             EvalResult::Money(Money::from((cur.clone(), amount.clone())))
         }
         Node::UnaryExpr { op, child } => {
-            let res = eval(child, posting, transaction, commodities);
+            let res = eval(child, posting, transaction, commodities, regexes);
             match op {
                 Unary::Not => match res {
                     EvalResult::Boolean(b) => EvalResult::Boolean(!b),
@@ -119,7 +124,9 @@ pub fn eval(
                 Unary::Any => {
                     let mut res = false;
                     for p in transaction.postings_iter() {
-                        if let EvalResult::Boolean(b) = eval(child, p, transaction, commodities) {
+                        if let EvalResult::Boolean(b) =
+                            eval(child, p, transaction, commodities, regexes)
+                        {
                             if b {
                                 res = true;
                                 break;
@@ -163,8 +170,8 @@ pub fn eval(
             }
         }
         Node::BinaryExpr { op, lhs, rhs } => {
-            let left = eval(lhs, posting, transaction, commodities);
-            let right = eval(rhs, posting, transaction, commodities);
+            let left = eval(lhs, posting, transaction, commodities, regexes);
+            let right = eval(rhs, posting, transaction, commodities, regexes);
             match op {
                 Binary::Eq => {
                     // println!("{:?} eq {:?}", left, right); // todo delete
@@ -323,10 +330,13 @@ pub enum Binary {
 #[derive(Clone)]
 pub enum Ternary {}
 
-fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> Node {
+fn build_ast_from_expr(
+    pair: pest::iterators::Pair<Rule>,
+    regexes: &mut HashMap<String, Regex>,
+) -> Node {
     let rule = pair.as_rule();
     match rule {
-        Rule::expr => build_ast_from_expr(pair.into_inner().next().unwrap()),
+        Rule::expr => build_ast_from_expr(pair.into_inner().next().unwrap(), regexes),
         Rule::comparison_expr
         | Rule::or_expr
         | Rule::and_expr
@@ -334,7 +344,7 @@ fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> Node {
         | Rule::multiplicative_expr => {
             let mut pair = pair.into_inner();
             let lhspair = pair.next().unwrap();
-            let lhs = build_ast_from_expr(lhspair);
+            let lhs = build_ast_from_expr(lhspair, regexes);
             match pair.next() {
                 None => lhs,
                 Some(x) => {
@@ -355,7 +365,7 @@ fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> Node {
                         },
                     };
                     let rhspair = pair.next().unwrap();
-                    let rhs = build_ast_from_expr(rhspair);
+                    let rhs = build_ast_from_expr(rhspair, regexes);
                     parse_binary_expr(op, lhs, rhs)
                 }
             }
@@ -375,7 +385,7 @@ fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> Node {
                         "any" => Unary::Any,
                         unknown => panic!("Unknown expr: {:?}", unknown),
                     };
-                    parse_unary_expr(op, build_ast_from_expr(inner.next().unwrap()))
+                    parse_unary_expr(op, build_ast_from_expr(inner.next().unwrap(), regexes))
                 }
                 Rule::money => {
                     let mut money = first.into_inner();
@@ -398,7 +408,14 @@ fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> Node {
                     let n = full.len() - 1;
                     let slice = &full[1..n];
                     match first.as_rule() {
-                        Rule::regex => Node::Regex(Regex::new(slice).unwrap()),
+                        Rule::regex => match regexes.get(slice) {
+                            None => {
+                                let regex = Regex::new(slice).unwrap();
+                                regexes.insert(slice.to_string(), regex.clone());
+                                Node::Regex(regex)
+                            }
+                            Some(regex) => Node::Regex(regex.clone()),
+                        },
                         Rule::string => Node::String(slice.to_string()),
                         unknown => unreachable!("This cannot happen {:?}", unknown),
                     }
@@ -411,7 +428,7 @@ fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> Node {
                     "date" => Node::Date,
                     unknown => panic!("Unknown variable: {:?}", unknown),
                 },
-                Rule::expr => build_ast_from_expr(first),
+                Rule::expr => build_ast_from_expr(first, regexes),
 
                 unknown => panic!("Unknown rule: {:?}", unknown),
             }

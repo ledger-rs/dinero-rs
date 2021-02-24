@@ -194,6 +194,7 @@ impl ParsedLedger {
 
         // 5. Go over the transactions again and see if there is something we need to do with them
         if automated_transactions.len() > 0 {
+            let mut regexes = HashMap::new();
             for automated in automated_transactions.iter_mut() {
                 for t in transactions.iter_mut() {
                     let mut extra_postings = vec![];
@@ -205,6 +206,7 @@ impl ParsedLedger {
                             p,
                             t,
                             &mut self.commodities,
+                            &mut regexes,
                         )? {
                             for comment in t.comments.iter() {
                                 p.to_owned().tags.append(&mut comment.get_tags());
@@ -235,6 +237,7 @@ impl ParsedLedger {
                                         p,
                                         t,
                                         &mut self.commodities,
+                                        &mut regexes,
                                     )),
                                     Some(alias) => {
                                         if alias == "" {
