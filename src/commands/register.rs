@@ -44,7 +44,10 @@ pub fn execute(options: &CommonOpts) -> Result<(), Error> {
                 print!(
                     "{:w1$}{:width$}",
                     format!("{}", t.date.unwrap()),
-                    clip(&t.description, w_description),
+                    clip(
+                        &format!("{} ", t.get_payee(&mut ledger.payees)),
+                        w_description
+                    ),
                     width = w_description,
                     w1 = w_date
                 );

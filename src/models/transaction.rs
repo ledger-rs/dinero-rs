@@ -26,7 +26,6 @@ pub struct Transaction<PostingType> {
     pub cleared: Cleared,
     pub code: Option<String>,
     pub description: String,
-    pub note: Option<String>,
     pub payee: Option<String>,
     pub postings: Vec<PostingType>,
     pub virtual_postings: Vec<PostingType>,
@@ -84,6 +83,12 @@ impl<T> Transaction<T> {
             }
         }
     }
+    pub fn get_payee_inmutable(&self, payees: &List<Payee>) -> Rc<Payee> {
+        match payees.get(&self.description) {
+            Ok(x) => x.clone(),
+            Err(_) => panic!("Payee not found"),
+        }
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -122,7 +127,7 @@ pub struct Posting {
     pub cost: Option<Cost>,
     pub kind: PostingType,
     pub tags: Vec<Tag>,
-    pub payee: Rc<Payee>,
+    pub payee: Option<Rc<Payee>>,
 }
 
 impl Posting {
@@ -134,7 +139,7 @@ impl Posting {
             cost: None,
             kind: kind,
             tags: vec![],
-            payee: Rc::new(payee.clone()),
+            payee: Some(Rc::new(payee.clone())),
         }
     }
     pub fn set_amount(&mut self, money: Money) {
@@ -181,7 +186,6 @@ impl<PostingType> Transaction<PostingType> {
             cleared: Cleared::Unknown,
             code: None,
             description: "".to_string(),
-            note: None,
             payee: None,
             postings: vec![],
             virtual_postings: vec![],
@@ -284,7 +288,7 @@ impl Transaction<Posting> {
 
         // 1. Iterate over postings
         let mut fill_account = &Rc::new(Account::from("this will never be used"));
-        let mut fill_payee = &Rc::new(Payee::from("this will never be used"));
+        let mut fill_payee = None;
         let mut postings: Vec<Posting> = Vec::new();
         for p in self.postings.iter() {
             // If it has money, update the balance
@@ -375,7 +379,7 @@ impl Transaction<Posting> {
             } else {
                 // We do nothing, but this is the account for the empty post
                 fill_account = &p.account;
-                fill_payee = &p.payee;
+                fill_payee = p.payee.clone();
             }
         }
 

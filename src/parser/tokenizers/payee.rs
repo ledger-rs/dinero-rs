@@ -70,7 +70,10 @@ pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Payee, ParserError> {
         }
     }
 
-    let alias_regex : Vec<Regex> = alias.iter().map(|x| Regex::new(x.clone().as_str()).unwrap()).collect(); 
+    let alias_regex: Vec<Regex> = alias
+        .iter()
+        .map(|x| Regex::new(x.clone().as_str()).unwrap())
+        .collect();
     Ok(Payee {
         name,
         note,

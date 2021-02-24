@@ -1,10 +1,10 @@
 use crate::models::{FromDirective, HasAliases, HasName, Origin};
+use regex::Regex;
 use std::collections::hash_map::RandomState;
 use std::collections::HashSet;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
-use regex::Regex;
 
 #[derive(Debug, Clone)]
 pub struct Payee {

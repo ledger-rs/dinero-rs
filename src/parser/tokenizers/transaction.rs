@@ -89,9 +89,14 @@ fn parse_generic(tokenizer: &mut Tokenizer, real: bool) -> Result<Transaction<Ra
                         transaction.description = m.as_str().to_string();
                     }
                     6 =>
-                    // note
+                    // payee
                     {
-                        transaction.payee = Some(m.as_str().to_string())
+                        if real {
+                            match m.as_str() {
+                                "" => (),
+                                x => transaction.payee = Some(x.to_string()),
+                            }
+                        }
                     }
                     7 =>
                     // note
@@ -104,7 +109,9 @@ fn parse_generic(tokenizer: &mut Tokenizer, real: bool) -> Result<Transaction<Ra
             None => (),
         }
     }
-
+    if real & transaction.payee.is_none() {
+        transaction.payee = Some(transaction.description.clone());
+    }
     // Have a flag so that it can be known whether a comment belongs to the transaction or to the
     // posting
     let mut parsed_posting = false;
@@ -119,7 +126,7 @@ fn parse_generic(tokenizer: &mut Tokenizer, real: bool) -> Result<Transaction<Ra
                         for tag in comment.get_tags().iter() {
                             if tag.get_name().to_lowercase() == "payee" {
                                 if let Some(payee) = &tag.value {
-                                    transaction.postings[len - 1].payee = payee.clone();
+                                    transaction.postings[len - 1].payee = Some(payee.clone());
                                 }
                                 break;
                             }
@@ -137,11 +144,7 @@ fn parse_generic(tokenizer: &mut Tokenizer, real: bool) -> Result<Transaction<Ra
                 ))));
             }
             _ => {
-                match parse_posting(
-                    tokenizer,
-                    transaction.transaction_type,
-                    transaction.description.clone(),
-                ) {
+                match parse_posting(tokenizer, transaction.transaction_type, &transaction.payee) {
                     // Although here we already know the kind of the posting (virtual, real),
                     // we deal with that in the next phase of parsing
                     Ok(posting) => transaction.postings.push(posting),
@@ -171,7 +174,7 @@ pub struct RawPosting {
     pub comments: Vec<Comment>,
     pub amount_expr: Option<String>,
     pub kind: PostingType,
-    pub payee: String,
+    pub payee: Option<String>,
 }
 
 /// Parses a posting
@@ -179,7 +182,7 @@ pub struct RawPosting {
 fn parse_posting(
     tokenizer: &mut Tokenizer,
     transaction_type: TransactionType,
-    default_payee: String,
+    default_payee: &Option<String>,
 ) -> Result<RawPosting, ParserError> {
     let mut account = String::new();
     let mut posting_type = PostingType::Real;
@@ -395,7 +398,6 @@ fn parse_amount(tokenizer: &mut Tokenizer) -> Result<BigRational, ParserError> {
         match BigInt::from_str(num.as_str()) {
             Ok(n) => n,
             Err(_) => {
-                // eprintln!("I fail here 372."); //todo delete
                 return Err(ParserError::UnexpectedInput(Some(
                     "Wrong number format".to_string(),
                 )));

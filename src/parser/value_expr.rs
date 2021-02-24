@@ -28,7 +28,7 @@ pub fn eval_expression(
 
     // Build the abstract syntax tree
     let root = build_ast_from_expr(parsed);
-
+    // println!("{:?}", expression); //todo delete
     eval(&root, posting, transaction, commodities)
 }
 
@@ -45,7 +45,7 @@ pub fn eval_value_expression(
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Node {
     Amount,
     Account,
@@ -80,6 +80,7 @@ pub enum EvalResult {
     Regex(Regex),
     String(Option<String>),
     Date(NaiveDate),
+    Note,
 }
 
 pub fn eval(
@@ -88,11 +89,11 @@ pub fn eval(
     transaction: &Transaction<Posting>,
     commodities: &mut List<Currency>,
 ) -> EvalResult {
-    match node {
+    let res = match node {
         Node::Amount => EvalResult::Money(posting.amount.clone().unwrap()),
         Node::Account => EvalResult::Account(posting.account.clone()),
-        Node::Payee => EvalResult::Payee(posting.payee.clone()),
-        Node::Note => EvalResult::String(transaction.note.clone()),
+        Node::Payee => EvalResult::Payee(posting.payee.clone().unwrap()),
+        Node::Note => EvalResult::Note,
         Node::Date => EvalResult::Date(transaction.date.clone().unwrap()),
         Node::Regex(r) => EvalResult::Regex(r.clone()),
         Node::String(r) => EvalResult::String(Some(r.clone())),
@@ -165,25 +166,40 @@ pub fn eval(
             let left = eval(lhs, posting, transaction, commodities);
             let right = eval(rhs, posting, transaction, commodities);
             match op {
-                Binary::Eq => match right {
-                    EvalResult::Regex(rhs) => match left {
-                        EvalResult::Account(lhs) => EvalResult::Boolean(lhs.is_match(rhs)),
-                        EvalResult::Payee(lhs) => EvalResult::Boolean(lhs.is_match(rhs)),
-                        EvalResult::String(lhs) => match lhs {
-                            Some(lhs) => EvalResult::Boolean(rhs.is_match(lhs.as_str())),
-                            None => EvalResult::Boolean(false),
+                Binary::Eq => {
+                    // println!("{:?} eq {:?}", left, right); // todo delete
+                    match right {
+                        EvalResult::Regex(rhs) => match left {
+                            EvalResult::Account(lhs) => EvalResult::Boolean(lhs.is_match(rhs)),
+                            EvalResult::Payee(lhs) => EvalResult::Boolean(lhs.is_match(rhs)),
+                            EvalResult::String(lhs) => match lhs {
+                                Some(lhs) => EvalResult::Boolean(rhs.is_match(lhs.as_str())),
+                                None => EvalResult::Boolean(false),
+                            },
+                            EvalResult::Note => {
+                                let mut result = false;
+                                for comment in transaction.comments.iter() {
+                                    // println!("{:?} -- {}", rhs, comment.comment); //todo delete
+                                    if rhs.is_match(comment.comment.as_str()) {
+                                        result = true;
+                                        break;
+                                    }
+                                }
+                                EvalResult::Boolean(result)
+                            }
+                            x => panic!("Found {:?}", x),
                         },
-                        x => panic!("Found {:?}", x),
-                    },
-                    EvalResult::Money(rhs) => match left {
-                        EvalResult::Money(lhs) => EvalResult::Boolean(lhs == rhs),
-                        EvalResult::Number(lhs) => EvalResult::Boolean(lhs == rhs.get_amount()),
+                        EvalResult::Money(rhs) => match left {
+                            EvalResult::Money(lhs) => EvalResult::Boolean(lhs == rhs),
+                            EvalResult::Number(lhs) => EvalResult::Boolean(lhs == rhs.get_amount()),
 
+                            unknown => panic!("Don't know what to do with {:?}", unknown),
+                        },
                         unknown => panic!("Don't know what to do with {:?}", unknown),
-                    },
-                    unknown => panic!("Don't know what to do with {:?}", unknown),
-                },
+                    }
+                }
                 Binary::Lt | Binary::Gt | Binary::Ge | Binary::Le => {
+                    // println!("{:?} {:?} {:?}", left, op, right); // todo delete
                     if let EvalResult::Date(lhs) = left {
                         match right {
                             EvalResult::Date(rhs) => match op {
@@ -273,10 +289,12 @@ pub fn eval(
                 unknown => panic!("Not implemented: {:?}", unknown),
             }
         }
-    }
+    };
+    // println!("Result: {:?}", res); //todo delete
+    res
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Unary {
     Not,
     Neg,

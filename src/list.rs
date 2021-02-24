@@ -1,5 +1,5 @@
 use regex::Regex;
-use std::collections::hash_map::{Iter, RandomState, Values};
+use std::collections::hash_map::{Iter, Values};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -34,7 +34,7 @@ impl<'a, T: Eq + Hash + HasName + Clone + FromDirective + HasAliases + Debug> Li
     pub fn insert(&mut self, element: T) {
         let found = self.list.get(&element.get_name().to_lowercase());
         match found {
-            Some(_) => (), // do nothing
+            Some(_) => eprintln!("Duplicate element: {:?}", element), // do nothing
             None => {
                 // Change the name which will be used as key to lowercase
                 let name = element.get_name().to_string().to_lowercase();

@@ -14,7 +14,7 @@ pub fn execute(path: PathBuf, no_balance_check: bool) -> Result<(), Error> {
         .map(|x| x.1.deref().to_owned())
         .collect::<Vec<Payee>>();
     payees.sort_by(|a, b| a.get_name().cmp(b.get_name()));
-    for payee in payees {
+    for payee in payees.iter() {
         println!("{}", payee);
     }
     Ok(())
