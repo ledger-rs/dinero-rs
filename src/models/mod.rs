@@ -211,6 +211,9 @@ impl ParsedLedger {
                             for comment in t.comments.iter() {
                                 p.to_owned().tags.append(&mut comment.get_tags());
                             }
+                            for comment in p.comments.iter() {
+                                p.to_owned().tags.append(&mut comment.get_tags());
+                            }
                             for auto_posting in automated.postings_iter() {
                                 let account_alias = auto_posting.account.clone();
                                 match self.accounts.get(&account_alias) {
@@ -267,6 +270,7 @@ impl ParsedLedger {
                                     balance: None,
                                     cost: None,
                                     kind: auto_posting.kind,
+                                    comments: vec![],
                                     tags: vec![],
                                     payee,
                                 };

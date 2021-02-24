@@ -1,6 +1,4 @@
-use crate::models::{
-    Cleared, Comment, HasName, PostingType, PriceType, Transaction, TransactionType,
-};
+use crate::models::{Cleared, Comment, PostingType, PriceType, Transaction, TransactionType};
 use crate::parser::chars::LineType;
 use crate::parser::tokenizers::comment;
 use crate::parser::{chars, Tokenizer};
@@ -123,14 +121,6 @@ fn parse_generic(tokenizer: &mut Tokenizer, real: bool) -> Result<Transaction<Ra
                     true => {
                         let len = transaction.postings.len();
 
-                        for tag in comment.get_tags().iter() {
-                            if tag.get_name().to_lowercase() == "payee" {
-                                if let Some(payee) = &tag.value {
-                                    transaction.postings[len - 1].payee = Some(payee.clone());
-                                }
-                                break;
-                            }
-                        }
                         transaction.postings[len - 1].comments.push(comment);
                     }
                     false => {
