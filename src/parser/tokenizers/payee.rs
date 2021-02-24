@@ -83,6 +83,7 @@ pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Payee, ParserError> {
     })
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::models::HasName;
