@@ -280,15 +280,27 @@ pub fn eval(
                 }
                 Binary::Or | Binary::And => {
                     if let EvalResult::Boolean(lhs) = left {
-                        if let EvalResult::Boolean(rhs) = right {
-                            EvalResult::Boolean(match op {
-                                Binary::Or => lhs | rhs,
-                                Binary::And => lhs & rhs,
-                                _ => unreachable!(),
-                            })
-                        } else {
-                            panic!("Should be booleans")
-                        }
+                        EvalResult::Boolean(match op {
+                            Binary::Or => {
+                                if lhs {
+                                    true
+                                } else if let EvalResult::Boolean(rhs) = right {
+                                    rhs
+                                } else {
+                                    panic!("Should be booleans")
+                                }
+                            }
+                            Binary::And => {
+                                if !lhs {
+                                    false
+                                } else if let EvalResult::Boolean(rhs) = right {
+                                    rhs
+                                } else {
+                                    panic!("Should be booleans")
+                                }
+                            }
+                            _ => unreachable!(),
+                        })
                     } else {
                         panic!("Should be booleans")
                     }
