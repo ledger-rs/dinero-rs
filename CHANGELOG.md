@@ -6,6 +6,7 @@ Changelog file for dinero-rs project, a command line application for managing fi
 - Improved documentation
 ### Fixed
 - keep tags from transactions
+- match automated transactions only once per transaction, like ```ledger``` does
 
 ## [0.12.0] - 2021-02-24
 ### Added
