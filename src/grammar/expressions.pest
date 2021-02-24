@@ -1,0 +1,68 @@
+// Grammar specification for value expressions
+
+// A value expression is an expression between parenthesis
+value_expr = {"(" ~ ws* ~ expr ~ ws* ~ ")"}
+
+// Then the expression builds up in terms of increasing preference
+expr = { or_expr }
+or_expr = { and_expr ~ ws* ~ ( or ~ ws* ~ and_expr ) * }
+and_expr = { comparison_expr ~ ws* ~ ( and ~ ws* ~ comparison_expr ) * }
+comparison_expr = { additive_expr ~ ws* ~ ( comparison ~ ws* ~ additive_expr ) * }
+additive_expr = { multiplicative_expr ~ ws* ~ ( add ~ ws* ~ multiplicative_expr ) * }
+multiplicative_expr = { primary ~ ws* ~ ( mult ~ ws* ~ primary )* }
+primary = {
+    ("(" ~ ws* ~ expr ~ ws* ~ ")") |
+    (unary ~ ws* ~ expr) |
+    term |
+    (function ~ ws* ~ "(" ~ ws* ~ expr ~ ws* ~ ("," ~ ws* ~ expr ~ ws*)* ~ ")")
+    }
+
+
+term = _{ variable | money | number | regex | string }
+money = { (number ~ ws* ~ currency) | (currency ~ ws* ~ number) }
+currency = { LETTER+ | ("\"" ~ (!"\"" ~ ANY)+ ~ "\"")}
+regex = { "/" ~ (!"/" ~ ANY)* ~ "/"}
+string = { "'" ~ (!"'" ~ ANY)* ~ "'"}
+variable = { 
+    "account" |
+    "payee" |
+    "date" |
+    "note" |
+    "amount" |
+    "total_amount" |
+    "cost" |
+    "value" |
+    "gain" |
+    "depth" |
+    "posting_number" |
+    "posting_count" |
+    "cleared" |
+    "real" |
+    "not_automated" |
+    "running_total" |
+    "note" |
+    // Abbreviations go later
+    "T" | "N" | "O" | "Z" | "R" | "X" |
+    "n" | "l" | "g" | "v" | "b"
+}
+
+
+// helpers
+number = { "-"? ~ bigint ~ ("." ~ bigint)? }
+bigint = _{ ASCII_DIGIT+ }
+ws = _{" "}
+
+
+add = { "+" | "-" }
+mult = { "*" | "/" }
+and = {"&" | "and"}
+or = {"|" | "or" }
+unary = { "-" | "!" | "not" }
+function = { "abs" | "has_tag" | "to_date" | "any" | "tag" }
+comparison = { eq | ne | ge | gt | le | lt }
+eq = { "=~" | "=="}
+ne = { "!=" }
+gt = { ">" }
+ge = { ">=" }
+le = { "<=" }
+lt = { "<" }

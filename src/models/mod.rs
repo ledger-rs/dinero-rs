@@ -37,19 +37,7 @@ pub struct Ledger {
     pub(crate) commodities: List<Currency>,
     pub(crate) transactions: Vec<Transaction<Posting>>,
     pub(crate) prices: Vec<Price>,
-    payees: List<Payee>,
-}
-
-impl Ledger {
-    pub fn new() -> Self {
-        Ledger {
-            accounts: List::<Account>::new(),
-            prices: vec![],
-            transactions: vec![],
-            commodities: List::<Currency>::new(),
-            payees: List::<Payee>::new(),
-        }
-    }
+    pub(crate) payees: List<Payee>,
 }
 
 impl ParsedLedger {
@@ -59,13 +47,14 @@ impl ParsedLedger {
         let mut account_strs = HashSet::<String>::new();
         let mut payee_strs = HashSet::<String>::new();
 
-        //
         // 1. Populate the directive lists
-        //
+
         for transaction in self.transactions.iter() {
             for p in transaction.postings.iter() {
                 account_strs.insert(p.account.clone());
-
+                if let Some(payee) = p.payee.clone() {
+                    payee_strs.insert(payee);
+                }
                 // Currencies
                 if let Some(c) = &p.money_currency {
                     commodity_strs.insert(c.clone());
@@ -100,7 +89,37 @@ impl ParsedLedger {
                 Err(_) => self.accounts.insert(Account::from(alias.as_str())),
             }
         }
-        // TODO payees
+
+        // Payees
+        let payees_copy = self.payees.clone();
+        for alias in payee_strs {
+            match self.payees.get(&alias) {
+                Ok(_) => {} // do nothing
+                Err(_) => {
+                    // Payees are actually matched by regex
+                    let mut matched = false;
+                    let mut alias_to_add = "".to_string();
+                    let mut payee_to_add = None;
+                    'outer: for (_, p) in payees_copy.iter() {
+                        for p_alias in p.alias_regex.iter() {
+                            // println!("{:?}", p_alias); // todo delete
+                            if p_alias.is_match(alias.as_str()) {
+                                // self.payees.add_alias(alias.to_string(), p);
+                                payee_to_add = Some(p);
+                                alias_to_add = alias.to_string();
+                                matched = true;
+                                break 'outer;
+                            }
+                        }
+                    }
+                    if !matched {
+                        self.payees.insert(Payee::from(alias.as_str()))
+                    } else {
+                        self.payees.add_alias(alias_to_add, payee_to_add.unwrap());
+                    }
+                }
+            }
+        }
 
         // 3. Prices from price statements
         let mut prices: Vec<Price> = Vec::new();
@@ -128,6 +147,7 @@ impl ParsedLedger {
         //
         let mut transactions = Vec::new();
         let mut automated_transactions = Vec::new();
+
         for parsed in self.transactions.iter() {
             let (mut t, mut auto, mut new_prices) = self._transaction_to_ledger(parsed)?;
             transactions.append(&mut t);
@@ -174,13 +194,20 @@ impl ParsedLedger {
 
         // 5. Go over the transactions again and see if there is something we need to do with them
         if automated_transactions.len() > 0 {
-            for automated in automated_transactions.iter() {
+            let mut regexes = HashMap::new();
+            for automated in automated_transactions.iter_mut() {
                 for t in transactions.iter_mut() {
                     let mut extra_postings = vec![];
                     let mut extra_virtual_postings = vec![];
                     let mut extra_virtual_postings_balance = vec![];
                     for p in t.postings_iter() {
-                        if filter_predicate(&vec![automated.description.clone()], p) {
+                        if filter_predicate(
+                            automated.get_filter_query().as_str(),
+                            p,
+                            t,
+                            &mut self.commodities,
+                            &mut regexes,
+                        )? {
                             for comment in t.comments.iter() {
                                 p.to_owned().tags.append(&mut comment.get_tags());
                             }
@@ -192,6 +219,17 @@ impl ParsedLedger {
                                         self.accounts.insert(Account::from(account_alias.as_str()))
                                     }
                                 }
+                                let payee = if let Some(payee_alias) = &auto_posting.payee {
+                                    match self.payees.get(&payee_alias) {
+                                        Ok(_) => {} // do nothing
+                                        Err(_) => {
+                                            self.payees.insert(Payee::from(payee_alias.as_str()))
+                                        }
+                                    }
+                                    Some(self.payees.get(&payee_alias).unwrap().clone())
+                                } else {
+                                    p.payee.clone()
+                                };
                                 let account = self.accounts.get(&account_alias).unwrap();
                                 let money = match &auto_posting.money_currency {
                                     None => Some(value_expr::eval_value_expression(
@@ -199,6 +237,7 @@ impl ParsedLedger {
                                         p,
                                         t,
                                         &mut self.commodities,
+                                        &mut regexes,
                                     )),
                                     Some(alias) => {
                                         if alias == "" {
@@ -221,6 +260,7 @@ impl ParsedLedger {
                                         }
                                     }
                                 };
+
                                 let posting = Posting {
                                     account: account.clone(),
                                     amount: money,
@@ -228,8 +268,9 @@ impl ParsedLedger {
                                     cost: None,
                                     kind: auto_posting.kind,
                                     tags: vec![],
+                                    payee,
                                 };
-                                // println!("{:?}", posting);
+
                                 match auto_posting.kind {
                                     PostingType::Real => extra_postings.push(posting),
                                     PostingType::Virtual => extra_virtual_postings.push(posting),
@@ -292,11 +333,11 @@ impl ParsedLedger {
 
     fn _transaction_to_ledger(
         &self,
-        parsed: &Transaction<tokenizers::transaction::Posting>,
+        parsed: &Transaction<tokenizers::transaction::RawPosting>,
     ) -> Result<
         (
             Vec<Transaction<Posting>>,
-            Vec<Transaction<tokenizers::transaction::Posting>>,
+            Vec<Transaction<tokenizers::transaction::RawPosting>>,
             Vec<Price>,
         ),
         Error,
@@ -309,21 +350,42 @@ impl ParsedLedger {
                 let mut transaction = Transaction::<Posting>::new(TransactionType::Real);
                 transaction.description = parsed.description.clone();
                 transaction.code = parsed.code.clone();
-                transaction.note = parsed.note.clone();
+                transaction.comments = parsed.comments.clone();
                 transaction.date = parsed.date;
                 transaction.effective_date = parsed.effective_date;
+
                 for comment in parsed.comments.iter() {
                     transaction.tags.append(&mut comment.get_tags());
                 }
                 // Go posting by posting
                 for p in parsed.postings.iter() {
-                    let account = self.accounts.get(&p.account)?;
-
-                    let mut posting: Posting = Posting::new(account, p.kind);
+                    let payee = match &p.payee {
+                        None => transaction.get_payee_inmutable(&self.payees),
+                        Some(x) => self.payees.get(x).unwrap().clone(),
+                    };
+                    let account = if p.account.to_lowercase().ends_with("unknown") {
+                        let mut account = None;
+                        for (_, acc) in self.accounts.iter() {
+                            for alias in acc.payee.iter() {
+                                if alias.is_match(payee.get_name()) {
+                                    account = Some(acc.clone());
+                                    break;
+                                }
+                            }
+                        }
+                        match account {
+                            Some(x) => x,
+                            None => self.accounts.get(&p.account)?.clone(),
+                        }
+                    } else {
+                        self.accounts.get(&p.account)?.clone()
+                    };
+                    let mut posting: Posting = Posting::new(&account, p.kind, &payee);
                     posting.tags = transaction.tags.clone();
                     for comment in p.comments.iter() {
                         posting.tags.append(&mut comment.get_tags());
                     }
+
                     // Modify posting with amounts
                     if let Some(c) = &p.money_currency {
                         posting.amount = Some(Money::from((
@@ -417,15 +479,4 @@ pub trait HasAliases {
 
 pub trait FromDirective {
     fn is_from_directive(&self) -> bool;
-}
-
-fn _output_balances(bal: &HashMap<Rc<Account>, Balance>) {
-    let mut s = String::new();
-    for (k, v) in bal.iter() {
-        if v.is_zero() {
-            continue;
-        }
-        s.push_str(format!("{}: {}\n", k.get_name(), v).as_str());
-    }
-    println!("{}", s);
 }

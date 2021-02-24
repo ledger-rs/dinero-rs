@@ -111,7 +111,7 @@ fn accounts_command() {
     let args = &["accounts", "-f", "examples/demo.ledger"];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
     let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
-    assert_eq!(output.lines().into_iter().count(), 6);
+    assert_eq!(output.lines().into_iter().count(), 7);
 
     test_args(args);
 }
@@ -158,13 +158,28 @@ fn prices_command() {
 }
 
 #[test]
+/// Check the payees command
+fn payees_command() {
+    let args = &["payees", "-f", "examples/demo.ledger"];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    assert_eq!(
+        output.lines().into_iter().count(),
+        5,
+        "Because of the aliases, there should be only 5 payees, not 6."
+    );
+
+    test_args(args);
+}
+
+#[test]
 /// Check the commodities command
 fn commodities_command() {
     let args = &["commodities", "-f", "examples/demo.ledger"];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
     let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
-    assert_eq!(output.lines().into_iter().count(), 5);
 
+    assert_eq!(output.lines().into_iter().count(), 5);
     test_args(args);
 }
 

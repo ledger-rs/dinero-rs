@@ -1,20 +1,26 @@
-use crate::models::{Currency, Money, Posting, Transaction};
+use crate::app;
+use crate::models::{Account, Currency, Money, Payee, Posting, Transaction};
 use crate::pest::Parser;
 use crate::List;
+use chrono::NaiveDate;
 use num::{abs, BigInt, BigRational};
+use regex::Regex;
 use std::rc::Rc;
 use std::str::FromStr;
 
+use std::collections::HashMap;
+
 #[derive(Parser)]
-#[grammar = "grammar/value_expression.pest"]
+#[grammar = "grammar/expressions.pest"]
 pub struct ValueExpressionParser;
 
-pub fn eval_value_expression(
+pub fn eval_expression(
     expression: &str,
     posting: &Posting,
     transaction: &Transaction<Posting>,
     commodities: &mut List<Currency>,
-) -> Money {
+    regexes: &mut HashMap<String, Regex>,
+) -> EvalResult {
     let parsed = ValueExpressionParser::parse(Rule::value_expr, expression)
         .expect("unsuccessful parse") // unwrap the parse result
         .next()
@@ -24,18 +30,32 @@ pub fn eval_value_expression(
         .unwrap();
 
     // Build the abstract syntax tree
-    let root = build_ast_from_expr(parsed);
+    let root = build_ast_from_expr(parsed, regexes);
+    // println!("{:?}", expression); //todo delete
+    eval(&root, posting, transaction, commodities, regexes)
+}
 
-    match eval(&root, posting, transaction, commodities) {
+pub fn eval_value_expression(
+    expression: &str,
+    posting: &Posting,
+    transaction: &Transaction<Posting>,
+    commodities: &mut List<Currency>,
+    regexes: &mut HashMap<String, Regex>,
+) -> Money {
+    match eval_expression(expression, posting, transaction, commodities, regexes) {
         EvalResult::Number(n) => posting.amount.clone().unwrap() * n,
         EvalResult::Money(m) => m,
         _ => panic!("Should be money"),
     }
 }
 
-#[derive(Clone)]
-enum Node {
+#[derive(Clone, Debug)]
+pub enum Node {
     Amount,
+    Account,
+    Payee,
+    Note,
+    Date,
     Number(BigRational),
     Money {
         currency: String,
@@ -50,22 +70,38 @@ enum Node {
         lhs: Box<Node>,
         rhs: Box<Node>,
     },
+    Regex(Regex),
+    String(String),
 }
 
-enum EvalResult {
+#[derive(Debug)]
+pub enum EvalResult {
     Number(BigRational),
     Money(Money),
     Boolean(bool),
+    Account(Rc<Account>),
+    Payee(Rc<Payee>),
+    Regex(Regex),
+    String(Option<String>),
+    Date(NaiveDate),
+    Note,
 }
 
-fn eval(
+pub fn eval(
     node: &Node,
     posting: &Posting,
     transaction: &Transaction<Posting>,
     commodities: &mut List<Currency>,
+    regexes: &mut HashMap<String, Regex>,
 ) -> EvalResult {
-    match node {
+    let res = match node {
         Node::Amount => EvalResult::Money(posting.amount.clone().unwrap()),
+        Node::Account => EvalResult::Account(posting.account.clone()),
+        Node::Payee => EvalResult::Payee(posting.payee.clone().unwrap()),
+        Node::Note => EvalResult::Note,
+        Node::Date => EvalResult::Date(transaction.date.clone().unwrap()),
+        Node::Regex(r) => EvalResult::Regex(r.clone()),
+        Node::String(r) => EvalResult::String(Some(r.clone())),
         Node::Number(n) => EvalResult::Number(n.clone()),
         Node::Money { currency, amount } => {
             let cur = match commodities.get(&currency) {
@@ -79,13 +115,33 @@ fn eval(
             EvalResult::Money(Money::from((cur.clone(), amount.clone())))
         }
         Node::UnaryExpr { op, child } => {
-            let res = eval(child, posting, transaction, commodities);
+            let res = eval(child, posting, transaction, commodities, regexes);
             match op {
-                Unary::Not => EvalResult::Boolean(false),
+                Unary::Not => match res {
+                    EvalResult::Boolean(b) => EvalResult::Boolean(!b),
+                    x => panic!("Can't do neg of {:?}", x),
+                },
+                Unary::Any => {
+                    let mut res = false;
+                    for p in transaction.postings_iter() {
+                        if let EvalResult::Boolean(b) =
+                            eval(child, p, transaction, commodities, regexes)
+                        {
+                            if b {
+                                res = true;
+                                break;
+                            }
+                        } else {
+                            panic!("Should evaluate to boolean")
+                        }
+                    }
+                    EvalResult::Boolean(res)
+                }
                 Unary::Neg => match res {
                     EvalResult::Number(n) => EvalResult::Number(-n),
                     EvalResult::Money(money) => EvalResult::Money(-money),
                     EvalResult::Boolean(b) => EvalResult::Boolean(!b),
+                    x => panic!("Can't do neg of {:?}", x),
                 },
                 Unary::Abs => match res {
                     EvalResult::Number(n) => EvalResult::Number(abs(n)),
@@ -94,13 +150,78 @@ fn eval(
                         Money::Money { amount, currency } => Money::from((currency, abs(amount))),
                     }),
                     EvalResult::Boolean(_b) => panic!("Can't do abs of boolean"),
+                    x => panic!("Can't do abs of {:?}", x),
+                },
+                Unary::HasTag => match res {
+                    EvalResult::Regex(r) => EvalResult::Boolean(posting.has_tag(r)),
+                    x => panic!("Expected regex. Found {:?}", x),
+                },
+                Unary::Tag => match res {
+                    EvalResult::Regex(r) => EvalResult::String(posting.get_tag(r)),
+                    EvalResult::String(r) => EvalResult::String(posting.get_exact_tag(r.unwrap())),
+                    x => panic!("Expected regex. Found {:?}", x),
+                },
+                Unary::ToDate => match res {
+                    EvalResult::String(r) => {
+                        EvalResult::Date(app::date_parser(r.unwrap().as_str()).unwrap())
+                    }
+                    x => panic!("Expected String. Found {:?}", x),
                 },
             }
         }
         Node::BinaryExpr { op, lhs, rhs } => {
-            let left = eval(lhs, posting, transaction, commodities);
-            let right = eval(rhs, posting, transaction, commodities);
+            let left = eval(lhs, posting, transaction, commodities, regexes);
+            let right = eval(rhs, posting, transaction, commodities, regexes);
             match op {
+                Binary::Eq => {
+                    // println!("{:?} eq {:?}", left, right); // todo delete
+                    match right {
+                        EvalResult::Regex(rhs) => match left {
+                            EvalResult::Account(lhs) => EvalResult::Boolean(lhs.is_match(rhs)),
+                            EvalResult::Payee(lhs) => EvalResult::Boolean(lhs.is_match(rhs)),
+                            EvalResult::String(lhs) => match lhs {
+                                Some(lhs) => EvalResult::Boolean(rhs.is_match(lhs.as_str())),
+                                None => EvalResult::Boolean(false),
+                            },
+                            EvalResult::Note => {
+                                let mut result = false;
+                                for comment in transaction.comments.iter() {
+                                    // println!("{:?} -- {}", rhs, comment.comment); //todo delete
+                                    if rhs.is_match(comment.comment.as_str()) {
+                                        result = true;
+                                        break;
+                                    }
+                                }
+                                EvalResult::Boolean(result)
+                            }
+                            x => panic!("Found {:?}", x),
+                        },
+                        EvalResult::Money(rhs) => match left {
+                            EvalResult::Money(lhs) => EvalResult::Boolean(lhs == rhs),
+                            EvalResult::Number(lhs) => EvalResult::Boolean(lhs == rhs.get_amount()),
+
+                            unknown => panic!("Don't know what to do with {:?}", unknown),
+                        },
+                        unknown => panic!("Don't know what to do with {:?}", unknown),
+                    }
+                }
+                Binary::Lt | Binary::Gt | Binary::Ge | Binary::Le => {
+                    // println!("{:?} {:?} {:?}", left, op, right); // todo delete
+                    if let EvalResult::Date(lhs) = left {
+                        match right {
+                            EvalResult::Date(rhs) => match op {
+                                Binary::Lt => EvalResult::Boolean(lhs < rhs),
+                                Binary::Gt => EvalResult::Boolean(lhs > rhs),
+                                Binary::Ge => EvalResult::Boolean(lhs >= rhs),
+                                Binary::Le => EvalResult::Boolean(lhs <= rhs),
+                                x => panic!("Found {:?}", x),
+                            },
+                            x => panic!("Found {:?}", x),
+                        }
+                    } else {
+                        panic!("Expected Date");
+                    }
+                }
                 Binary::Add | Binary::Subtract => {
                     if let EvalResult::Number(lhs) = left {
                         if let EvalResult::Number(rhs) = right {
@@ -172,39 +293,58 @@ fn eval(
                         panic!("Should be booleans")
                     }
                 }
+                unknown => panic!("Not implemented: {:?}", unknown),
             }
         }
-    }
+    };
+    // println!("Result: {:?}", res); //todo delete
+    res
 }
 
-#[derive(Clone)]
-enum Unary {
+#[derive(Clone, Debug)]
+pub enum Unary {
     Not,
     Neg,
     Abs,
+    Any,
+    HasTag,
+    Tag,
+    ToDate,
 }
 
-#[derive(Clone)]
-enum Binary {
+#[derive(Clone, Debug)]
+pub enum Binary {
     Add,
     Subtract,
     Mult,
     Div,
     Or,
     And,
+    Eq,
+    Ge,
+    Gt,
+    Le,
+    Lt,
 }
 
 #[derive(Clone)]
-enum Ternary {}
+pub enum Ternary {}
 
-fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> Node {
+fn build_ast_from_expr(
+    pair: pest::iterators::Pair<Rule>,
+    regexes: &mut HashMap<String, Regex>,
+) -> Node {
     let rule = pair.as_rule();
     match rule {
-        Rule::expr => build_ast_from_expr(pair.into_inner().next().unwrap()),
-        Rule::or_expr | Rule::and_expr | Rule::additive_expr | Rule::multiplicative_expr => {
+        Rule::expr => build_ast_from_expr(pair.into_inner().next().unwrap(), regexes),
+        Rule::comparison_expr
+        | Rule::or_expr
+        | Rule::and_expr
+        | Rule::additive_expr
+        | Rule::multiplicative_expr => {
             let mut pair = pair.into_inner();
             let lhspair = pair.next().unwrap();
-            let lhs = build_ast_from_expr(lhspair);
+            let lhs = build_ast_from_expr(lhspair, regexes);
             match pair.next() {
                 None => lhs,
                 Some(x) => {
@@ -216,11 +356,16 @@ fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> Node {
                             "-" => Binary::Subtract,
                             "*" => Binary::Mult,
                             "/" => Binary::Div,
+                            "=~" | "==" => Binary::Eq,
+                            "<" => Binary::Lt,
+                            ">" => Binary::Gt,
+                            "<=" => Binary::Le,
+                            ">=" => Binary::Ge,
                             x => unreachable!("{}", x),
                         },
                     };
                     let rhspair = pair.next().unwrap();
-                    let rhs = build_ast_from_expr(rhspair);
+                    let rhs = build_ast_from_expr(rhspair, regexes);
                     parse_binary_expr(op, lhs, rhs)
                 }
             }
@@ -229,15 +374,19 @@ fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> Node {
             let mut inner = pair.into_inner();
             let first = inner.next().unwrap();
             match first.as_rule() {
-                Rule::unary_function | Rule::unary => {
+                Rule::function | Rule::unary => {
                     let op = match first.as_str() {
                         "abs" => Unary::Abs,
                         "-" => Unary::Neg,
+                        "has_tag" => Unary::HasTag,
+                        "tag" => Unary::Tag,
+                        "to_date" => Unary::ToDate,
+                        "not" => Unary::Not,
+                        "any" => Unary::Any,
                         unknown => panic!("Unknown expr: {:?}", unknown),
                     };
-                    parse_unary_expr(op, build_ast_from_expr(inner.next().unwrap()))
+                    parse_unary_expr(op, build_ast_from_expr(inner.next().unwrap(), regexes))
                 }
-                Rule::amount => Node::Amount,
                 Rule::money => {
                     let mut money = first.into_inner();
                     let child = money.next().unwrap();
@@ -254,6 +403,32 @@ fn build_ast_from_expr(pair: pest::iterators::Pair<Rule>) -> Node {
                     }
                 }
                 Rule::number => Node::Number(parse_big_rational(first.as_str())),
+                Rule::regex | Rule::string => {
+                    let full = first.as_str().to_string();
+                    let n = full.len() - 1;
+                    let slice = &full[1..n];
+                    match first.as_rule() {
+                        Rule::regex => match regexes.get(slice) {
+                            None => {
+                                let regex = Regex::new(slice).unwrap();
+                                regexes.insert(slice.to_string(), regex.clone());
+                                Node::Regex(regex)
+                            }
+                            Some(regex) => Node::Regex(regex.clone()),
+                        },
+                        Rule::string => Node::String(slice.to_string()),
+                        unknown => unreachable!("This cannot happen {:?}", unknown),
+                    }
+                }
+                Rule::variable => match first.as_str() {
+                    "account" => Node::Account,
+                    "amount" => Node::Amount,
+                    "payee" => Node::Payee,
+                    "note" => Node::Note,
+                    "date" => Node::Date,
+                    unknown => panic!("Unknown variable: {:?}", unknown),
+                },
+                Rule::expr => build_ast_from_expr(first, regexes),
 
                 unknown => panic!("Unknown rule: {:?}", unknown),
             }

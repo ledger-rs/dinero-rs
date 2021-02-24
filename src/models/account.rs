@@ -1,4 +1,5 @@
 use crate::models::{FromDirective, HasAliases, HasName, Origin};
+use regex::Regex;
 use std::collections::hash_map::RandomState;
 use std::collections::HashSet;
 use std::fmt;
@@ -14,7 +15,7 @@ pub struct Account {
     pub(crate) aliases: HashSet<String>,
     pub(crate) check: Vec<String>,
     pub(crate) assert: Vec<String>,
-    pub(crate) payee: Vec<String>,
+    pub(crate) payee: Vec<Regex>,
     pub(crate) default: bool,
 }
 
@@ -120,5 +121,9 @@ impl Account {
                 }
             }
         }
+    }
+
+    pub fn is_match(&self, regex: Regex) -> bool {
+        regex.is_match(self.get_name())
     }
 }
