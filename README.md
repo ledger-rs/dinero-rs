@@ -9,7 +9,7 @@ Dinero (spanish for money) is a command line tool that can deal with ledger file
 
 ## Install
 
-If you have Rust available, the easiest way to get dinero-rs is by install the crate:
+If you Rust and cargo are available in your system, the easiest way to get dinero-rs is by installing the crate:
 ```sh
 cargo install dinero-rs
 ```
@@ -45,6 +45,9 @@ dinero reg -f myledger.ledger
 Currently supported are:
 - Balance reports
 - Register reports
+- Account and payees reports
+- Automated transactions
+- Currency conversion
 
 Report filtering by account name and by date.
 
