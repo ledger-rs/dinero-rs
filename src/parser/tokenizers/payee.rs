@@ -12,7 +12,7 @@ use crate::ParserError;
 pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Payee, ParserError> {
     lazy_static! {
         static ref RE: Regex = Regex::new(format!("{}{}{}",
-        r"(payee) +"        , // directive commodity
+        r"(payee) +"            , // payee directive
         r"(.*)"                 , // description
         r"(  ;.*)?"             , // note
         ).as_str()).unwrap();
@@ -31,7 +31,7 @@ pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Payee, ParserError> {
             Some(m) => {
                 match i {
                     1 =>
-                    // commodity
+                    // payee
                     {
                         detected = true;
                     }
@@ -70,10 +70,37 @@ pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Payee, ParserError> {
         }
     }
 
+    let alias_regex: Vec<Regex> = alias
+        .iter()
+        .map(|x| Regex::new(x.clone().as_str()).unwrap())
+        .collect();
     Ok(Payee {
         name,
         note,
         alias,
+        alias_regex,
         origin: Origin::FromDirective,
     })
+}
+
+mod tests {
+    use super::*;
+    use crate::models::HasName;
+    #[test]
+    fn parse_ko() {
+        let input = "payee ACME  ; From the Looney Tunes\n\tWrong Acme, Inc.\n".to_string();
+        let mut tokenizer = Tokenizer::from(input);
+        let payee_raw = parse(&mut tokenizer);
+        assert!(payee_raw.is_err());
+    }
+
+    #[test]
+    fn parse_ok() {
+        let input = "payee ACME\n\talias Acme, Inc.\n".to_string();
+        let mut tokenizer = Tokenizer::from(input);
+        let payee_raw = parse(&mut tokenizer);
+        assert!(payee_raw.is_ok());
+        let payee = payee_raw.unwrap();
+        assert_eq!(payee.get_name(), "ACME");
+    }
 }

@@ -22,7 +22,7 @@ pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Account, ParserError> {
     let mut aliases = HashSet::new();
     let mut check = Vec::new();
     let mut assert = Vec::new();
-    let mut payee = Vec::new();
+    let mut payee: Vec<Regex> = Vec::new();
     let mut note = None;
     let mut isin = None;
 
@@ -68,7 +68,7 @@ pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Account, ParserError> {
                     assert.push(chars::get_line(tokenizer).trim().to_string());
                 }
                 "payee" => {
-                    payee.push(chars::get_line(tokenizer).trim().to_string());
+                    payee.push(Regex::new(chars::get_line(tokenizer).trim()).unwrap());
                 }
                 "default" => default = true,
                 found => {

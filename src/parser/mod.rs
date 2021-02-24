@@ -29,7 +29,7 @@ pub struct ParsedLedger {
     pub accounts: List<Account>,
     pub payees: List<Payee>,
     pub commodities: List<Currency>,
-    pub transactions: Vec<Transaction<transaction::Posting>>,
+    pub transactions: Vec<Transaction<transaction::RawPosting>>,
     pub prices: Vec<models::ParsedPrice>,
     pub comments: Vec<Comment>,
     pub tags: Vec<models::Tag>,

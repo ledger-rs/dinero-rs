@@ -12,10 +12,10 @@ repository = "https://github.com/frosklis/dinero-rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 name = "dinero"
-path = "src/lib/mod.rs"
+path = "src/mod.rs"
 [[bin]]
 name = "dinero"
-test = false
+test = false 
 bench = false
 path = "src/main.rs"
 

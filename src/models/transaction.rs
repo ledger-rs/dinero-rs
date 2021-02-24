@@ -8,13 +8,15 @@ use chrono::NaiveDate;
 use num::rational::BigRational;
 
 use crate::models::balance::Balance;
-use crate::models::{Account, Comment, HasName, Money};
-use crate::LedgerError;
+use crate::models::{Account, Comment, HasName, Money, Origin, Payee};
+use crate::{LedgerError, List};
 use num::BigInt;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use super::Tag;
+use crate::filter::preprocess_query;
+use regex::Regex;
 
 #[derive(Debug, Clone)]
 pub struct Transaction<PostingType> {
@@ -24,13 +26,69 @@ pub struct Transaction<PostingType> {
     pub cleared: Cleared,
     pub code: Option<String>,
     pub description: String,
-    pub note: Option<String>,
+    pub payee: Option<String>,
     pub postings: Vec<PostingType>,
     pub virtual_postings: Vec<PostingType>,
     pub virtual_postings_balance: Vec<PostingType>,
     pub comments: Vec<Comment>,
     pub transaction_type: TransactionType,
     pub tags: Vec<Tag>,
+    filter_query: Option<String>,
+}
+
+impl<T> Transaction<T> {
+    pub fn get_filter_query(&mut self) -> String {
+        match self.filter_query.clone() {
+            None => {
+                let mut parts: Vec<String> = vec![];
+                let mut current = String::new();
+                let mut in_regex = false;
+                let mut in_string = false;
+                for c in self.description.chars() {
+                    if (c == ' ') & !in_string & !in_regex {
+                        parts.push(current.clone());
+                        current = String::new();
+                    }
+                    if c == '"' {
+                        in_string = !in_string;
+                    } else if c == '/' {
+                        in_regex = !in_regex;
+                        current.push(c);
+                    } else {
+                        current.push(c)
+                    }
+                }
+                parts.push(current.clone());
+                //self.description.split(" ").map(|x| x.to_string()).collect();
+                let res = preprocess_query(&parts);
+                self.filter_query = Some(res.clone());
+                res
+            }
+            Some(x) => x,
+        }
+    }
+    pub fn get_payee(&self, payees: &mut List<Payee>) -> Rc<Payee> {
+        match payees.get(&self.description) {
+            Ok(x) => x.clone(),
+            Err(_) => {
+                let payee = Payee {
+                    name: self.description.clone(),
+                    note: None,
+                    alias: Default::default(),
+                    alias_regex: vec![],
+                    origin: Origin::FromTransaction,
+                };
+                payees.insert(payee);
+                self.get_payee(payees)
+            }
+        }
+    }
+    pub fn get_payee_inmutable(&self, payees: &List<Payee>) -> Rc<Payee> {
+        match payees.get(&self.description) {
+            Ok(x) => x.clone(),
+            Err(_) => panic!("Payee not found"),
+        }
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -69,10 +127,11 @@ pub struct Posting {
     pub cost: Option<Cost>,
     pub kind: PostingType,
     pub tags: Vec<Tag>,
+    pub payee: Option<Rc<Payee>>,
 }
 
 impl Posting {
-    pub fn new(account: &Account, kind: PostingType) -> Posting {
+    pub fn new(account: &Account, kind: PostingType, payee: &Payee) -> Posting {
         Posting {
             account: Rc::new(account.clone()),
             amount: None,
@@ -80,10 +139,35 @@ impl Posting {
             cost: None,
             kind: kind,
             tags: vec![],
+            payee: Some(Rc::new(payee.clone())),
         }
     }
     pub fn set_amount(&mut self, money: Money) {
         self.amount = Some(money)
+    }
+    pub fn has_tag(&self, regex: Regex) -> bool {
+        for t in self.tags.iter() {
+            if regex.is_match(t.get_name()) {
+                return true;
+            }
+        }
+        false
+    }
+    pub fn get_tag(&self, regex: Regex) -> Option<String> {
+        for t in self.tags.iter() {
+            if regex.is_match(t.get_name()) {
+                return t.value.clone();
+            }
+        }
+        None
+    }
+    pub fn get_exact_tag(&self, regex: String) -> Option<String> {
+        for t in self.tags.iter() {
+            if regex.as_str() == t.get_name() {
+                return t.value.clone();
+            }
+        }
+        None
     }
 }
 
@@ -102,13 +186,14 @@ impl<PostingType> Transaction<PostingType> {
             cleared: Cleared::Unknown,
             code: None,
             description: "".to_string(),
-            note: None,
+            payee: None,
             postings: vec![],
             virtual_postings: vec![],
             virtual_postings_balance: vec![],
             comments: vec![],
             transaction_type: t_type,
             tags: vec![],
+            filter_query: None,
         }
     }
     /// Iterator over all the postings, including the virtual ones
@@ -203,12 +288,13 @@ impl Transaction<Posting> {
 
         // 1. Iterate over postings
         let mut fill_account = &Rc::new(Account::from("this will never be used"));
+        let mut fill_payee = None;
         let mut postings: Vec<Posting> = Vec::new();
         for p in self.postings.iter() {
             // If it has money, update the balance
             if let Some(money) = &p.amount {
                 let expected_balance = balances.get(p.account.deref()).unwrap().clone()  // What we had 
-                        + Balance::from(money.clone()); // What we add
+                    + Balance::from(money.clone()); // What we add
                 if !skip_balance_check {
                     if let Some(balance) = &p.balance {
                         if Balance::from(balance.clone()) != expected_balance {
@@ -229,36 +315,36 @@ impl Transaction<Posting> {
                 // Update the balance of the transaction
                 transaction_balance = transaction_balance   // What we had
                     + match &p.cost {
-                        None => Balance::from(money.clone()),
+                    None => Balance::from(money.clone()),
                     // If it has a cost, the secondary currency is added for the balance
-                        Some(cost) => match cost {
-                            Cost::Total { amount } => {
-                                if p.amount.as_ref().unwrap().is_negative() {
-                                    Balance::from(-amount.clone())
-                                } else {
-                                    Balance::from(amount.clone())
-                                }
+                    Some(cost) => match cost {
+                        Cost::Total { amount } => {
+                            if p.amount.as_ref().unwrap().is_negative() {
+                                Balance::from(-amount.clone())
+                            } else {
+                                Balance::from(amount.clone())
                             }
-                            Cost::PerUnit { amount } => {
-                                let currency = match amount {
-                                    Money::Zero => panic!("Cost has no currency"),
-                                    Money::Money { currency, .. } => currency,
-                                };
-                                let units = match amount {
-                                    Money::Zero => BigRational::from(BigInt::from(0)),
-                                    Money::Money { amount, .. } => amount.clone(),
-                                } * match p.amount.as_ref().unwrap() {
-                                    Money::Zero => BigRational::from(BigInt::from(0)),
-                                    Money::Money { amount, .. } => amount.clone(),
-                                };
-                                let money = Money::Money {
-                                    amount: units,
-                                    currency: currency.clone(),
-                                };
-                                Balance::from(money)
-                            }
-                        },
-                    };
+                        }
+                        Cost::PerUnit { amount } => {
+                            let currency = match amount {
+                                Money::Zero => panic!("Cost has no currency"),
+                                Money::Money { currency, .. } => currency,
+                            };
+                            let units = match amount {
+                                Money::Zero => BigRational::from(BigInt::from(0)),
+                                Money::Money { amount, .. } => amount.clone(),
+                            } * match p.amount.as_ref().unwrap() {
+                                Money::Zero => BigRational::from(BigInt::from(0)),
+                                Money::Money { amount, .. } => amount.clone(),
+                            };
+                            let money = Money::Money {
+                                amount: units,
+                                currency: currency.clone(),
+                            };
+                            Balance::from(money)
+                        }
+                    },
+                };
 
                 // Add the posting
                 postings.push(Posting {
@@ -268,6 +354,7 @@ impl Transaction<Posting> {
                     cost: p.cost.clone(),
                     kind: PostingType::Real,
                     tags: self.tags.clone(),
+                    payee: p.payee.clone(),
                 });
             } else if &p.balance.is_some() & !skip_balance_check {
                 // There is a balance
@@ -287,10 +374,12 @@ impl Transaction<Posting> {
                     cost: p.cost.clone(),
                     kind: PostingType::Real,
                     tags: p.tags.clone(),
+                    payee: p.payee.clone(),
                 });
             } else {
                 // We do nothing, but this is the account for the empty post
                 fill_account = &p.account;
+                fill_payee = p.payee.clone();
             }
         }
 
@@ -321,6 +410,7 @@ impl Transaction<Posting> {
                     cost: None,
                     kind: PostingType::Real,
                     tags: self.tags.clone(),
+                    payee: fill_payee.clone(),
                 });
             }
             self.postings = postings;
