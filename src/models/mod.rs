@@ -368,12 +368,28 @@ impl ParsedLedger {
                 }
                 // Go posting by posting
                 for p in parsed.postings.iter() {
-                    let account = self.accounts.get(&p.account)?;
                     let payee = match &p.payee {
                         None => transaction.get_payee_inmutable(&self.payees),
                         Some(x) => self.payees.get(x).unwrap().clone(),
                     };
-                    let mut posting: Posting = Posting::new(account, p.kind, &payee);
+                    let account = if p.account.to_lowercase().ends_with("unknown") {
+                        let mut account = None;
+                        for (_, acc) in self.accounts.iter() {
+                            for alias in acc.payee.iter() {
+                                if alias.is_match(payee.get_name()) {
+                                    account = Some(acc.clone());
+                                    break;
+                                }
+                            }
+                        }
+                        match account {
+                            Some(x) => x,
+                            None => self.accounts.get(&p.account)?.clone(),
+                        }
+                    } else {
+                        self.accounts.get(&p.account)?.clone()
+                    };
+                    let mut posting: Posting = Posting::new(&account, p.kind, &payee);
                     posting.tags = transaction.tags.clone();
                     for comment in p.comments.iter() {
                         posting.tags.append(&mut comment.get_tags());

@@ -15,7 +15,7 @@ pub struct Account {
     pub(crate) aliases: HashSet<String>,
     pub(crate) check: Vec<String>,
     pub(crate) assert: Vec<String>,
-    pub(crate) payee: Vec<String>,
+    pub(crate) payee: Vec<Regex>,
     pub(crate) default: bool,
 }
 
