@@ -325,7 +325,7 @@ fn parse_posting(
 
 /// Parses money
 fn parse_money(tokenizer: &mut Tokenizer) -> Result<(BigRational, String), ParserError> {
-    let currency: String;
+    let mut currency: String;
     let amount: BigRational;
 
     match tokenizer.get_char() {
@@ -338,9 +338,17 @@ fn parse_money(tokenizer: &mut Tokenizer) -> Result<(BigRational, String), Parse
                 }
             };
             currency = chars::get_string(tokenizer);
+            if currency.starts_with("\"") {
+                let n = currency.len();
+                currency = currency[1..n - 1].to_string();
+            }
         }
         Some(_) => {
             currency = chars::get_string(tokenizer);
+            if currency.starts_with("\"") {
+                let n = currency.len();
+                currency = currency[1..n - 1].to_string();
+            }
             amount = match parse_amount(tokenizer) {
                 Ok(amount) => amount,
                 Err(e) => {

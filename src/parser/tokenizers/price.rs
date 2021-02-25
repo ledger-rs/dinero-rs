@@ -65,7 +65,9 @@ pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<ParsedPrice, ParserErro
             None => (),
         }
     }
-
+    // Fix commodities
+    commodity = commodity.replace("\"", "").to_string();
+    other_commodity = other_commodity.replace("\"", "").to_string();
     Ok(ParsedPrice {
         date,
         commodity,
