@@ -38,6 +38,8 @@ P 2021-01-23 AAPL 139.07 USD
 ; Difficult things to parse that were in my ledger
 P 2018/01/14 17:37:11 BTC 13420.7 USD
 P 2013/12/11 EURUSD=X 1.376444 USD
+P 2015/08/07 ETH-USD 2.772120 USD
+
 payee ACME, inc.
     alias (?i)(.*acme.*)
 account Expenses:Travel

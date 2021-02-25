@@ -280,6 +280,6 @@ mod tests {
             Utc::now().naive_local().date(),
             &ledger.prices,
         );
-        assert_eq!(multipliers.len(), 5);
+        assert_eq!(multipliers.len(), 6);
     }
 }
