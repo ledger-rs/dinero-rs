@@ -13,7 +13,13 @@ pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<ParsedPrice, ParserErro
         .unwrap()
         .into_inner();
     let date = parse_date(parsed.next().unwrap());
-    let commodity = parse_string(parsed.next().unwrap());
+    let commodity = {
+        let time_or_commodity = parsed.next().unwrap();
+        match time_or_commodity.as_rule() {
+            Rule::time => parse_string(parsed.next().unwrap()),
+            _ => parse_string(time_or_commodity),
+        }
+    };
     let amount = parse_rational(parsed.next().unwrap());
     let other_commodity = parse_string(parsed.next().unwrap());
 

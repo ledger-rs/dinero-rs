@@ -5,18 +5,22 @@
 
 // Directives
 directive = { ( price ) ~ end }
-price = {"P" ~ ws* ~ date ~ ws+ ~ currency ~ ws* ~number ~ ws* ~ currency ~ws* ~ comment? ~ end}
+price = {"P" ~ ws* ~ date ~ (ws ~ time)? ~ ws+ ~ currency ~ ws* ~number ~ ws* ~ currency ~ws* ~ comment? ~ end}
 
 quote = _{"\"" | "'"}
 comment = {";" ~ ANY*}
 
 date = { year ~ date_sep ~ month ~ date_sep ~ day }
+time = { hour ~ ":" ~ minute ~ (":" ~ second) }
 date_sep = { "." | "/" | "-"}
 year = { "-"? ~ bigint}
 month = {("1" ~ ("0" | "1" | "2")) | ("0"? ~ ASCII_NONZERO_DIGIT)}
 day = {("3" ~ ("0" | "1")) |
 	(("1" | "2") ~ ASCII_DIGIT ) |
     ("0"? ~ ASCII_NONZERO_DIGIT) }
+hour = { (("0"|"1") ~ ASCII_DIGIT) | ("2" ~ ("0" ~"1" ~"2" ~"3"))}
+minute = { ("0"|"1"|"2"|"3"|"4"|"5") ~ ASCII_DIGIT }
+second = { ("0"|"1"|"2"|"3"|"4"|"5") ~ ASCII_DIGIT ~ ("." ~ bigint)? }
 
 
 // Grammar specification for value expressions
@@ -47,7 +51,7 @@ string = {
 	("\"" ~ (("\\\"") | (!"\"" ~ ANY))* ~ "\"") |
 	("'" ~ (("\\'") | (!"'" ~ ANY))* ~ "'")
     }
-reserved = _{"+" ~ "-" ~ "*" ~ "/" ~ "\\" ~ "|" ~ "%"  ~ "&" ~ "<" ~ ">" ~ ":" ~ "?" ~  "(" ~  ")" ~ ";"}
+reserved = _{"+" | "-" | "*" | "/" | "\\" | "|" | "%"  | "&" | "<" | ">" | ":" | "?" |  "(" |  ")" | ";"}
 unquoted = { !reserved ~ !"=" ~ 
     (!reserved ~ !SEPARATOR ~ ANY)+ }
 variable = {
@@ -77,7 +81,7 @@ variable = {
 // helpers
 number = { "-"? ~ bigint ~ ("." ~ bigint)? }
 bigint = _{ ASCII_DIGIT+ }
-ws = _{" " | "\t"}
+ws = _{" "}
 end = { EOI | NEWLINE }
 
 
