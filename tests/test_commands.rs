@@ -195,12 +195,11 @@ fn automated_fail() {
 }
 
 #[test]
-/// If this fails it means that it created an extra posting
 fn automated_value_expression() {
     let args = &["reg", "-f", "examples/automated.ledger"];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
     let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
-    assert_eq!(output.lines().into_iter().count(), 12);
+    assert_eq!(output.lines().into_iter().count(), 9);
 
     test_args(args);
 }

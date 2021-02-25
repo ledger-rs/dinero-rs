@@ -1,3 +1,24 @@
+//
+// Grammar specification for ledger files as interpreted by dinero rs
+// Test in https:://pest.rs
+//
+
+// Directives
+directive = { ( price ) ~ end }
+price = {"P" ~ ws* ~ date ~ ws+ ~ currency ~ ws* ~number ~ ws* ~ currency ~ws* ~ comment? ~ end}
+
+quote = _{"\"" | "'"}
+comment = {";" ~ ANY*}
+
+date = { year ~ date_sep ~ month ~ date_sep ~ day }
+date_sep = { "." | "/" | "-"}
+year = { "-"? ~ bigint}
+month = {("1" ~ ("0" | "1" | "2")) | ("0"? ~ ASCII_NONZERO_DIGIT)}
+day = {("3" ~ ("0" | "1")) |
+	(("1" | "2") ~ ASCII_DIGIT ) |
+    ("0"? ~ ASCII_NONZERO_DIGIT) }
+
+
 // Grammar specification for value expressions
 
 // A value expression is an expression between parenthesis
@@ -20,10 +41,15 @@ primary = {
 
 term = _{ variable | money | number | regex | string }
 money = { (number ~ ws* ~ currency) | (currency ~ ws* ~ number) }
-currency = { LETTER+ | ("\"" ~ (!"\"" ~ ANY)+ ~ "\"")}
+currency = { string | unquoted }
 regex = { "/" ~ (!"/" ~ ANY)* ~ "/"}
-string = { "'" ~ (!"'" ~ ANY)* ~ "'"}
-variable = { 
+string = {
+	("\"" ~ (("\\\"") | (!"\"" ~ ANY))* ~ "\"") |
+	("'" ~ (("\\'") | (!"'" ~ ANY))* ~ "'")
+    }
+unquoted = { (!"+" ~ !"-" ~ !"*" ~ !"/" ~ !"\\" ~ !"|" ~ !"%" ~ !"=" ~ !"!" ~ !"&" ~ !"<" ~ !">" ~ !":" ~ !"?" ~  !"(" ~  !")" ~ !";" ~ 
+	!SEPARATOR ~ ANY)+ }
+variable = {
     "account" |
     "payee" |
     "date" |
@@ -50,7 +76,8 @@ variable = {
 // helpers
 number = { "-"? ~ bigint ~ ("." ~ bigint)? }
 bigint = _{ ASCII_DIGIT+ }
-ws = _{" "}
+ws = _{" " | "\t"}
+end = { EOI | NEWLINE }
 
 
 add = { "+" | "-" }

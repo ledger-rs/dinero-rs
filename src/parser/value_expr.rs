@@ -1,18 +1,15 @@
+use super::utils::parse_rational;
+use super::{GrammarParser, Rule};
 use crate::app;
 use crate::models::{Account, Currency, Money, Payee, Posting, Transaction};
-use crate::pest::Parser;
 use crate::List;
 use chrono::NaiveDate;
 use num::{abs, BigInt, BigRational};
+use pest::Parser;
 use regex::Regex;
+use std::collections::HashMap;
 use std::rc::Rc;
 use std::str::FromStr;
-
-use std::collections::HashMap;
-
-#[derive(Parser)]
-#[grammar = "grammar/expressions.pest"]
-pub struct ValueExpressionParser;
 
 pub fn eval_expression(
     expression: &str,
@@ -21,7 +18,7 @@ pub fn eval_expression(
     commodities: &mut List<Currency>,
     regexes: &mut HashMap<String, Regex>,
 ) -> EvalResult {
-    let parsed = ValueExpressionParser::parse(Rule::value_expr, expression)
+    let parsed = GrammarParser::parse(Rule::value_expr, expression)
         .expect("unsuccessful parse") // unwrap the parse result
         .next()
         .unwrap()
@@ -405,16 +402,16 @@ fn build_ast_from_expr(
                     match child.as_rule() {
                         Rule::number => Node::Money {
                             currency: money.next().unwrap().as_str().to_string(),
-                            amount: parse_big_rational(child.as_str()),
+                            amount: parse_rational(child),
                         },
                         Rule::currency => Node::Money {
                             currency: child.as_str().to_string(),
-                            amount: parse_big_rational(money.next().unwrap().as_str()),
+                            amount: parse_rational(money.next().unwrap()),
                         },
                         unknown => panic!("Unknown rule: {:?}", unknown),
                     }
                 }
-                Rule::number => Node::Number(parse_big_rational(first.as_str())),
+                Rule::number => Node::Number(parse_rational(first)),
                 Rule::regex | Rule::string => {
                     let full = first.as_str().to_string();
                     let n = full.len() - 1;
@@ -462,24 +459,4 @@ fn parse_unary_expr(operation: Unary, child: Node) -> Node {
         op: operation,
         child: Box::new(child),
     }
-}
-
-fn parse_big_rational(input: &str) -> BigRational {
-    let mut num = String::new();
-    let mut den = "1".to_string();
-    let mut decimal = false;
-    for c in input.chars() {
-        if c == '.' {
-            decimal = true
-        } else {
-            num.push(c);
-            if decimal {
-                den.push('0')
-            };
-        }
-    }
-    BigRational::new(
-        BigInt::from_str(num.as_str()).unwrap(),
-        BigInt::from_str(den.as_str()).unwrap(),
-    )
 }
