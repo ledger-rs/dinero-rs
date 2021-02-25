@@ -4,12 +4,11 @@ use crate::app;
 use crate::models::{Account, Currency, Money, Payee, Posting, Transaction};
 use crate::List;
 use chrono::NaiveDate;
-use num::{abs, BigInt, BigRational};
+use num::{abs, BigRational};
 use pest::Parser;
 use regex::Regex;
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::str::FromStr;
 
 pub fn eval_expression(
     expression: &str,

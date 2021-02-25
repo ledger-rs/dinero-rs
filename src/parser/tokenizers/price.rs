@@ -1,16 +1,8 @@
-use std::str::FromStr;
-
-use chrono::NaiveDate;
-use lazy_static::lazy_static;
-use num::rational::BigRational;
-use regex::Regex;
-
 use super::super::{GrammarParser, Rule};
 use crate::models::ParsedPrice;
 use crate::parser::utils::{parse_date, parse_rational, parse_string};
 use crate::parser::{chars, Tokenizer};
 use crate::ParserError;
-use num::BigInt;
 use pest::Parser;
 
 pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<ParsedPrice, ParserError> {

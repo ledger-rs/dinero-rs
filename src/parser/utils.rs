@@ -4,7 +4,6 @@ use super::Rule;
 use chrono::NaiveDate;
 use num::{BigInt, BigRational};
 use pest::iterators::Pair;
-use pest::Parser;
 use std::str::FromStr;
 
 /// Parses a date
