@@ -124,14 +124,13 @@ impl ParsedLedger {
         // 3. Prices from price statements
         let mut prices: Vec<Price> = Vec::new();
         for price in self.prices.iter() {
-            prices.push(Price {
-                date: price.date,
-                commodity: self
-                    .commodities
+            prices.push(Price::new(
+                price.date,
+                self.commodities
                     .get(price.commodity.as_str())
                     .unwrap()
                     .clone(),
-                price: Money::Money {
+                Money::Money {
                     amount: price.other_quantity.clone(),
                     currency: self
                         .commodities
@@ -139,7 +138,7 @@ impl ParsedLedger {
                         .unwrap()
                         .clone(),
                 },
-            });
+            ));
         }
 
         //
@@ -184,22 +183,19 @@ impl ParsedLedger {
                     currency: vec[1].get_commodity().unwrap().clone(),
                 };
 
-                prices.push(Price {
-                    date,
-                    commodity,
-                    price,
-                });
+                prices.push(Price::new(date, commodity, price));
             }
         }
 
         // 5. Go over the transactions again and see if there is something we need to do with them
         if automated_transactions.len() > 0 {
             let mut regexes = HashMap::new();
-            for automated in automated_transactions.iter_mut() {
-                for t in transactions.iter_mut() {
+            for t in transactions.iter_mut() {
+                for automated in automated_transactions.iter_mut() {
                     let mut extra_postings = vec![];
                     let mut extra_virtual_postings = vec![];
                     let mut extra_virtual_postings_balance = vec![];
+                    let mut matched = false;
                     for p in t.postings_iter() {
                         if filter_predicate(
                             automated.get_filter_query().as_str(),
@@ -208,7 +204,11 @@ impl ParsedLedger {
                             &mut self.commodities,
                             &mut regexes,
                         )? {
+                            matched = true;
                             for comment in t.comments.iter() {
+                                p.to_owned().tags.append(&mut comment.get_tags());
+                            }
+                            for comment in p.comments.iter() {
                                 p.to_owned().tags.append(&mut comment.get_tags());
                             }
                             for auto_posting in automated.postings_iter() {
@@ -267,6 +267,7 @@ impl ParsedLedger {
                                     balance: None,
                                     cost: None,
                                     kind: auto_posting.kind,
+                                    comments: vec![],
                                     tags: vec![],
                                     payee,
                                 };
@@ -286,6 +287,9 @@ impl ParsedLedger {
                     t.virtual_postings.append(&mut extra_virtual_postings);
                     t.virtual_postings_balance
                         .append(&mut extra_virtual_postings_balance);
+                    if matched {
+                        break;
+                    }
                 }
             }
             // Populate balances
@@ -314,11 +318,7 @@ impl ParsedLedger {
                         currency: vec[1].get_commodity().unwrap().clone(),
                     };
 
-                    prices.push(Price {
-                        date,
-                        commodity,
-                        price,
-                    });
+                    prices.push(Price::new(date, commodity, price));
                 }
             }
         }
@@ -410,10 +410,10 @@ impl ParsedLedger {
                                 amount: amount.clone(),
                             }),
                         };
-                        prices.push(Price {
-                            date: transaction.date.unwrap(),
-                            commodity: posting_currency.clone(),
-                            price: Money::Money {
+                        prices.push(Price::new(
+                            transaction.date.unwrap(),
+                            posting_currency.clone(),
+                            Money::Money {
                                 amount: p.cost_amount.clone().unwrap()
                                     / match p.cost_type.as_ref().unwrap() {
                                         PriceType::Total => {
@@ -423,7 +423,7 @@ impl ParsedLedger {
                                     },
                                 currency: amount.get_commodity().unwrap().clone(),
                             },
-                        })
+                        ))
                     }
                     if let Some(c) = &p.balance_currency {
                         posting.balance = Some(Money::from((

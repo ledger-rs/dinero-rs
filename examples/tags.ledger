@@ -1,0 +1,6 @@
+; File to test tags and tag related options
+2021-01-01 * Fruit
+    ; :shopping:
+    Expenses:Groceries     15.03 EUR
+    ; :healthy:
+    Assets:Cash

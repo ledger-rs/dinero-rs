@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::iter::Chain;
 use std::ops::Deref;
 use std::rc::Rc;
-use std::slice::Iter;
+use std::slice::{Iter, IterMut};
 
 use chrono::NaiveDate;
 use num::rational::BigRational;
@@ -126,6 +126,7 @@ pub struct Posting {
     pub balance: Option<Money>,
     pub cost: Option<Cost>,
     pub kind: PostingType,
+    pub comments: Vec<Comment>,
     pub tags: Vec<Tag>,
     pub payee: Option<Rc<Payee>>,
 }
@@ -138,6 +139,7 @@ impl Posting {
             balance: None,
             cost: None,
             kind: kind,
+            comments: vec![],
             tags: vec![],
             payee: Some(Rc::new(payee.clone())),
         }
@@ -204,6 +206,16 @@ impl<PostingType> Transaction<PostingType> {
             .iter()
             .chain(self.virtual_postings.iter())
             .chain(self.virtual_postings_balance.iter())
+    }
+    /// Iterator over all the postings, including the virtual ones
+    pub fn postings_iter_mut(
+        &mut self,
+    ) -> Chain<Chain<IterMut<'_, PostingType>, IterMut<'_, PostingType>>, IterMut<'_, PostingType>>
+    {
+        self.postings
+            .iter_mut()
+            .chain(self.virtual_postings.iter_mut())
+            .chain(self.virtual_postings_balance.iter_mut())
     }
 }
 
@@ -353,7 +365,8 @@ impl Transaction<Posting> {
                     balance: p.balance.clone(),
                     cost: p.cost.clone(),
                     kind: PostingType::Real,
-                    tags: self.tags.clone(),
+                    comments: p.comments.clone(),
+                    tags: p.tags.clone(),
                     payee: p.payee.clone(),
                 });
             } else if &p.balance.is_some() & !skip_balance_check {
@@ -373,6 +386,7 @@ impl Transaction<Posting> {
                     balance: p.balance.clone(),
                     cost: p.cost.clone(),
                     kind: PostingType::Real,
+                    comments: p.comments.clone(),
                     tags: p.tags.clone(),
                     payee: p.payee.clone(),
                 });
@@ -409,6 +423,7 @@ impl Transaction<Posting> {
                     balance: None,
                     cost: None,
                     kind: PostingType::Real,
+                    comments: self.comments.clone(),
                     tags: self.tags.clone(),
                     payee: fill_payee.clone(),
                 });

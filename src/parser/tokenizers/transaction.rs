@@ -1,115 +1,59 @@
-use crate::models::{
-    Cleared, Comment, HasName, PostingType, PriceType, Transaction, TransactionType,
-};
+use super::super::{GrammarParser, Rule};
+use crate::models::{Comment, PostingType, PriceType, Transaction, TransactionType};
 use crate::parser::chars::LineType;
 use crate::parser::tokenizers::comment;
+use crate::parser::utils::{parse_date, parse_string};
 use crate::parser::{chars, Tokenizer};
 use crate::{Error, ParserError};
-use chrono::NaiveDate;
 use lazy_static::lazy_static;
 use num::rational::BigRational;
 use num::BigInt;
+use pest::Parser;
 use regex::Regex;
 use std::str::FromStr;
 
 pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Transaction<RawPosting>, Error> {
-    parse_generic(tokenizer, true)
-}
-
-pub(crate) fn parse_automated_transaction(
-    tokenizer: &mut Tokenizer,
-) -> Result<Transaction<RawPosting>, Error> {
-    parse_generic(tokenizer, false)
+    parse_with_grammar(tokenizer)
 }
 
 /// Parses a transaction
-fn parse_generic(tokenizer: &mut Tokenizer, real: bool) -> Result<Transaction<RawPosting>, Error> {
-    lazy_static! {
-        static ref RE_REAL: Regex = Regex::new(format!("{}{}{}{}{}{}{}",
-        r"(\d{4}[/-]\d{2}[/-]\d{2})"        , // date
-        r"(= ?\d{4}[/-]\d{2}[/-]\d{2})? +"  , // effective_date
-        r"([\*!])? +"                       , // cleared
-        r"(\(.*\) )?"                       , // code
-        r"(.*)"                             , // description
-        r"( |.*)"                           , // payee
-        r"( ;.*)?"                          , // note
-        ).as_str()).unwrap();
-        static ref RE_AUTOMATED: Regex = Regex::new(format!("{}",r"=(.*)" ).as_str()).unwrap();
-    }
+fn parse_with_grammar(tokenizer: &mut Tokenizer) -> Result<Transaction<RawPosting>, Error> {
     let mystr = chars::get_line(tokenizer);
-    let caps = match real {
-        true => match RE_REAL.captures(mystr.as_str()) {
-            Some(c) => c,
-            None => return Err(tokenizer.error(ParserError::UnexpectedInput(None))),
-        },
-        false => RE_AUTOMATED.captures(mystr.as_str()).unwrap(),
-    };
+    let mut parsed = GrammarParser::parse(Rule::transaction, mystr.as_str())
+        .expect("Could not parse price!") // unwrap the parse result
+        .next()
+        .unwrap()
+        .into_inner();
 
-    let mut transaction = Transaction::<RawPosting>::new(match real {
-        true => TransactionType::Real,
-        false => TransactionType::Automated,
-    });
-
-    for (i, cap) in caps.iter().enumerate() {
-        match cap {
-            Some(m) => {
-                match i {
-                    1 =>
-                    // date
-                    {
-                        match real {
-                            true => transaction.date = Some(parse_date(m.as_str())),
-                            false => {
-                                transaction.description = m.as_str().to_string();
-                            }
-                        }
+    let mut transaction = Transaction::<RawPosting>::new(TransactionType::Real);
+    transaction.date = Some(parse_date(parsed.next().unwrap()));
+    let mut next_item = parsed.next().unwrap();
+    while next_item.as_rule() != Rule::description {
+        next_item = parsed.next().unwrap();
+    }
+    transaction.description = parse_string(next_item).trim().to_string();
+    match parsed.next() {
+        None => (), // do nothing, we're done
+        Some(x) => {
+            match x.as_rule() {
+                Rule::payee => {
+                    transaction.payee = Some(parse_string(x).trim().to_string());
+                    let comment = parsed.next();
+                    if comment.is_some() {
+                        transaction.comments.push(Comment {
+                            comment: parse_string(comment.unwrap()),
+                        });
                     }
-                    2 =>
-                    // effective date
-                    {
-                        transaction.effective_date = Some(parse_date(m.as_str()))
-                    }
-                    3 =>
-                    // cleared
-                    {
-                        transaction.cleared = match m.as_str() {
-                            "*" => Cleared::Cleared,
-                            "!" => Cleared::NotCleared,
-                            _ => Cleared::Unknown,
-                        }
-                    }
-                    4 =>
-                    // code
-                    {
-                        transaction.code = Some(m.as_str().to_string())
-                    }
-                    5 =>
-                    // description
-                    {
-                        transaction.description = m.as_str().to_string();
-                    }
-                    6 =>
-                    // payee
-                    {
-                        if real {
-                            match m.as_str() {
-                                "" => (),
-                                x => transaction.payee = Some(x.to_string()),
-                            }
-                        }
-                    }
-                    7 =>
-                    // note
-                    {
-                        transaction.code = Some(m.as_str().to_string())
-                    }
-                    _ => (),
                 }
+                Rule::comment => transaction.comments.push(Comment {
+                    comment: parse_string(x),
+                }),
+                _ => (), // Do nothing (it means it reached Rule::end)
             }
-            None => (),
         }
     }
-    if real & transaction.payee.is_none() {
+
+    if transaction.payee.is_none() & (transaction.description.len() > 0) {
         transaction.payee = Some(transaction.description.clone());
     }
     // Have a flag so that it can be known whether a comment belongs to the transaction or to the
@@ -123,14 +67,67 @@ fn parse_generic(tokenizer: &mut Tokenizer, real: bool) -> Result<Transaction<Ra
                     true => {
                         let len = transaction.postings.len();
 
-                        for tag in comment.get_tags().iter() {
-                            if tag.get_name().to_lowercase() == "payee" {
-                                if let Some(payee) = &tag.value {
-                                    transaction.postings[len - 1].payee = Some(payee.clone());
-                                }
-                                break;
-                            }
-                        }
+                        transaction.postings[len - 1].comments.push(comment);
+                    }
+                    false => {
+                        transaction.comments.push(comment);
+                    }
+                }
+            }
+            c if c.is_numeric() => {
+                return Err(tokenizer.error(ParserError::UnexpectedInput(Some(
+                    "Expecting account name".to_string(),
+                ))));
+            }
+            _ => {
+                match parse_posting(tokenizer, transaction.transaction_type, &transaction.payee) {
+                    // Although here we already know the kind of the posting (virtual, real),
+                    // we deal with that in the next phase of parsing
+                    Ok(posting) => transaction.postings.push(posting),
+                    Err(e) => {
+                        eprintln!("Error while parsing posting.");
+                        return Err(tokenizer.error(e));
+                    }
+                }
+                parsed_posting = true;
+            }
+        }
+    }
+
+    Ok(transaction)
+}
+
+pub(crate) fn parse_automated_transaction(
+    tokenizer: &mut Tokenizer,
+) -> Result<Transaction<RawPosting>, Error> {
+    lazy_static! {
+        static ref RE_AUTOMATED: Regex = Regex::new(format!("{}", r"=(.*)").as_str()).unwrap();
+    }
+    let mystr = chars::get_line(tokenizer);
+    let caps = RE_AUTOMATED.captures(mystr.as_str()).unwrap();
+
+    let mut transaction = Transaction::<RawPosting>::new(TransactionType::Automated);
+
+    for (i, cap) in caps.iter().enumerate() {
+        match cap {
+            Some(m) => match i {
+                1 => transaction.description = m.as_str().to_string(),
+                _ => (),
+            },
+            None => (),
+        }
+    }
+    // Have a flag so that it can be known whether a comment belongs to the transaction or to the
+    // posting
+    let mut parsed_posting = false;
+    while let LineType::Indented = chars::consume_whitespaces_and_lines(tokenizer) {
+        match tokenizer.get_char().unwrap() {
+            ';' => {
+                let comment = comment::parse(tokenizer);
+                match parsed_posting {
+                    true => {
+                        let len = transaction.postings.len();
+
                         transaction.postings[len - 1].comments.push(comment);
                     }
                     false => {
@@ -335,7 +332,7 @@ fn parse_posting(
 
 /// Parses money
 fn parse_money(tokenizer: &mut Tokenizer) -> Result<(BigRational, String), ParserError> {
-    let currency: String;
+    let mut currency: String;
     let amount: BigRational;
 
     match tokenizer.get_char() {
@@ -348,9 +345,17 @@ fn parse_money(tokenizer: &mut Tokenizer) -> Result<(BigRational, String), Parse
                 }
             };
             currency = chars::get_string(tokenizer);
+            if currency.starts_with("\"") {
+                let n = currency.len();
+                currency = currency[1..n - 1].to_string();
+            }
         }
         Some(_) => {
             currency = chars::get_string(tokenizer);
+            if currency.starts_with("\"") {
+                let n = currency.len();
+                currency = currency[1..n - 1].to_string();
+            }
             amount = match parse_amount(tokenizer) {
                 Ok(amount) => amount,
                 Err(e) => {
@@ -408,23 +413,4 @@ fn parse_amount(tokenizer: &mut Tokenizer) -> Result<BigRational, ParserError> {
             Err(_) => return Err(ParserError::UnexpectedInput(None)),
         },
     ))
-}
-
-fn parse_date(input_str: &str) -> NaiveDate {
-    // yyyy-mm-dd is 10 characters -- guaranted by the regexp, but it comes with maybe stuff in the front
-    let len = input_str.len();
-    let date_str = &input_str[len - 10..len];
-    assert!(date_str.len() == 10, date_str.to_string());
-    assert_eq!(
-        date_str.chars().nth(4),
-        date_str.chars().nth(7),
-        "Separators mismatch"
-    );
-    let sep = date_str.chars().nth(4).unwrap();
-    let mut parts = date_str.split(sep);
-    let year = i32::from_str(parts.next().unwrap()).unwrap();
-    let month = u32::from_str(parts.next().unwrap()).unwrap();
-    let day = u32::from_str(parts.next().unwrap()).unwrap();
-
-    NaiveDate::from_ymd(year, month, day)
 }
