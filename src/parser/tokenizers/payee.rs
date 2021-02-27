@@ -74,13 +74,13 @@ pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Payee, ParserError> {
         .iter()
         .map(|x| Regex::new(x.clone().as_str()).unwrap())
         .collect();
-    Ok(Payee {
+    Ok(Payee::new(
         name,
         note,
         alias,
         alias_regex,
-        origin: Origin::FromDirective,
-    })
+        Origin::FromDirective,
+    ))
 }
 
 #[cfg(test)]

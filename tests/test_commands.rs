@@ -203,3 +203,13 @@ fn automated_value_expression() {
 
     test_args(args);
 }
+
+#[test]
+fn automated_add_tag() {
+    let args = &["reg", "-f", "examples/automated.ledger", "%yummy"];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    assert_eq!(output.lines().into_iter().count(), 2);
+
+    test_args(args);
+}
