@@ -11,12 +11,19 @@ use std::rc::Rc;
 /// A price relates two commodities
 #[derive(Debug, Clone)]
 pub struct Price {
-    pub date: NaiveDate,
-    pub commodity: Rc<Currency>,
-    pub price: Money,
+    date: NaiveDate,
+    commodity: Rc<Currency>,
+    price: Money,
 }
 
 impl Price {
+    pub fn new(date: NaiveDate, commodity: Rc<Currency>, price: Money) -> Price {
+        Price {
+            date,
+            commodity,
+            price,
+        }
+    }
     pub fn get_price(&self) -> Money {
         self.price.clone()
     }

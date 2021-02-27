@@ -124,14 +124,13 @@ impl ParsedLedger {
         // 3. Prices from price statements
         let mut prices: Vec<Price> = Vec::new();
         for price in self.prices.iter() {
-            prices.push(Price {
-                date: price.date,
-                commodity: self
-                    .commodities
+            prices.push(Price::new(
+                price.date,
+                self.commodities
                     .get(price.commodity.as_str())
                     .unwrap()
                     .clone(),
-                price: Money::Money {
+                Money::Money {
                     amount: price.other_quantity.clone(),
                     currency: self
                         .commodities
@@ -139,7 +138,7 @@ impl ParsedLedger {
                         .unwrap()
                         .clone(),
                 },
-            });
+            ));
         }
 
         //
@@ -184,11 +183,7 @@ impl ParsedLedger {
                     currency: vec[1].get_commodity().unwrap().clone(),
                 };
 
-                prices.push(Price {
-                    date,
-                    commodity,
-                    price,
-                });
+                prices.push(Price::new(date, commodity, price));
             }
         }
 
@@ -323,11 +318,7 @@ impl ParsedLedger {
                         currency: vec[1].get_commodity().unwrap().clone(),
                     };
 
-                    prices.push(Price {
-                        date,
-                        commodity,
-                        price,
-                    });
+                    prices.push(Price::new(date, commodity, price));
                 }
             }
         }
@@ -419,10 +410,10 @@ impl ParsedLedger {
                                 amount: amount.clone(),
                             }),
                         };
-                        prices.push(Price {
-                            date: transaction.date.unwrap(),
-                            commodity: posting_currency.clone(),
-                            price: Money::Money {
+                        prices.push(Price::new(
+                            transaction.date.unwrap(),
+                            posting_currency.clone(),
+                            Money::Money {
                                 amount: p.cost_amount.clone().unwrap()
                                     / match p.cost_type.as_ref().unwrap() {
                                         PriceType::Total => {
@@ -432,7 +423,7 @@ impl ParsedLedger {
                                     },
                                 currency: amount.get_commodity().unwrap().clone(),
                             },
-                        })
+                        ))
                     }
                     if let Some(c) = &p.balance_currency {
                         posting.balance = Some(Money::from((
