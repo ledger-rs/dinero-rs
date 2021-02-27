@@ -53,8 +53,12 @@ fn parse_with_grammar(tokenizer: &mut Tokenizer) -> Result<Transaction<RawPostin
         }
     }
 
-    if transaction.payee.is_none() & (transaction.description.len() > 0) {
-        transaction.payee = Some(transaction.description.clone());
+    if transaction.payee.is_none() {
+        if transaction.description.len() > 0 {
+            transaction.payee = Some(transaction.description.clone());
+        } else {
+            transaction.payee = Some("[Unspecified payee]".to_string())
+        }
     }
     // Have a flag so that it can be known whether a comment belongs to the transaction or to the
     // posting
