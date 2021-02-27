@@ -19,5 +19,6 @@
     Expenses:Rent               705.43 EUR
     Assets:Checking account
 2021-01-06 * Meal | My favorite restaurant
+    ; :one_tag:
     Expenses:Restaurants        58.33 EUR
     Assets:Cash
