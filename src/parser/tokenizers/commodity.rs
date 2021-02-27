@@ -1,9 +1,6 @@
 use super::super::{GrammarParser, Rule};
 use std::collections::HashSet;
 
-use lazy_static::lazy_static;
-use regex::Regex;
-
 use crate::models::{Comment, Currency, Origin};
 use crate::parser::chars::LineType;
 use crate::parser::tokenizers::comment;
