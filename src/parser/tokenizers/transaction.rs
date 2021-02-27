@@ -2,7 +2,7 @@ use super::super::{GrammarParser, Rule};
 use crate::models::{Comment, PostingType, PriceType, Transaction, TransactionType};
 use crate::parser::chars::LineType;
 use crate::parser::tokenizers::comment;
-use crate::parser::utils::{parse_string, parse_date};
+use crate::parser::utils::{parse_date, parse_string};
 use crate::parser::{chars, Tokenizer};
 use crate::{Error, ParserError};
 use lazy_static::lazy_static;
@@ -101,7 +101,7 @@ pub(crate) fn parse_automated_transaction(
     tokenizer: &mut Tokenizer,
 ) -> Result<Transaction<RawPosting>, Error> {
     lazy_static! {
-        static ref RE_AUTOMATED: Regex = Regex::new(format!("{}",r"=(.*)" ).as_str()).unwrap();
+        static ref RE_AUTOMATED: Regex = Regex::new(format!("{}", r"=(.*)").as_str()).unwrap();
     }
     let mystr = chars::get_line(tokenizer);
     let caps = RE_AUTOMATED.captures(mystr.as_str()).unwrap();
@@ -110,12 +110,10 @@ pub(crate) fn parse_automated_transaction(
 
     for (i, cap) in caps.iter().enumerate() {
         match cap {
-            Some(m) => {
-                match i {
-                    1 => transaction.description = m.as_str().to_string(),
-                    _ => (),
-                }
-            }
+            Some(m) => match i {
+                1 => transaction.description = m.as_str().to_string(),
+                _ => (),
+            },
             None => (),
         }
     }
