@@ -1,6 +1,9 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
 
+## [0.13.1] - 2021-02-27 
+### Fixed
+- Fixed issue when there is no specified payee
 ## [0.13.0] - 2021-02-27 
 ### Added
 - Improved documentation
