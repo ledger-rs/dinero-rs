@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 #[test]
 fn test_include() {
-    let p1 = PathBuf::from("examples/include.ledger".to_string());
+    let p1 = PathBuf::from("tests/example_files/include.ledger".to_string());
     let mut tokenizer: Tokenizer = Tokenizer::from(&p1);
     let res = tokenizer.tokenize();
     assert!(res.is_ok());
@@ -13,7 +13,7 @@ fn test_include() {
 
 #[test]
 fn test_build_ledger_from_demo() {
-    let p1 = PathBuf::from("examples/demo.ledger".to_string());
+    let p1 = PathBuf::from("tests/example_files/demo.ledger".to_string());
     let mut tokenizer: Tokenizer = Tokenizer::from(&p1);
     let items = tokenizer.tokenize().unwrap();
     let ledger = items.to_ledger(false);
@@ -44,7 +44,7 @@ fn test_fail() {
 fn include_glob() {
     let assert_1 = Command::cargo_bin("dinero")
         .unwrap()
-        .args(&["prices", "-f", "examples/include.ledger"])
+        .args(&["prices", "-f", "tests/example_files/include.ledger"])
         .assert();
     let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
     assert!(output.lines().into_iter().count() > 100);

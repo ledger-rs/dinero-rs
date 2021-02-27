@@ -1,7 +1,8 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
 
-## [0.14.0]
+## [0.15.0] - 
+## [0.14.0] - 2021-02-27
 ### Fixed
 - speed bump, from 7 seconds to 4 seconds in my personal ledger (still room to improve)
 - ability to add tags from automated transactions

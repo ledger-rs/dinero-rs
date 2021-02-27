@@ -263,7 +263,7 @@ mod tests {
     #[test]
     fn test_graph() {
         // Copy from balance command
-        let path = PathBuf::from("examples/demo.ledger");
+        let path = PathBuf::from("tests/example_files/demo.ledger");
         let mut tokenizer = Tokenizer::from(&path);
         let items = tokenizer.tokenize().unwrap();
         let ledger = items.to_ledger(false).unwrap();
