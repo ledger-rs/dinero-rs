@@ -207,6 +207,12 @@ impl ParsedLedger {
                     let mut extra_virtual_postings_balance = vec![];
                     let mut matched = false;
 
+                    for comment in automated.comments.iter() {
+                        t.tags.append(&mut comment.get_tags());
+                        for p in t.postings.iter_mut() {
+                            p.tags.append(&mut comment.get_tags());
+                        }
+                    }
                     for p in t.postings_iter() {
                         let node = root_nodes.get(automated.get_filter_query().as_str());
                         if filter_expression(
@@ -217,12 +223,7 @@ impl ParsedLedger {
                             &mut regexes,
                         )? {
                             matched = true;
-                            for comment in t.comments.iter() {
-                                p.to_owned().tags.append(&mut comment.get_tags());
-                            }
-                            for comment in p.comments.iter() {
-                                p.to_owned().tags.append(&mut comment.get_tags());
-                            }
+
                             for auto_posting in automated.postings_iter() {
                                 let account_alias = auto_posting.account.clone();
                                 match self.accounts.get(&account_alias) {
@@ -292,7 +293,6 @@ impl ParsedLedger {
                                     }
                                 }
                             }
-                            // todo!("Need to work on transaction automation");
                         }
                     }
                     t.postings.append(&mut extra_postings);
