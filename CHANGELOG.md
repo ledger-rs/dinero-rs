@@ -4,6 +4,7 @@ Changelog file for dinero-rs project, a command line application for managing fi
 ## [0.13.0] - 2021-02-27 
 ### Added
 - Improved documentation
+- Support for [hledger syntax for payees](https://github.com/frosklis/dinero-rs/issues/37)
 ### Fixed
 - keep tags from transactions
 - match automated transactions only once per transaction, like ```ledger``` does

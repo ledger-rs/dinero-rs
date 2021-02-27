@@ -9,9 +9,15 @@
     Expenses:Rent        EUR 553.12
     Expenses:Utilities   (amount - 553.12 EUR)
     Expenses:Rent        (-amount)
+= @"My favorite restaurant"
+    ; :yummy:
+
 2021-01-01 * Flights
     Income:Salary      -1000 EUR
     Assets:Checking account
 2021-01-05 * Rent
     Expenses:Rent               705.43 EUR
     Assets:Checking account
+2021-01-06 * Meal | My favorite restaurant
+    Expenses:Restaurants        58.33 EUR
+    Assets:Cash

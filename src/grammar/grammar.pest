@@ -6,8 +6,13 @@
 // Directives
 directive = { ( price ) ~ end }
 price = {"P" ~ ws* ~ date ~ (ws ~ time)? ~ ws+ ~ currency ~ ws* ~number ~ ws* ~ currency ~ws* ~ comment? ~ end}
+transaction = {date ~ (ws ~ time)? ~ ws* ~ status?  ~ ws* ~ status?  ~ ws* ~ description  ~ ws* ~ ("|" ~ ws*~payee)? ~ws* ~ comment? ~ end }
 
+code = { "(" ~ string ~ ")" }
+status = { "*"| "!" }
 quote = _{"\"" | "'"}
+payee = { string | (!"|" ~ !";" ~!end ~ ANY)* }
+description = { string | (!"|" ~ !";" ~!end ~ ANY)* }
 comment = {";" ~ ANY*}
 
 date = { year ~ date_sep ~ month ~ date_sep ~ day }
