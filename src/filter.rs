@@ -1,5 +1,5 @@
 use crate::models::{Currency, Posting, PostingType, Transaction};
-use crate::parser::value_expr::{eval_expression, EvalResult};
+use crate::parser::value_expr::{eval, eval_expression, EvalResult, Node};
 use crate::{CommonOpts, Error, List};
 use colored::Colorize;
 use regex::Regex;
@@ -60,6 +60,25 @@ pub fn filter_predicate(
         EvalResult::Boolean(b) => Ok(b),
         _ => Err(Error {
             message: vec![predicate.red().bold(), "should return a boolean".normal()],
+        }),
+    }
+}
+
+pub fn filter_expression(
+    predicate: &Node,
+    posting: &Posting,
+    transaction: &Transaction<Posting>,
+    commodities: &mut List<Currency>,
+    regexes: &mut HashMap<String, Regex>,
+) -> Result<bool, Error> {
+    let result = eval(predicate, posting, transaction, commodities, regexes);
+    match result {
+        EvalResult::Boolean(b) => Ok(b),
+        _ => Err(Error {
+            message: vec![
+                format!("{:?}", predicate).red().bold(),
+                "should return a boolean".normal(),
+            ],
         }),
     }
 }
