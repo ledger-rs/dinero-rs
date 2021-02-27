@@ -4,8 +4,9 @@
 //
 
 // Directives
-directive = { ( price ) ~ end }
+directive = { price | commodity }
 price = {"P" ~ ws* ~ date ~ (ws ~ time)? ~ ws+ ~ currency ~ ws* ~number ~ ws* ~ currency ~ws* ~ comment? ~ end}
+commodity = { "commodity" ~ ws+ ~ currency ~ ws* ~ comment? ~ end}
 transaction = {date ~ (ws ~ time)? ~ ws* ~ status?  ~ ws* ~ status?  ~ ws* ~ description  ~ ws* ~ ("|" ~ ws*~payee)? ~ws* ~ comment? ~ end }
 
 code = { "(" ~ string ~ ")" }
@@ -56,8 +57,8 @@ string = {
 	("\"" ~ (("\\\"") | (!"\"" ~ ANY))* ~ "\"") |
 	("'" ~ (("\\'") | (!"'" ~ ANY))* ~ "'")
     }
-reserved = _{"+" | "*" | "/" | "\\" | "|" | "%"  | "&" | "<" | ">" | ":" | "?" |  "(" |  ")" | ";"}
-unquoted = { !reserved ~ !"=" ~ !"-" ~
+reserved = _{"+" | "*" | "/" | "\\" | "|" | "%" | "<" | ">" | ":" | "?" |  "(" |  ")" | ";"}
+unquoted = { !reserved ~ !"=" ~ !"-" ~ !"&" ~
     (!reserved ~ !SEPARATOR ~ ANY)+ }
 variable = {
     "account" |

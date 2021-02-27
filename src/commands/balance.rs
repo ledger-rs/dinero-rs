@@ -123,12 +123,12 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
         let (account, bal) = &vec_balances[index];
         if let Some(depth) = depth {
             if account.split(":").count() > depth {
-                index +=1;
+                index += 1;
                 continue;
             }
         }
         if bal.is_zero() {
-            index+=1;
+            index += 1;
             continue;
         }
 

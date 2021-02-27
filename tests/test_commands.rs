@@ -75,7 +75,12 @@ fn virtual_postings() {
 #[test]
 /// Check that the virtual postings are being filtered out
 fn real_filter() {
-    let args = &["reg", "-f", "tests/example_files/virtual_postings.ledger", "--real"];
+    let args = &[
+        "reg",
+        "-f",
+        "tests/example_files/virtual_postings.ledger",
+        "--real",
+    ];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
     let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
     assert_eq!(output.lines().into_iter().count(), 4);
@@ -86,7 +91,13 @@ fn real_filter() {
 #[test]
 /// Check that the tag filter works
 fn tag_filter() {
-    let args = &["bal", "-f", "tests/example_files/demo.ledger", "--flat", "%fruit"];
+    let args = &[
+        "bal",
+        "-f",
+        "tests/example_files/demo.ledger",
+        "--flat",
+        "%fruit",
+    ];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
     let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
     assert_eq!(output.lines().into_iter().count(), 4);
@@ -97,7 +108,13 @@ fn tag_filter() {
 #[test]
 /// Check that the tag filter works
 fn account_filter() {
-    let args = &["bal", "-f", "tests/example_files/demo.ledger", "--flat", "travel"];
+    let args = &[
+        "bal",
+        "-f",
+        "tests/example_files/demo.ledger",
+        "--flat",
+        "travel",
+    ];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
     let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
     assert_eq!(output.lines().into_iter().count(), 1);
@@ -206,7 +223,12 @@ fn automated_value_expression() {
 
 #[test]
 fn automated_add_tag() {
-    let args = &["reg", "-f", "tests/example_files/automated.ledger", "%yummy"];
+    let args = &[
+        "reg",
+        "-f",
+        "tests/example_files/automated.ledger",
+        "%yummy",
+    ];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
     let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
     assert_eq!(output.lines().into_iter().count(), 2);
