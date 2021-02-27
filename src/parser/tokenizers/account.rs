@@ -81,9 +81,9 @@ pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Account, ParserError> {
             },
         }
     }
-    let account = Account {
+    let account = Account::new(
         name,
-        origin: Origin::FromDirective,
+        Origin::FromDirective,
         note,
         isin,
         aliases,
@@ -91,7 +91,7 @@ pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Account, ParserError> {
         assert,
         payee,
         default,
-    };
+    );
     Ok(account)
 }
 
@@ -122,7 +122,7 @@ mod tests {
             .to_string(),
         );
         let account = parse(&mut tokenizer).unwrap();
-        assert!(!account.default, "Not a default account");
+        assert!(!account.is_default(), "Not a default account");
         assert_eq!(account.get_name(), "Assets:Checking account");
     }
 
@@ -135,7 +135,7 @@ mod tests {
             .to_string(),
         );
         let account = parse(&mut tokenizer).unwrap();
-        assert!(!account.default, "Not a default account");
+        assert!(!account.is_default(), "Not a default account");
         assert_eq!(account.get_name(), "Assets:MyAccount");
 
         let mut accounts = List::<Account>::new();

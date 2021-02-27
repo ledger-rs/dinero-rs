@@ -4,12 +4,27 @@ use crate::app;
 use crate::models::{Account, Currency, Money, Payee, Posting, Transaction};
 use crate::List;
 use chrono::NaiveDate;
+
 use num::{abs, BigRational};
 use pest::Parser;
 use regex::Regex;
 use std::collections::HashMap;
 use std::rc::Rc;
+pub fn build_root_node_from_expression(
+    expression: &str,
+    regexes: &mut HashMap<String, Regex>,
+) -> Node {
+    let parsed = GrammarParser::parse(Rule::value_expr, expression)
+        .expect("unsuccessful parse") // unwrap the parse result
+        .next()
+        .unwrap()
+        .into_inner()
+        .next()
+        .unwrap();
 
+    // Build the abstract syntax tree
+    build_ast_from_expr(parsed, regexes)
+}
 pub fn eval_expression(
     expression: &str,
     posting: &Posting,

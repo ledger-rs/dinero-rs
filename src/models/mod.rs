@@ -14,6 +14,8 @@ pub use transaction::{
     Cleared, Posting, PostingType, Transaction, TransactionStatus, TransactionType,
 };
 
+use crate::filter::filter_expression;
+use crate::parser::value_expr::build_root_node_from_expression;
 use crate::parser::ParsedLedger;
 use crate::parser::{tokenizers, value_expr};
 use crate::{filter::filter_predicate, models::transaction::Cost};
@@ -101,7 +103,7 @@ impl ParsedLedger {
                     let mut alias_to_add = "".to_string();
                     let mut payee_to_add = None;
                     'outer: for (_, p) in payees_copy.iter() {
-                        for p_alias in p.alias_regex.iter() {
+                        for p_alias in p.get_aliases().iter() {
                             // println!("{:?}", p_alias); // todo delete
                             if p_alias.is_match(alias.as_str()) {
                                 // self.payees.add_alias(alias.to_string(), p);
@@ -189,16 +191,26 @@ impl ParsedLedger {
 
         // 5. Go over the transactions again and see if there is something we need to do with them
         if automated_transactions.len() > 0 {
+            // Build a cache of abstract value trees, it takes time to parse expressions, so better do it only once
+            let mut root_nodes = HashMap::new();
             let mut regexes = HashMap::new();
+            for automated in automated_transactions.iter_mut() {
+                let query = automated.get_filter_query();
+                let node = build_root_node_from_expression(query.as_str(), &mut regexes);
+                root_nodes.insert(query, node);
+            }
+
             for t in transactions.iter_mut() {
                 for automated in automated_transactions.iter_mut() {
                     let mut extra_postings = vec![];
                     let mut extra_virtual_postings = vec![];
                     let mut extra_virtual_postings_balance = vec![];
                     let mut matched = false;
+
                     for p in t.postings_iter() {
-                        if filter_predicate(
-                            automated.get_filter_query().as_str(),
+                        let node = root_nodes.get(automated.get_filter_query().as_str());
+                        if filter_expression(
+                            node.unwrap(), // automated.get_filter_query().as_str(),
                             p,
                             t,
                             &mut self.commodities,
@@ -366,7 +378,7 @@ impl ParsedLedger {
                     let account = if p.account.to_lowercase().ends_with("unknown") {
                         let mut account = None;
                         for (_, acc) in self.accounts.iter() {
-                            for alias in acc.payee.iter() {
+                            for alias in acc.payees().iter() {
                                 if alias.is_match(payee.get_name()) {
                                     account = Some(acc.clone());
                                     break;

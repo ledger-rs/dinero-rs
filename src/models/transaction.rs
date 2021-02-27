@@ -71,13 +71,13 @@ impl<T> Transaction<T> {
         match payees.get(&self.description) {
             Ok(x) => x.clone(),
             Err(_) => {
-                let payee = Payee {
-                    name: self.description.clone(),
-                    note: None,
-                    alias: Default::default(),
-                    alias_regex: vec![],
-                    origin: Origin::FromTransaction,
-                };
+                let payee = Payee::new(
+                    self.description.clone(),
+                    None,
+                    Default::default(),
+                    vec![],
+                    Origin::FromTransaction,
+                );
                 payees.insert(payee);
                 self.get_payee(payees)
             }
