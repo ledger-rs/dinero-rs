@@ -7,12 +7,12 @@ use std::collections::HashMap;
 
 pub fn filter(
     options: &CommonOpts,
+    node: &Option<Node>,
     transaction: &Transaction<Posting>,
     posting: &Posting,
     commodities: &mut List<Currency>,
 ) -> Result<bool, Error> {
     // Get what's needed
-    let predicate = preprocess_query(&options.query);
     let real = options.real;
 
     // Check for real postings
@@ -35,32 +35,9 @@ pub fn filter(
             return Ok(false);
         }
     }
-
-    filter_predicate(
-        predicate.as_str(),
-        posting,
-        transaction,
-        commodities,
-        &mut HashMap::new(),
-    )
-}
-
-pub fn filter_predicate(
-    predicate: &str,
-    posting: &Posting,
-    transaction: &Transaction<Posting>,
-    commodities: &mut List<Currency>,
-    regexes: &mut HashMap<String, Regex>,
-) -> Result<bool, Error> {
-    if (predicate.len() == 0) | (predicate == "()") {
-        return Ok(true);
-    }
-    let result = eval_expression(predicate, posting, transaction, commodities, regexes);
-    match result {
-        EvalResult::Boolean(b) => Ok(b),
-        _ => Err(Error {
-            message: vec![predicate.red().bold(), "should return a boolean".normal()],
-        }),
+    match node {
+        Some(x) => filter_expression(x, posting, transaction, commodities, &mut HashMap::new()),
+        None => Ok(true),
     }
 }
 

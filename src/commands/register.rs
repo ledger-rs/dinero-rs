@@ -1,8 +1,10 @@
 use crate::models::{Balance, Money};
+use crate::parser::value_expr::build_root_node_from_expression;
 use crate::parser::Tokenizer;
 use crate::Error;
 use crate::{filter, CommonOpts};
 use colored::Colorize;
+use std::collections::HashMap;
 use terminal_size::{terminal_size, Width};
 
 /// Register report
@@ -33,10 +35,23 @@ pub fn execute(options: &CommonOpts) -> Result<(), Error> {
     } else {
         width - w_date - w_description - w_amount - w_balance
     };
+
+    // Build a cache of abstract value trees, it takes time to parse expressions, so better do it only once
+    let mut regexes = HashMap::new();
+    let query = filter::preprocess_query(&options.query);
+    let node = if query.len() > 2 {
+        Some(build_root_node_from_expression(
+            query.as_str(),
+            &mut regexes,
+        ))
+    } else {
+        None
+    };
+
     for t in ledger.transactions.iter() {
         let mut counter = 0;
         for p in t.postings_iter() {
-            if !filter::filter(&options, t, p, &mut ledger.commodities)? {
+            if !filter::filter(&options, &node, t, p, &mut ledger.commodities)? {
                 continue;
             }
             counter += 1;

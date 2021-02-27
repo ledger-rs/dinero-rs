@@ -15,10 +15,10 @@ pub use transaction::{
 };
 
 use crate::filter::filter_expression;
+use crate::models::transaction::Cost;
 use crate::parser::value_expr::build_root_node_from_expression;
 use crate::parser::ParsedLedger;
 use crate::parser::{tokenizers, value_expr};
-use crate::{filter::filter_predicate, models::transaction::Cost};
 use crate::{Error, List};
 use num::BigInt;
 use std::rc::Rc;

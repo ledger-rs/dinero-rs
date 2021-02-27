@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use colored::Colorize;
 
 use crate::models::{conversion, Account, Balance, Currency, HasName, Money};
+use crate::parser::value_expr::build_root_node_from_expression;
 use crate::parser::Tokenizer;
 use crate::Error;
 use crate::{filter, CommonOpts};
@@ -24,9 +25,21 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
 
     let mut balances: HashMap<Rc<Account>, Balance> = HashMap::new();
 
+    // Build a cache of abstract value trees, it takes time to parse expressions, so better do it only once
+    let mut regexes = HashMap::new();
+    let query = filter::preprocess_query(&options.query);
+    let node = if query.len() > 2 {
+        Some(build_root_node_from_expression(
+            query.as_str(),
+            &mut regexes,
+        ))
+    } else {
+        None
+    };
+
     for t in ledger.transactions.iter() {
         for p in t.postings_iter() {
-            if !filter::filter(&options, t, p, &mut ledger.commodities)? {
+            if !filter::filter(&options, &node, t, p, &mut ledger.commodities)? {
                 continue;
             }
             let mut cur_bal = balances
