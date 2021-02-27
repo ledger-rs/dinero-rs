@@ -42,6 +42,15 @@ pub struct Ledger {
     pub(crate) payees: List<Payee>,
 }
 
+impl Ledger {
+    pub fn get_commodities(&self) -> &List<Currency> {
+        &self.commodities
+    }
+    pub fn get_prices(&self) -> &Vec<Price> {
+        &self.prices
+    }
+}
+
 impl ParsedLedger {
     /// Creates a proper ledger from a parsed ledger
     pub fn to_ledger(mut self, no_checks: bool) -> Result<Ledger, Error> {
