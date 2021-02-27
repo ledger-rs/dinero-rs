@@ -21,13 +21,19 @@ use crate::LedgerError;
 pub struct List<T> {
     aliases: HashMap<String, String>,
     list: HashMap<String, Rc<T>>,
+    matches: HashMap<String, Option<String>>,
 }
 
 impl<'a, T: Eq + Hash + HasName + Clone + FromDirective + HasAliases + Debug> List<T> {
     pub fn new() -> Self {
         let aliases: HashMap<String, String> = HashMap::new();
         let list: HashMap<String, Rc<T>> = HashMap::new();
-        List { aliases, list }
+        let matches: HashMap<String, Option<String>> = HashMap::new();
+        List {
+            aliases,
+            list,
+            matches,
+        }
     }
 
     /// Inserts an ```element``` in the list
@@ -77,20 +83,36 @@ impl<'a, T: Eq + Hash + HasName + Clone + FromDirective + HasAliases + Debug> Li
         }
     }
     /// Gets an element from the regex
-    pub fn get_regex(&self, regex: Regex) -> Option<&Rc<T>> {
-        // Try the list
-        for (_alias, value) in self.list.iter() {
-            if regex.is_match(value.get_name()) {
-                return Some(value);
+    pub fn get_regex(&mut self, regex: Regex) -> Option<&Rc<T>> {
+        let alias = self.matches.get(regex.as_str());
+        match alias {
+            Some(x) => match x {
+                Some(alias) => Some(self.get(alias).unwrap()),
+                None => None,
+            },
+            None => {
+                // cache miss
+                for (_alias, value) in self.list.iter() {
+                    if regex.is_match(value.get_name()) {
+                        self.matches
+                            .insert(regex.as_str().to_string(), Some(_alias.clone()));
+                        return Some(value);
+                    }
+                }
+                for (alias, value) in self.aliases.iter() {
+                    if regex.is_match(alias) {
+                        self.matches
+                            .insert(regex.as_str().to_string(), Some(value.clone()));
+                        return self.list.get(value);
+                    }
+                }
+                self.matches.insert(regex.as_str().to_string(), None);
+                None
             }
         }
-        for (alias, value) in self.aliases.iter() {
-            if regex.is_match(alias) {
-                return self.list.get(value);
-            }
-        }
+        // // Try the list
 
-        None
+        // None
     }
 
     pub fn iter(&self) -> Iter<'_, String, Rc<T>> {
