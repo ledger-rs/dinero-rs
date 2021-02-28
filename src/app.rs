@@ -56,7 +56,7 @@ struct Opt {
     #[structopt(subcommand)]
     cmd: Command,
 }
-
+/// Command line options
 #[derive(Debug, StructOpt)]
 pub struct CommonOpts {
     /// Input file
@@ -120,6 +120,7 @@ pub struct CommonOpts {
     unrealized_losses: Option<String>,
 }
 
+/// Entry point for the command line app
 pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
     // println!("{:?}", args);
     let mut possible_paths: Vec<String> = Vec::new();

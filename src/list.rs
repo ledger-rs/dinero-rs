@@ -7,7 +7,7 @@ use std::rc::Rc;
 
 use crate::models::{FromDirective, HasAliases, HasName};
 use crate::LedgerError;
-/// A list of things with aliases
+/// A generic container with some search capabilities
 ///
 /// This structure is used to hold master elements of the ledger than can be aliases such as
 /// commodities or accounts
