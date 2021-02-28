@@ -13,3 +13,6 @@ dinero payees | sort > payees_dinero.txt &
 ledger bal stockplan -X eur > bal_stockplan_ledger.txt &
 dinero bal stockplan -X eur > bal_stockplan_dinero.txt &
 
+ledger bal ^activo -X eur > bal_activo_ledger.txt &
+dinero bal ^activo -X eur > bal_activo_dinero.txt &
+
