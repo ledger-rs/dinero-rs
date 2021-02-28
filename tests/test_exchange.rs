@@ -34,22 +34,24 @@ P 2020-07-01 EUR 1.5 USD
     let eur = ledger.get_commodities().get("eur").unwrap();
     let usd = ledger.get_commodities().get("usd").unwrap();
     let acme = ledger.get_commodities().get("acme").unwrap();
-    let multipliers_acme = conversion(
-        acme.clone(),
-        Utc::now().naive_local().date(),
-        ledger.get_prices(),
-    );
+    for _ in 0..30 {
+        let multipliers_acme = conversion(
+            acme.clone(),
+            Utc::now().naive_local().date(),
+            ledger.get_prices(),
+        );
 
-    let to_eur = multipliers_acme.get(eur).unwrap();
-    let to_usd = multipliers_acme.get(usd).unwrap();
-    assert_eq!(
-        to_eur,
-        &BigRational::from_integer(BigInt::from(1000)).inv(),
-        "1 ACME = 1000 EUR"
-    );
-    assert_eq!(
-        to_usd,
-        &BigRational::from_integer(BigInt::from(1500)).inv(),
-        "1 ACME = 1500 USD"
-    );
+        let to_eur = multipliers_acme.get(eur).unwrap();
+        let to_usd = multipliers_acme.get(usd).unwrap();
+        assert_eq!(
+            to_eur,
+            &BigRational::from_integer(BigInt::from(1000)).inv(),
+            "1 ACME = 1000 EUR"
+        );
+        assert_eq!(
+            to_usd,
+            &BigRational::from_integer(BigInt::from(1500)).inv(),
+            "1 ACME = 1500 USD"
+        );
+    }
 }
