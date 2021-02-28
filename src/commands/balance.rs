@@ -119,13 +119,20 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
     vec_balances.sort_by(|a, b| a.0.cmp(b.0));
     let num_bal = vec_balances.len();
     let mut index = 0;
+    let mut showed_balances = 0;
     while index < num_bal {
         let (account, bal) = &vec_balances[index];
         if let Some(depth) = depth {
             if account.split(":").count() > depth {
+                index += 1;
                 continue;
             }
         }
+        if bal.is_zero() {
+            index += 1;
+            continue;
+        }
+        showed_balances += 1;
 
         let mut first = true;
         for (_, money) in bal.balance.iter() {
@@ -186,7 +193,7 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
     }
 
     // Print the total
-    if show_total & (vec_balances.len() > 1) {
+    if show_total & (showed_balances > 1) {
         // Calculate it
         let mut total_balance = balances
             .iter()

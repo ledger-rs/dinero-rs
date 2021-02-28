@@ -20,7 +20,7 @@ pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Transaction<RawPosting>
 fn parse_with_grammar(tokenizer: &mut Tokenizer) -> Result<Transaction<RawPosting>, Error> {
     let mystr = chars::get_line(tokenizer);
     let mut parsed = GrammarParser::parse(Rule::transaction, mystr.as_str())
-        .expect("Could not parse price!") // unwrap the parse result
+        .expect("Could not parse transaction!") // unwrap the parse result
         .next()
         .unwrap()
         .into_inner();
@@ -28,29 +28,34 @@ fn parse_with_grammar(tokenizer: &mut Tokenizer) -> Result<Transaction<RawPostin
     let mut transaction = Transaction::<RawPosting>::new(TransactionType::Real);
     transaction.date = Some(parse_date(parsed.next().unwrap()));
     let mut next_item = parsed.next().unwrap();
-    while next_item.as_rule() != Rule::description {
+    if next_item.as_rule() == Rule::time {
+        next_item = parsed.next().unwrap()
+    }
+    if next_item.as_rule() == Rule::date {
+        transaction.effective_date = Some(parse_date(next_item));
+        next_item = parsed.next().unwrap()
+    }
+    if next_item.as_rule() == Rule::time {
+        next_item = parsed.next().unwrap()
+    }
+    if next_item.as_rule() == Rule::status {
+        next_item = parsed.next().unwrap()
+    }
+    if next_item.as_rule() == Rule::code {
+        next_item = parsed.next().unwrap()
+    }
+    if next_item.as_rule() == Rule::description {
+        transaction.description = parse_string(next_item).trim().to_string();
         next_item = parsed.next().unwrap();
     }
-    transaction.description = parse_string(next_item).trim().to_string();
-    match parsed.next() {
-        None => (), // do nothing, we're done
-        Some(x) => {
-            match x.as_rule() {
-                Rule::payee => {
-                    transaction.payee = Some(parse_string(x).trim().to_string());
-                    let comment = parsed.next();
-                    if comment.is_some() {
-                        transaction.comments.push(Comment {
-                            comment: parse_string(comment.unwrap()),
-                        });
-                    }
-                }
-                Rule::comment => transaction.comments.push(Comment {
-                    comment: parse_string(x),
-                }),
-                _ => (), // Do nothing (it means it reached Rule::end)
-            }
-        }
+    if next_item.as_rule() == Rule::payee {
+        transaction.payee = Some(parse_string(next_item).trim().to_string());
+        next_item = parsed.next().unwrap();
+    }
+    if next_item.as_rule() == Rule::comment {
+        transaction.comments.push(Comment {
+            comment: parse_string(next_item),
+        });
     }
 
     if transaction.payee.is_none() {

@@ -1,5 +1,5 @@
 use crate::models::{Currency, Posting, PostingType, Transaction};
-use crate::parser::value_expr::{eval, eval_expression, EvalResult, Node};
+use crate::parser::value_expr::{eval, EvalResult, Node};
 use crate::{CommonOpts, Error, List};
 use colored::Colorize;
 use regex::Regex;

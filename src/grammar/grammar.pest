@@ -4,9 +4,18 @@
 //
 
 // Directives
-directive = { ( price ) ~ end }
+directive = { price | commodity }
 price = {"P" ~ ws* ~ date ~ (ws ~ time)? ~ ws+ ~ currency ~ ws* ~number ~ ws* ~ currency ~ws* ~ comment? ~ end}
-transaction = {date ~ (ws ~ time)? ~ ws* ~ status?  ~ ws* ~ status?  ~ ws* ~ description  ~ ws* ~ ("|" ~ ws*~payee)? ~ws* ~ comment? ~ end }
+commodity = { "commodity" ~ ws+ ~ currency ~ ws* ~ comment? ~ end}
+transaction = {
+    date ~ (ws ~ time)? ~          // date
+    ("=" ~ date ~ (ws ~ time)?)? ~  // effective_date
+    ws+ ~ status? ~                // status
+    ws* ~ code?                    // code
+    ~ ws* ~ description            // description
+    ~ ws* ~ ("|" ~ ws*~payee)?     // payee
+    ~ws* ~ comment?                // comment
+    ~ end }
 
 code = { "(" ~ string ~ ")" }
 status = { "*"| "!" }
@@ -56,8 +65,8 @@ string = {
 	("\"" ~ (("\\\"") | (!"\"" ~ ANY))* ~ "\"") |
 	("'" ~ (("\\'") | (!"'" ~ ANY))* ~ "'")
     }
-reserved = _{"+" | "*" | "/" | "\\" | "|" | "%"  | "&" | "<" | ">" | ":" | "?" |  "(" |  ")" | ";"}
-unquoted = { !reserved ~ !"=" ~ !"-" ~
+reserved = _{"+" | "*" | "/" | "\\" | "|" | "%" | "<" | ">" | ":" | "?" |  "(" |  ")" | ";"}
+unquoted = { !reserved ~ !"=" ~ !"-" ~ !"&" ~
     (!reserved ~ !SEPARATOR ~ ANY)+ }
 variable = {
     "account" |
