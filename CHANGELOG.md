@@ -1,6 +1,11 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
 
+## [0.16.0] - planned
+### Added
+### Changed
+- Now the whole file is processed using a formal grammar
+
 ## [0.15.0] - 2021-02-28
 ### Fixed
 - Correct caonversion of currencies. There were [certain cases that did not work properly](https://github.com/frosklis/dinero-rs/issues/37)
