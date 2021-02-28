@@ -204,12 +204,19 @@ impl Graph {
                     }
                 }
             }
+        }
+        for (_, p) in prices_nodup.iter() {
+            let commodities =
+                if p.price.get_commodity().unwrap().get_name() < p.commodity.as_ref().get_name() {
+                    (p.price.get_commodity().unwrap(), p.commodity.clone())
+                } else {
+                    (p.commodity.clone(), p.price.get_commodity().unwrap())
+                };
             let c_vec = vec![commodities.0.clone(), commodities.1.clone()];
             for c in c_vec {
                 currency_dates.insert((c.clone(), p.date));
             }
         }
-
         // Create the nodes
         for (c, d) in currency_dates.iter() {
             nodes.insert(
@@ -220,7 +227,6 @@ impl Graph {
                 }),
             );
         }
-
         // Edges from the prices
         for (_, p) in prices_nodup.iter() {
             let from = nodes
@@ -238,6 +244,8 @@ impl Graph {
             }));
         }
 
+        // println!("Nodes: {}", nodes.len());
+        // println!("Edges: {}", edges.len());
         let vec_node: Vec<Rc<Node>> = nodes.iter().map(|x| x.1.clone()).collect();
         let n = vec_node.len();
         for i in 0..n {
@@ -251,6 +259,7 @@ impl Graph {
                 }
             }
         }
+        // println!("Edges: {}", edges.len());
 
         Graph {
             nodes: nodes.iter().map(|x| x.1.clone()).collect(),
