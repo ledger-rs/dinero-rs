@@ -74,17 +74,24 @@ pub fn conversion(
         queue.push(node.clone());
     }
     while !queue.is_empty() {
+        // Sort largest to smallest
         queue.sort_by(|a, b| cmp(distances.get(b).unwrap(), distances.get(a).unwrap()));
+
+        // Take the closest node
         let v = queue.pop().unwrap();
+        // This means there is no path to the node
         if distances.get(v.as_ref()).unwrap().is_none() {
             break;
         }
 
+        // The path from the starting currency to the node
         let current_path = if let Some(path) = paths.get(v.as_ref()) {
             path.clone()
         } else {
             Vec::new()
         };
+
+        // Update the distances
         for (u, e) in graph.get_neighbours(v.as_ref()).iter() {
             // println!("Neighbour: {} {}", u.currency.get_name(), u.date);
             let alt = distances.get(v.as_ref()).unwrap().unwrap() + e.length();
@@ -102,11 +109,24 @@ pub fn conversion(
             paths.insert(u.clone(), u_path);
         }
     }
+
     // Return not the paths but the multipliers
     let mut multipliers = HashMap::new();
+    let mut inserted = HashMap::new();
     for (k, v) in paths.iter() {
+        // println!("{} {} ~{:?}", k.currency.get_name(), k.date, v.len());
         let mut mult = BigRational::new(BigInt::from(1), BigInt::from(1));
         let mut currency = k.currency.clone();
+        match inserted.get(&k.currency) {
+            Some(x) => {
+                if *x > k.date {
+                    continue;
+                }
+            }
+            None => {
+                inserted.insert(currency.clone(), k.date);
+            }
+        }
         for edge in v.iter().rev() {
             match edge.as_ref().price.as_ref() {
                 None => (), // do nothing, multiply by one and keep the same currency
