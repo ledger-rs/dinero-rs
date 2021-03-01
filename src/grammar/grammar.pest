@@ -3,27 +3,36 @@
 // Test in https:://pest.rs
 //
 
+journal = { (directive | transaction | indented | comment )+ }
+indented = _{ ws+ ~ (!end ~ ANY)* }
 // Directives
 directive = { price | commodity }
 price = {"P" ~ ws* ~ date ~ (ws ~ time)? ~ ws+ ~ currency ~ ws* ~number ~ ws* ~ currency ~ws* ~ comment? ~ end}
 commodity = { "commodity" ~ ws+ ~ currency ~ ws* ~ comment? ~ end}
-transaction = {
+transaction_head = {
     date ~ (ws ~ time)? ~          // date
     ("=" ~ date ~ (ws ~ time)?)? ~  // effective_date
     ws+ ~ status? ~                // status
     ws* ~ code?                    // code
     ~ ws* ~ description            // description
     ~ ws* ~ ("|" ~ ws*~payee)?     // payee
-    ~ws* ~ comment?                // comment
-    ~ end }
+    ~ws* ~ comment? }               // comment
+transaction = {transaction_head
+    ~ NEWLINE
+    ~ (sep ~ comment )*
+    ~ posting+ }
 
 code = { "(" ~ string ~ ")" }
 status = { "*"| "!" }
 quote = _{"\"" | "'"}
 payee = { string | (!"|" ~ !";" ~!end ~ ANY)* }
 description = { string | (!"|" ~ !";" ~!end ~ ANY)* }
-comment = {";" ~ ANY*}
-
+comment = {";" ~ (!end ~ ANY)* ~ end}
+posting = {  sep+ ~ status? ~ ( ("(" ~ account ~ ")") | ("[" ~ account ~ "]") | account )
+    ~ sep ~ ws* ~ ((money ~ ws*) ~ (("@@" | "@") ~ ws* ~ money ~ ws*)?)? ~
+    ("=" ~ ws* ~ money ~ ws*)? ~ comment? ~ (sep ~ comment)*}
+account = { string | unquoted }
+// Dates
 date = { year ~ date_sep ~ month ~ date_sep ~ day }
 time = { hour ~ ":" ~ minute ~ (":" ~ second) }
 date_sep = { "." | "/" | "-"}
@@ -96,6 +105,7 @@ variable = {
 number = { "-"? ~ bigint ~ ("." ~ bigint)? }
 bigint = _{ ASCII_DIGIT+ }
 ws = _{" "}
+sep = _{("\t" | " \t" | "  ") ~ SEPARATOR* }
 end = { EOI | NEWLINE }
 
 

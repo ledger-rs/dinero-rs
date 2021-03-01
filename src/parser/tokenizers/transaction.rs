@@ -12,14 +12,10 @@ use pest::Parser;
 use regex::Regex;
 use std::str::FromStr;
 
-pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Transaction<RawPosting>, Error> {
-    parse_with_grammar(tokenizer)
-}
-
 /// Parses a transaction
-fn parse_with_grammar(tokenizer: &mut Tokenizer) -> Result<Transaction<RawPosting>, Error> {
+pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Transaction<RawPosting>, Error> {
     let mystr = chars::get_line(tokenizer);
-    let mut parsed = GrammarParser::parse(Rule::transaction, mystr.as_str())
+    let mut parsed = GrammarParser::parse(Rule::transaction_head, mystr.as_str())
         .expect("Could not parse transaction!") // unwrap the parse result
         .next()
         .unwrap()
