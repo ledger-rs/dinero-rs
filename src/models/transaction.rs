@@ -45,7 +45,7 @@ pub struct Posting {
     pub comments: Vec<Comment>,
     pub tags: Vec<Tag>,
     pub payee: Option<Rc<Payee>>,
-    // pub transaction: RefCell<Weak<Transaction<Posting>>>,
+    pub transaction: RefCell<Weak<Transaction<Posting>>>,
 }
 
 impl<T> Transaction<T> {
@@ -142,6 +142,7 @@ impl Posting {
             comments: vec![],
             tags: vec![],
             payee: Some(Rc::new(payee.clone())),
+            transaction: RefCell::new(Default::default()),
         }
     }
     pub fn set_amount(&mut self, money: Money) {
@@ -353,6 +354,7 @@ impl Transaction<Posting> {
                     comments: p.comments.clone(),
                     tags: p.tags.clone(),
                     payee: p.payee.clone(),
+                    transaction: p.transaction.clone(),
                 });
             } else if &p.balance.is_some() & !skip_balance_check {
                 // There is a balance
@@ -374,6 +376,7 @@ impl Transaction<Posting> {
                     comments: p.comments.clone(),
                     tags: p.tags.clone(),
                     payee: p.payee.clone(),
+                    transaction: p.transaction.clone(),
                 });
             } else {
                 // We do nothing, but this is the account for the empty post
@@ -427,6 +430,7 @@ impl Transaction<Posting> {
                     comments: self.comments.clone(),
                     tags: self.tags.clone(),
                     payee: fill_payee.clone(),
+                    transaction: self.postings.borrow()[0].transaction.clone(),
                 });
             }
             // self.postings = RefCell::new(postings);

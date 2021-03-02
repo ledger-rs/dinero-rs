@@ -22,7 +22,7 @@ use crate::parser::{tokenizers, value_expr};
 use crate::{Error, List};
 use num::BigInt;
 use std::cell::RefCell;
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 
 mod account;
 mod balance;
@@ -291,7 +291,7 @@ impl ParsedLedger {
                                     comments: vec![],
                                     tags: vec![],
                                     payee,
-                                    //transaction: RefCell::new(Default::default())
+                                    transaction: RefCell::new(Rc::downgrade(&Rc::new(t.clone()))),
                                 };
 
                                 extra_postings.push(posting);
