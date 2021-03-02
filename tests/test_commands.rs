@@ -68,8 +68,8 @@ fn virtual_postings() {
     let args = &["reg", "-f", "tests/example_files/virtual_postings.ledger"];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
     let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
-    assert_eq!(output.lines().into_iter().count(), 7);
     test_args(args);
+    assert_eq!(output.lines().into_iter().count(), 7);
 }
 
 #[test]

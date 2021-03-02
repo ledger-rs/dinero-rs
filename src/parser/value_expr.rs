@@ -134,7 +134,7 @@ pub fn eval(
                 },
                 Unary::Any => {
                     let mut res = false;
-                    for p in transaction.postings_iter() {
+                    for p in transaction.postings.borrow().iter() {
                         if let EvalResult::Boolean(b) =
                             eval(child, p, transaction, commodities, regexes)
                         {

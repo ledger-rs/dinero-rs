@@ -21,6 +21,7 @@ use crate::parser::ParsedLedger;
 use crate::parser::{tokenizers, value_expr};
 use crate::{Error, List};
 use num::BigInt;
+use std::cell::RefCell;
 use std::rc::Rc;
 
 mod account;
@@ -61,7 +62,7 @@ impl ParsedLedger {
         // 1. Populate the directive lists
 
         for transaction in self.transactions.iter() {
-            for p in transaction.postings.iter() {
+            for p in transaction.postings.borrow().iter() {
                 account_strs.insert(p.account.clone());
                 if let Some(payee) = p.payee.clone() {
                     payee_strs.insert(payee);
@@ -212,17 +213,15 @@ impl ParsedLedger {
             for t in transactions.iter_mut() {
                 for automated in automated_transactions.iter_mut() {
                     let mut extra_postings = vec![];
-                    let mut extra_virtual_postings = vec![];
-                    let mut extra_virtual_postings_balance = vec![];
                     let mut matched = false;
 
                     for comment in automated.comments.iter() {
                         t.tags.append(&mut comment.get_tags());
-                        for p in t.postings.iter_mut() {
+                        for p in t.postings.borrow_mut().iter_mut() {
                             p.tags.append(&mut comment.get_tags());
                         }
                     }
-                    for p in t.postings_iter() {
+                    for p in t.postings.borrow().iter() {
                         let node = root_nodes.get(automated.get_filter_query().as_str());
                         if filter_expression(
                             node.unwrap(), // automated.get_filter_query().as_str(),
@@ -233,7 +232,7 @@ impl ParsedLedger {
                         )? {
                             matched = true;
 
-                            for auto_posting in automated.postings_iter() {
+                            for auto_posting in automated.postings.borrow().iter() {
                                 let account_alias = auto_posting.account.clone();
                                 match self.accounts.get(&account_alias) {
                                     Ok(_) => {} // do nothing
@@ -292,22 +291,14 @@ impl ParsedLedger {
                                     comments: vec![],
                                     tags: vec![],
                                     payee,
+                                    //transaction: RefCell::new(Default::default())
                                 };
 
-                                match auto_posting.kind {
-                                    PostingType::Real => extra_postings.push(posting),
-                                    PostingType::Virtual => extra_virtual_postings.push(posting),
-                                    PostingType::VirtualMustBalance => {
-                                        extra_virtual_postings_balance.push(posting)
-                                    }
-                                }
+                                extra_postings.push(posting);
                             }
                         }
                     }
-                    t.postings.append(&mut extra_postings);
-                    t.virtual_postings.append(&mut extra_virtual_postings);
-                    t.virtual_postings_balance
-                        .append(&mut extra_virtual_postings_balance);
+                    t.postings.borrow_mut().append(&mut extra_postings);
                     if matched {
                         break;
                     }
@@ -379,7 +370,7 @@ impl ParsedLedger {
                     transaction.tags.append(&mut comment.get_tags());
                 }
                 // Go posting by posting
-                for p in parsed.postings.iter() {
+                for p in parsed.postings.borrow().iter() {
                     let payee = match &p.payee {
                         None => transaction.get_payee_inmutable(&self.payees),
                         Some(x) => self.payees.get(x).unwrap().clone(),
@@ -452,15 +443,7 @@ impl ParsedLedger {
                             p.balance_amount.clone().unwrap(),
                         )));
                     }
-                    match posting.kind {
-                        PostingType::Real => transaction.postings.push(posting.to_owned()),
-                        PostingType::Virtual => {
-                            transaction.virtual_postings.push(posting.to_owned())
-                        }
-                        PostingType::VirtualMustBalance => transaction
-                            .virtual_postings_balance
-                            .push(posting.to_owned()),
-                    }
+                    transaction.postings.borrow_mut().push(posting.to_owned());
                 }
                 match transaction.clone().is_balanced() {
                     true => {

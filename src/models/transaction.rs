@@ -1,7 +1,8 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::iter::Chain;
 use std::ops::Deref;
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 use std::slice::{Iter, IterMut};
 
 use chrono::NaiveDate;
@@ -27,13 +28,24 @@ pub struct Transaction<PostingType> {
     pub code: Option<String>,
     pub description: String,
     pub payee: Option<String>,
-    pub postings: Vec<PostingType>,
-    pub virtual_postings: Vec<PostingType>,
-    pub virtual_postings_balance: Vec<PostingType>,
+    pub postings: RefCell<Vec<PostingType>>,
     pub comments: Vec<Comment>,
     pub transaction_type: TransactionType,
     pub tags: Vec<Tag>,
     filter_query: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Posting {
+    pub(crate) account: Rc<Account>,
+    pub amount: Option<Money>,
+    pub balance: Option<Money>,
+    pub cost: Option<Cost>,
+    pub kind: PostingType,
+    pub comments: Vec<Comment>,
+    pub tags: Vec<Tag>,
+    pub payee: Option<Rc<Payee>>,
+    // pub transaction: RefCell<Weak<Transaction<Posting>>>,
 }
 
 impl<T> Transaction<T> {
@@ -119,18 +131,6 @@ pub enum PostingType {
     VirtualMustBalance,
 }
 
-#[derive(Debug, Clone)]
-pub struct Posting {
-    pub(crate) account: Rc<Account>,
-    pub amount: Option<Money>,
-    pub balance: Option<Money>,
-    pub cost: Option<Cost>,
-    pub kind: PostingType,
-    pub comments: Vec<Comment>,
-    pub tags: Vec<Tag>,
-    pub payee: Option<Rc<Payee>>,
-}
-
 impl Posting {
     pub fn new(account: &Account, kind: PostingType, payee: &Payee) -> Posting {
         Posting {
@@ -189,41 +189,20 @@ impl<PostingType> Transaction<PostingType> {
             code: None,
             description: "".to_string(),
             payee: None,
-            postings: vec![],
-            virtual_postings: vec![],
-            virtual_postings_balance: vec![],
+            postings: RefCell::new(vec![]),
             comments: vec![],
             transaction_type: t_type,
             tags: vec![],
             filter_query: None,
         }
     }
-    /// Iterator over all the postings, including the virtual ones
-    pub fn postings_iter(
-        &self,
-    ) -> Chain<Chain<Iter<'_, PostingType>, Iter<'_, PostingType>>, Iter<'_, PostingType>> {
-        self.postings
-            .iter()
-            .chain(self.virtual_postings.iter())
-            .chain(self.virtual_postings_balance.iter())
-    }
-    /// Iterator over all the postings, including the virtual ones
-    pub fn postings_iter_mut(
-        &mut self,
-    ) -> Chain<Chain<IterMut<'_, PostingType>, IterMut<'_, PostingType>>, IterMut<'_, PostingType>>
-    {
-        self.postings
-            .iter_mut()
-            .chain(self.virtual_postings.iter_mut())
-            .chain(self.virtual_postings_balance.iter_mut())
-    }
 }
 
-fn total_balance(postings: &Vec<Posting>) -> Balance {
+fn total_balance(postings: &Vec<Posting>, kind: PostingType) -> Balance {
     let bal = Balance::new();
     postings
         .iter()
-        .filter(|p| p.amount.is_some())
+        .filter(|p| p.amount.is_some() & (p.kind == kind))
         .map(|p| match &p.cost {
             None => Balance::from(p.amount.as_ref().unwrap().clone()),
             Some(cost) => match cost {
@@ -264,11 +243,12 @@ fn total_balance(postings: &Vec<Posting>) -> Balance {
 
 impl Transaction<Posting> {
     pub fn is_balanced(&self) -> bool {
-        total_balance(self.postings.as_ref()).can_be_zero()
+        total_balance(&*self.postings.borrow(), PostingType::Real).can_be_zero()
     }
 
     pub fn num_empty_postings(&self) -> usize {
         self.postings
+            .borrow()
             .iter()
             .filter(|p| p.amount.is_none() & p.balance.is_none())
             .collect::<Vec<&Posting>>()
@@ -293,16 +273,21 @@ impl Transaction<Posting> {
         let mut transaction_balance = Balance::new();
 
         // 1. Check the virtual postings
-        match total_balance(self.virtual_postings_balance.as_ref()).can_be_zero() {
+        match total_balance(&*self.postings.borrow(), PostingType::VirtualMustBalance).can_be_zero()
+        {
             true => {}
             false => return Err(LedgerError::TransactionIsNotBalanced),
         }
 
         // 1. Iterate over postings
-        let mut fill_account = &Rc::new(Account::from("this will never be used"));
+        let mut fill_account = Rc::new(Account::from("this will never be used"));
         let mut fill_payee = None;
         let mut postings: Vec<Posting> = Vec::new();
-        for p in self.postings.iter() {
+
+        for p in self.postings.get_mut().iter() {
+            if p.kind != PostingType::Real {
+                continue;
+            }
             // If it has money, update the balance
             if let Some(money) = &p.amount {
                 let expected_balance = balances.get(p.account.deref()).unwrap().clone()  // What we had 
@@ -392,18 +377,34 @@ impl Transaction<Posting> {
                 });
             } else {
                 // We do nothing, but this is the account for the empty post
-                fill_account = &p.account;
+                fill_account = p.account.clone();
                 fill_payee = p.payee.clone();
             }
         }
 
-        let empties = self.postings.len() - postings.len();
+        let empties = self
+            .postings
+            .borrow()
+            .iter()
+            .filter(|p| p.kind == PostingType::Real)
+            .count()
+            - postings.len();
         if empties > 1 {
             Err(LedgerError::TooManyEmptyPostings(empties))
         } else if empties == 0 {
             match transaction_balance.can_be_zero() {
                 true => {
-                    self.postings = postings;
+                    //self.postings = RefCell::new(postings);
+                    postings.append(
+                        &mut self
+                            .postings
+                            .borrow_mut()
+                            .iter()
+                            .filter(|p| p.kind != PostingType::Real)
+                            .map(|p| p.clone())
+                            .collect(),
+                    );
+                    self.postings.replace(postings);
                     Ok(transaction_balance)
                 }
                 false => Err(LedgerError::TransactionIsNotBalanced),
@@ -412,8 +413,8 @@ impl Transaction<Posting> {
             // Fill the empty posting
             // let account = &self.postings.last().unwrap().account;
             for (_, money) in (-transaction_balance).iter() {
-                let expected_balance =
-                    balances.get(fill_account).unwrap().clone() + Balance::from(money.clone());
+                let expected_balance = balances.get(&fill_account.clone()).unwrap().clone()
+                    + Balance::from(money.clone());
 
                 balances.insert(fill_account.clone(), expected_balance);
 
@@ -428,7 +429,18 @@ impl Transaction<Posting> {
                     payee: fill_payee.clone(),
                 });
             }
-            self.postings = postings;
+            // self.postings = RefCell::new(postings);
+            postings.append(
+                &mut self
+                    .postings
+                    .get_mut()
+                    .iter()
+                    .filter(|p| p.kind != PostingType::Real)
+                    .map(|p| p.clone())
+                    .collect(),
+            );
+            self.postings.replace(postings);
+            // self_postings = postings;
             Ok(Balance::new())
         }
     }
@@ -438,7 +450,7 @@ impl Display for Transaction<Posting> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let mut message = String::new();
         message.push_str(format!("{} {}", self.date.unwrap(), self.description).as_str());
-        for p in self.postings_iter() {
+        for p in self.postings.borrow().iter() {
             if p.amount.as_ref().is_some() {
                 message.push_str(
                     format!(

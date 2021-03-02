@@ -50,7 +50,7 @@ pub fn execute(options: &CommonOpts) -> Result<(), Error> {
 
     for t in ledger.transactions.iter() {
         let mut counter = 0;
-        for p in t.postings_iter() {
+        for p in t.postings.borrow().iter() {
             if !filter::filter(&options, &node, t, p, &mut ledger.commodities)? {
                 continue;
             }
