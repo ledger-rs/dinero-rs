@@ -1,7 +1,7 @@
 use super::utils::parse_rational;
 use super::{GrammarParser, Rule};
 use crate::app;
-use crate::models::{Account, Currency, Money, Payee, Posting, PostingOrigin, Transaction};
+use crate::models::{Account, Currency, Money, Payee, Posting, Transaction};
 use crate::List;
 use chrono::NaiveDate;
 
@@ -321,11 +321,9 @@ pub fn eval(
                         panic!("Should be booleans")
                     }
                 }
-                unknown => panic!("Not implemented: {:?}", unknown),
             }
         }
     };
-    // println!("Result: {:?}", res); //todo delete
     res
 }
 

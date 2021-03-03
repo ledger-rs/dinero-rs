@@ -22,7 +22,7 @@ use crate::parser::{tokenizers, value_expr};
 use crate::{Error, List};
 use num::BigInt;
 use std::cell::RefCell;
-use std::rc::{Rc, Weak};
+use std::rc::Rc;
 
 mod account;
 mod balance;
@@ -213,7 +213,6 @@ impl ParsedLedger {
             for t in transactions.iter_mut() {
                 for automated in automated_transactions.iter_mut() {
                     let mut extra_postings = vec![];
-                    let mut matched = false;
 
                     for p in t.postings.borrow().iter() {
                         if p.origin != PostingOrigin::FromTransaction {
@@ -227,8 +226,6 @@ impl ParsedLedger {
                             &mut self.commodities,
                             &mut regexes,
                         )? {
-                            matched = true;
-
                             for comment in automated.comments.iter() {
                                 p.tags.borrow_mut().append(&mut comment.get_tags());
                             }
