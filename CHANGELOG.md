@@ -1,6 +1,9 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
 
+## [0.16.0] -
+### Added
+- Virtual postings show correctly like this ```(account)```
 ## [0.15.0] - 2021-02-28
 ### Fixed
 - Correct caonversion of currencies. There were [certain cases that did not work properly](https://github.com/frosklis/dinero-rs/issues/37)
