@@ -320,7 +320,7 @@ mod tests {
         let mut balances: HashMap<Rc<Account>, Balance> = HashMap::new();
 
         for t in ledger.transactions.iter() {
-            for p in t.postings_iter() {
+            for p in t.postings.borrow().iter() {
                 let mut cur_bal = balances
                     .get(p.account.deref())
                     .unwrap_or(&Balance::new())
