@@ -11,7 +11,7 @@ pub use payee::Payee;
 pub use price::conversion;
 pub use price::{Price, PriceType};
 pub use transaction::{
-    Cleared, Posting, PostingType, Transaction, TransactionStatus, TransactionType,
+    Cleared, Posting, PostingOrigin, PostingType, Transaction, TransactionStatus, TransactionType,
 };
 
 use crate::filter::filter_expression;
@@ -215,13 +215,10 @@ impl ParsedLedger {
                     let mut extra_postings = vec![];
                     let mut matched = false;
 
-                    for comment in automated.comments.iter() {
-                        t.tags.append(&mut comment.get_tags());
-                        for p in t.postings.borrow_mut().iter_mut() {
-                            p.tags.append(&mut comment.get_tags());
-                        }
-                    }
                     for p in t.postings.borrow().iter() {
+                        if p.origin != PostingOrigin::FromTransaction {
+                            continue;
+                        }
                         let node = root_nodes.get(automated.get_filter_query().as_str());
                         if filter_expression(
                             node.unwrap(), // automated.get_filter_query().as_str(),
@@ -231,6 +228,10 @@ impl ParsedLedger {
                             &mut regexes,
                         )? {
                             matched = true;
+
+                            for comment in automated.comments.iter() {
+                                p.tags.borrow_mut().append(&mut comment.get_tags());
+                            }
 
                             for auto_posting in automated.postings.borrow().iter() {
                                 let account_alias = auto_posting.account.clone();
@@ -289,9 +290,10 @@ impl ParsedLedger {
                                     cost: None,
                                     kind: auto_posting.kind,
                                     comments: vec![],
-                                    tags: vec![],
+                                    tags: RefCell::new(vec![]),
                                     payee,
                                     transaction: RefCell::new(Rc::downgrade(&Rc::new(t.clone()))),
+                                    origin: PostingOrigin::Automated,
                                 };
 
                                 extra_postings.push(posting);
@@ -299,9 +301,9 @@ impl ParsedLedger {
                         }
                     }
                     t.postings.borrow_mut().append(&mut extra_postings);
-                    if matched {
-                        break;
-                    }
+                    // if matched {
+                    //     break;
+                    // }
                 }
             }
             // Populate balances
@@ -392,10 +394,11 @@ impl ParsedLedger {
                     } else {
                         self.accounts.get(&p.account)?.clone()
                     };
-                    let mut posting: Posting = Posting::new(&account, p.kind, &payee);
-                    posting.tags = transaction.tags.clone();
+                    let mut posting: Posting =
+                        Posting::new(&account, p.kind, &payee, PostingOrigin::FromTransaction);
+                    posting.tags = RefCell::new(transaction.tags.clone());
                     for comment in p.comments.iter() {
-                        posting.tags.append(&mut comment.get_tags());
+                        posting.tags.borrow_mut().append(&mut comment.get_tags());
                     }
 
                     // Modify posting with amounts

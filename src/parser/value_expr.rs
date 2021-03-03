@@ -1,7 +1,7 @@
 use super::utils::parse_rational;
 use super::{GrammarParser, Rule};
 use crate::app;
-use crate::models::{Account, Currency, Money, Payee, Posting, Transaction};
+use crate::models::{Account, Currency, Money, Payee, Posting, PostingOrigin, Transaction};
 use crate::List;
 use chrono::NaiveDate;
 
@@ -10,6 +10,7 @@ use pest::Parser;
 use regex::Regex;
 use std::collections::HashMap;
 use std::rc::Rc;
+
 pub fn build_root_node_from_expression(
     expression: &str,
     regexes: &mut HashMap<String, Regex>,
@@ -25,6 +26,7 @@ pub fn build_root_node_from_expression(
     // Build the abstract syntax tree
     build_ast_from_expr(parsed, regexes)
 }
+
 pub fn eval_expression(
     expression: &str,
     posting: &Posting,
@@ -135,6 +137,9 @@ pub fn eval(
                 Unary::Any => {
                     let mut res = false;
                     for p in transaction.postings.borrow().iter() {
+                        // if p.origin != PostingOrigin::FromTransaction {
+                        //     continue;
+                        // }
                         if let EvalResult::Boolean(b) =
                             eval(child, p, transaction, commodities, regexes)
                         {

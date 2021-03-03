@@ -43,9 +43,17 @@ pub struct Posting {
     pub cost: Option<Cost>,
     pub kind: PostingType,
     pub comments: Vec<Comment>,
-    pub tags: Vec<Tag>,
+    pub tags: RefCell<Vec<Tag>>,
     pub payee: Option<Rc<Payee>>,
     pub transaction: RefCell<Weak<Transaction<Posting>>>,
+    pub origin: PostingOrigin,
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum PostingOrigin {
+    FromTransaction,
+    Automated,
+    Periodic,
 }
 
 impl<T> Transaction<T> {
@@ -132,7 +140,12 @@ pub enum PostingType {
 }
 
 impl Posting {
-    pub fn new(account: &Account, kind: PostingType, payee: &Payee) -> Posting {
+    pub fn new(
+        account: &Account,
+        kind: PostingType,
+        payee: &Payee,
+        origin: PostingOrigin,
+    ) -> Posting {
         Posting {
             account: Rc::new(account.clone()),
             amount: None,
@@ -140,16 +153,17 @@ impl Posting {
             cost: None,
             kind: kind,
             comments: vec![],
-            tags: vec![],
+            tags: RefCell::new(vec![]),
             payee: Some(Rc::new(payee.clone())),
             transaction: RefCell::new(Default::default()),
+            origin,
         }
     }
     pub fn set_amount(&mut self, money: Money) {
         self.amount = Some(money)
     }
     pub fn has_tag(&self, regex: Regex) -> bool {
-        for t in self.tags.iter() {
+        for t in self.tags.borrow().iter() {
             if regex.is_match(t.get_name()) {
                 return true;
             }
@@ -157,7 +171,7 @@ impl Posting {
         false
     }
     pub fn get_tag(&self, regex: Regex) -> Option<String> {
-        for t in self.tags.iter() {
+        for t in self.tags.borrow().iter() {
             if regex.is_match(t.get_name()) {
                 return t.value.clone();
             }
@@ -165,7 +179,7 @@ impl Posting {
         None
     }
     pub fn get_exact_tag(&self, regex: String) -> Option<String> {
-        for t in self.tags.iter() {
+        for t in self.tags.borrow().iter() {
             if regex.as_str() == t.get_name() {
                 return t.value.clone();
             }
@@ -355,6 +369,7 @@ impl Transaction<Posting> {
                     tags: p.tags.clone(),
                     payee: p.payee.clone(),
                     transaction: p.transaction.clone(),
+                    origin: PostingOrigin::FromTransaction,
                 });
             } else if &p.balance.is_some() & !skip_balance_check {
                 // There is a balance
@@ -377,6 +392,7 @@ impl Transaction<Posting> {
                     tags: p.tags.clone(),
                     payee: p.payee.clone(),
                     transaction: p.transaction.clone(),
+                    origin: PostingOrigin::FromTransaction,
                 });
             } else {
                 // We do nothing, but this is the account for the empty post
@@ -428,9 +444,10 @@ impl Transaction<Posting> {
                     cost: None,
                     kind: PostingType::Real,
                     comments: self.comments.clone(),
-                    tags: self.tags.clone(),
+                    tags: RefCell::new(self.tags.clone()),
                     payee: fill_payee.clone(),
                     transaction: self.postings.borrow()[0].transaction.clone(),
+                    origin: PostingOrigin::FromTransaction,
                 });
             }
             // self.postings = RefCell::new(postings);
