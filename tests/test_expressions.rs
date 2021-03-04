@@ -85,7 +85,7 @@ fn function_any() {
         "-f",
         "tests/example_files/demo.ledger",
         "expr",
-        "any(1000 < abs(amount))",
+        "any((500 + 500) < abs(amount))",
     ];
     let assert_2 = Command::cargo_bin("dinero").unwrap().args(args_2).assert();
     let output_2 = String::from_utf8(assert_2.get_output().to_owned().stdout).unwrap();
@@ -101,7 +101,7 @@ fn test_equality() {
         "-f",
         "tests/example_files/demo.ledger",
         "expr",
-        "any(abs(amount) == 2)",
+        "any(abs(amount) == (2 * 1))",
     ];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args_1).assert();
     let output_1 = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
@@ -129,7 +129,7 @@ fn bad_comparison() {
         "-f",
         "tests/example_files/demo.ledger",
         "expr",
-        "5 eur < 3 usd",
+        "(2 * (5 eur)) < ((3 usd) / 5))",
     ];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args_1).assert();
     let output_1 = String::from_utf8(assert_1.get_output().to_owned().stderr).unwrap();

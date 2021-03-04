@@ -63,7 +63,10 @@ pub fn eval_value_expression(
     match eval_expression(expression, posting, transaction, commodities, regexes) {
         EvalResult::Number(n) => posting.amount.clone().unwrap() * n,
         EvalResult::Money(m) => m,
-        _ => panic!("Should be money"),
+        x => {
+            eprintln!("Found {:?}.", x);
+            panic!("Should be money.");
+        }
     }
 }
 

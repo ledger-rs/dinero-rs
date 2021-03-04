@@ -16,3 +16,6 @@ dinero bal stockplan -X eur > bal_stockplan_dinero.txt &
 ledger bal ^activo -X eur > bal_activo_ledger.txt &
 dinero bal ^activo -X eur > bal_activo_dinero.txt &
 
+ledger bal ^vactivo -X eur > bal_vactivo_ledger.txt &
+dinero bal ^vactivo -X eur > bal_vactivo_dinero.txt &
+
