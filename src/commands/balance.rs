@@ -53,7 +53,8 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
 
     // For printing this out, take into account whether it is a flat report or not
     // if it is not, the parent balances have to be updated
-    let mut vec_balances: Vec<(&str, Balance)>;
+    let mut vec_balances: Vec<(&str, Balance)> = vec![];
+    let mut temp: Vec<(String, Balance)>;
     let mut accounts = HashSet::new();
     let mut new_balances = HashMap::new();
     let mut vec: Vec<String>;
@@ -89,11 +90,47 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
             .map(|x| (x.0.clone(), x.1.clone()))
             .collect()
     } else {
-        vec_balances = balances
-            .iter()
-            .filter(|x| !x.1.is_zero())
-            .map(|x| (x.0.get_name(), x.1.clone()))
-            .collect();
+        match depth {
+            Some(depth) => {
+                temp = balances
+                    .iter()
+                    .filter(|x| !x.1.is_zero())
+                    .map(|x| {
+                        (
+                            x.0.get_name()
+                                .split(":")
+                                .collect::<Vec<&str>>()
+                                .iter()
+                                .map(|x| x.to_string())
+                                .take(depth)
+                                .collect::<Vec<String>>()
+                                .join(":"),
+                            x.1.clone(),
+                        )
+                    })
+                    .collect::<Vec<(String, Balance)>>();
+                temp.sort_by(|a, b| a.0.cmp(&b.0));
+                let mut account = String::new();
+                for (acc, value) in temp.iter() {
+                    if acc.to_string() != account {
+                        vec_balances.push((acc.as_str(), value.clone()));
+                    } else {
+                        let n = vec_balances.len();
+                        vec_balances[n - 1] =
+                            (&acc.as_str(), vec_balances[n - 1].clone().1 + value.clone());
+                    }
+
+                    account = acc.to_string();
+                }
+            }
+            None => {
+                vec_balances = balances
+                    .iter()
+                    .filter(|x| !x.1.is_zero())
+                    .map(|x| (x.0.get_name(), x.1.clone()))
+                    .collect()
+            }
+        }
     }
 
     // Print the balances by account
