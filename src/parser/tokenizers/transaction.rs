@@ -70,9 +70,11 @@ pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Transaction<RawPosting>
                 let comment = comment::parse(tokenizer);
                 match parsed_posting {
                     true => {
-                        let len = transaction.postings.len();
+                        let len = transaction.postings.borrow().len();
 
-                        transaction.postings[len - 1].comments.push(comment);
+                        transaction.postings.borrow_mut()[len - 1]
+                            .comments
+                            .push(comment);
                     }
                     false => {
                         transaction.comments.push(comment);
@@ -88,7 +90,7 @@ pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Transaction<RawPosting>
                 match parse_posting(tokenizer, transaction.transaction_type, &transaction.payee) {
                     // Although here we already know the kind of the posting (virtual, real),
                     // we deal with that in the next phase of parsing
-                    Ok(posting) => transaction.postings.push(posting),
+                    Ok(posting) => transaction.postings.borrow_mut().push(posting),
                     Err(e) => {
                         eprintln!("Error while parsing posting.");
                         return Err(tokenizer.error(e));
@@ -131,9 +133,11 @@ pub(crate) fn parse_automated_transaction(
                 let comment = comment::parse(tokenizer);
                 match parsed_posting {
                     true => {
-                        let len = transaction.postings.len();
+                        let len = transaction.postings.borrow().len();
 
-                        transaction.postings[len - 1].comments.push(comment);
+                        transaction.postings.borrow_mut()[len - 1]
+                            .comments
+                            .push(comment);
                     }
                     false => {
                         transaction.comments.push(comment);
@@ -149,7 +153,7 @@ pub(crate) fn parse_automated_transaction(
                 match parse_posting(tokenizer, transaction.transaction_type, &transaction.payee) {
                     // Although here we already know the kind of the posting (virtual, real),
                     // we deal with that in the next phase of parsing
-                    Ok(posting) => transaction.postings.push(posting),
+                    Ok(posting) => transaction.postings.borrow_mut().push(posting),
                     Err(e) => {
                         eprintln!("Error while parsing posting.");
                         return Err(tokenizer.error(e));
