@@ -1,0 +1,19 @@
+2020-01-01 * ACME, Inc.
+    Assets:Shares        1 ACME @ 1000.00 USD
+    Assets:Bank:Checking account
+2021-01-01 * ACME, Inc.
+    Assets:Shares        1 ACME @ 1000.00 EUR
+    Assets:Bank:Checking account
+
+P 2020-07-01 EUR 1.5 USD
+
+; I have 2 ACME Shares
+; worth 2000 EUR
+; worth 3000 USD because the last exchange rate was 1.5
+; in terms of nodes there should be
+; 2021-01-01 ACME
+; 2021-01-01 EUR
+; 2020-07-01 EUR
+; 2020-07-01 USD
+; NOTHING for 2020-01-01
+;
