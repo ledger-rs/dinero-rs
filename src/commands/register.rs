@@ -1,3 +1,4 @@
+use crate::models::PostingType;
 use crate::models::{Balance, Money};
 use crate::parser::value_expr::build_root_node_from_expression;
 use crate::parser::Tokenizer;
@@ -6,7 +7,6 @@ use crate::{filter, CommonOpts};
 use colored::Colorize;
 use std::collections::HashMap;
 use terminal_size::{terminal_size, Width};
-
 /// Register report
 pub fn execute(options: &CommonOpts) -> Result<(), Error> {
     // Get options from options
@@ -50,7 +50,7 @@ pub fn execute(options: &CommonOpts) -> Result<(), Error> {
 
     for t in ledger.transactions.iter() {
         let mut counter = 0;
-        for p in t.postings_iter() {
+        for p in t.postings.borrow().iter() {
             if !filter::filter(&options, &node, t, p, &mut ledger.commodities)? {
                 continue;
             }
@@ -74,11 +74,23 @@ pub fn execute(options: &CommonOpts) -> Result<(), Error> {
             if balance.is_zero() {
                 balance = Balance::from(Money::Zero);
             }
-            print!(
-                "{:width$}",
-                format!("{}", p.account).blue(),
-                width = w_account
-            );
+            match p.kind {
+                PostingType::Real => print!(
+                    "{:width$}",
+                    format!("{}", p.account).blue(),
+                    width = w_account
+                ),
+                PostingType::Virtual => print!(
+                    "{:width$}",
+                    format!("({})", p.account).blue(),
+                    width = w_account
+                ),
+                PostingType::VirtualMustBalance => print!(
+                    "{:width$}",
+                    format!("[{}]", p.account).blue(),
+                    width = w_account
+                ),
+            }
 
             match p.amount.as_ref().unwrap().is_negative() {
                 false => print!(

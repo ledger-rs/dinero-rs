@@ -38,7 +38,7 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
     };
 
     for t in ledger.transactions.iter() {
-        for p in t.postings_iter() {
+        for p in t.postings.borrow().iter() {
             if !filter::filter(&options, &node, t, p, &mut ledger.commodities)? {
                 continue;
             }

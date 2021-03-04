@@ -1,9 +1,14 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
 
+## [0.16.0] - 2021-03-04
+### Added
+- Virtual postings show correctly like this ```(account)```
+### Fixed 
+- Now you can add tags [through automated transactions](https://github.com/frosklis/dinero-rs/issues/49)
 ## [0.15.0] - 2021-02-28
 ### Fixed
-- Correct caonversion of currencies. There were [certain cases that did not work properly](https://github.com/frosklis/dinero-rs/issues/37)
+- Correct conversion of currencies. There were [certain cases that did not work properly](https://github.com/frosklis/dinero-rs/issues/37)
 ### Added
 - complete transaction grammar
 ## [0.14.0] - 2021-02-27

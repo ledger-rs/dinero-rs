@@ -5,6 +5,7 @@ use colored::Colorize;
 use regex::Regex;
 use std::collections::HashMap;
 
+/// Filters a posting based on the options
 pub fn filter(
     options: &CommonOpts,
     node: &Option<Node>,
