@@ -8,6 +8,8 @@ use chrono::NaiveDate;
 use num::{abs, BigRational};
 use pest::Parser;
 use regex::Regex;
+use std::borrow::Borrow;
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -101,6 +103,64 @@ pub enum EvalResult {
     String(Option<String>),
     Date(NaiveDate),
     Note,
+}
+
+/// Only use this for >, <, >=, <=, not for equality
+impl PartialOrd for EvalResult {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        match self {
+            EvalResult::Number(left) => match other {
+                EvalResult::Number(right) => Some(left.cmp(right)),
+                EvalResult::Money(right) => Some(left.cmp(right.get_amount().borrow())),
+                _ => None,
+            },
+            EvalResult::Money(left) => match other {
+                EvalResult::Number(right) => Some(left.get_amount().cmp(right)),
+                EvalResult::Money(right) => Some(left.cmp(&right)),
+                _ => None,
+            },
+            EvalResult::String(left) => match other {
+                EvalResult::String(right) => Some(left.cmp(&right)),
+                _ => None,
+            },
+            EvalResult::Date(left) => match other {
+                EvalResult::Date(right) => Some(left.cmp(&right)),
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+}
+
+impl PartialEq for EvalResult {
+    fn eq(&self, other: &Self) -> bool {
+        match self {
+            EvalResult::Number(left) => match other {
+                EvalResult::Number(right) => left == right,
+                EvalResult::Money(right) => left == &right.get_amount(),
+                x => panic!("Expected number, found {:?}", x),
+            },
+            EvalResult::Money(left) => match other {
+                EvalResult::Number(right) => &left.get_amount() == right,
+                EvalResult::Money(right) => left == right,
+                x => panic!("Expected mpney, found {:?}", x),
+            },
+
+            EvalResult::Boolean(left) => match other {
+                EvalResult::Boolean(right) => left == right,
+                x => panic!("Expected mpney, found {:?}", x),
+            },
+            EvalResult::String(left) => match other {
+                EvalResult::String(right) => left == right,
+                x => panic!("Expected string, found {:?}", x),
+            },
+            EvalResult::Date(left) => match other {
+                EvalResult::Date(right) => left == right,
+                x => panic!("Expected string, found {:?}", x),
+            },
+            x => panic!("Can't compare {:?}", x),
+        }
+    }
 }
 
 pub fn eval(
@@ -226,26 +286,12 @@ pub fn eval(
                             x => panic!("Found {:?}", x),
                         },
                         x => panic!("Found {:?}", x),
-                        unknown => panic!("Don't know what to do with {:?}", unknown),
                     }
                 }
-                Binary::Lt | Binary::Gt | Binary::Ge | Binary::Le => {
-                    // println!("{:?} {:?} {:?}", left, op, right); // todo delete
-                    if let EvalResult::Date(lhs) = left {
-                        match right {
-                            EvalResult::Date(rhs) => match op {
-                                Binary::Lt => EvalResult::Boolean(lhs < rhs),
-                                Binary::Gt => EvalResult::Boolean(lhs > rhs),
-                                Binary::Ge => EvalResult::Boolean(lhs >= rhs),
-                                Binary::Le => EvalResult::Boolean(lhs <= rhs),
-                                x => panic!("Found {:?}", x),
-                            },
-                            x => panic!("Found {:?}", x),
-                        }
-                    } else {
-                        panic!("Expected Date");
-                    }
-                }
+                Binary::Lt => EvalResult::Boolean(left < right),
+                Binary::Gt => EvalResult::Boolean(left > right),
+                Binary::Ge => EvalResult::Boolean(left >= right),
+                Binary::Le => EvalResult::Boolean(left <= right),
                 Binary::Add | Binary::Subtract => {
                     if let EvalResult::Number(lhs) = left {
                         if let EvalResult::Number(rhs) = right {
