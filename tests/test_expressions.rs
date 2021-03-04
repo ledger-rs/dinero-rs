@@ -96,4 +96,15 @@ fn test_equality() {
     let output_1 = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
     assert_eq!(output_1.lines().into_iter().count(), 9);
     test_args(args_1);
+    let args_2 = &[
+        "reg",
+        "-f",
+        "tests/example_files/demo.ledger",
+        "expr",
+        "any(abs(amount) == 100 $)",
+    ];
+    let assert_2 = Command::cargo_bin("dinero").unwrap().args(args_2).assert();
+    let output_2 = String::from_utf8(assert_2.get_output().to_owned().stdout).unwrap();
+    assert_eq!(output_2.lines().into_iter().count(), 4);
+    test_args(args_2);
 }

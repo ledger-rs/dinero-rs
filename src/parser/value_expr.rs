@@ -143,12 +143,12 @@ impl PartialEq for EvalResult {
             EvalResult::Money(left) => match other {
                 EvalResult::Number(right) => &left.get_amount() == right,
                 EvalResult::Money(right) => left == right,
-                x => panic!("Expected mpney, found {:?}", x),
+                x => panic!("Can't compare money and {:?}", x),
             },
 
             EvalResult::Boolean(left) => match other {
                 EvalResult::Boolean(right) => left == right,
-                x => panic!("Expected mpney, found {:?}", x),
+                x => panic!("Expected boolean, found {:?}", x),
             },
             EvalResult::String(left) => match other {
                 EvalResult::String(right) => left == right,
@@ -265,7 +265,6 @@ pub fn eval(
                             EvalResult::Note => {
                                 let mut result = false;
                                 for comment in transaction.comments.iter() {
-                                    // println!("{:?} -- {}", rhs, comment.comment); //todo delete
                                     if rhs.is_match(comment.comment.as_str()) {
                                         result = true;
                                         break;
@@ -273,16 +272,6 @@ pub fn eval(
                                 }
                                 EvalResult::Boolean(result)
                             }
-                            x => panic!("Found {:?}", x),
-                        },
-                        EvalResult::Money(rhs) => match left {
-                            EvalResult::Money(lhs) => EvalResult::Boolean(lhs == rhs),
-                            EvalResult::Number(lhs) => EvalResult::Boolean(lhs == rhs.get_amount()),
-
-                            unknown => panic!("Don't know what to do with {:?}", unknown),
-                        },
-                        EvalResult::Date(rhs) => match left {
-                            EvalResult::Date(lhs) => EvalResult::Boolean(lhs == rhs),
                             x => panic!("Found {:?}", x),
                         },
                         _ => EvalResult::Boolean(left == right),
