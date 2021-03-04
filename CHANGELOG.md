@@ -1,7 +1,7 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
 
-## [0.16.0] -
+## [0.16.0] - 2021-03-04
 ### Added
 - Virtual postings show correctly like this ```(account)```
 ### Fixed 
