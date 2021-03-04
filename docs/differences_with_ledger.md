@@ -1,4 +1,4 @@
-# Differences with ledger-cli
+# Differences with ledger-cli
 
 Although dinero is completely inspired by [```ledger-cli```](https://ledger-cli.org) and implements a subset of its features, it has been written form scratch, it is not a port. 
 
