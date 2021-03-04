@@ -218,6 +218,11 @@ pub fn eval(
 
                             unknown => panic!("Don't know what to do with {:?}", unknown),
                         },
+                        EvalResult::Date(rhs) => match left {
+                            EvalResult::Date(lhs) => EvalResult::Boolean(lhs == rhs),
+                            x => panic!("Found {:?}", x),
+                        },
+                        x => panic!("Found {:?}", x),
                         unknown => panic!("Don't know what to do with {:?}", unknown),
                     }
                 }
