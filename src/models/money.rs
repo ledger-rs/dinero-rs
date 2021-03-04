@@ -174,7 +174,7 @@ impl Ord for Money {
                         self_amount.cmp(other_amount.borrow())
                     } else {
                         panic!(
-                            "Can't compare different currencies. {} and {}",
+                            "Can't compare different currencies. {} and {}.",
                             self_currency, other_currency
                         );
                     }

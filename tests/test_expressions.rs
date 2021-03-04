@@ -119,3 +119,20 @@ fn test_equality() {
     assert_eq!(output_2.lines().into_iter().count(), 4);
     test_args(args_2);
 }
+
+#[test]
+#[should_panic(expected = "Can't compare different currencies. € and USD.")]
+/// Bad comparison
+fn bad_comparison() {
+    let args_1 = &[
+        "reg",
+        "-f",
+        "tests/example_files/demo.ledger",
+        "expr",
+        "5 eur < 3 usd",
+    ];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args_1).assert();
+    let output_1 = String::from_utf8(assert_1.get_output().to_owned().stderr).unwrap();
+    assert!(output_1.lines().into_iter().count() >= 1);
+    test_err(args_1);
+}
