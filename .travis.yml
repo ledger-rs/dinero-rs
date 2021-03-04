@@ -3,6 +3,7 @@ before_cache:
     - find ./target/debug -type f -maxdepth 1 -delete
     - rm -fr ./target/debug/{deps,.fingerprint}/{*ra_*,*test*,*tools*,*gen_lsp*,*thread_worker*,*dinero*}
     - rm -f  ./target/.rustc_info.json
+    - rm -rf ~/.cargo/registry/index/github.com*
 language: rust
 rust:
   - stable

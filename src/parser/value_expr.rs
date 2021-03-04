@@ -66,7 +66,7 @@ pub fn eval_value_expression(
         x => {
             eprintln!("Found {:?}.", x);
             panic!("Should be money.");
-    },
+        }
     }
 }
 
