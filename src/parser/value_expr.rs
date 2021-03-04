@@ -285,7 +285,7 @@ pub fn eval(
                             EvalResult::Date(lhs) => EvalResult::Boolean(lhs == rhs),
                             x => panic!("Found {:?}", x),
                         },
-                        x => panic!("Found {:?}", x),
+                        _ => EvalResult::Boolean(left == right),
                     }
                 }
                 Binary::Lt => EvalResult::Boolean(left < right),
