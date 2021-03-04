@@ -12,7 +12,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 /// Builds the abstract syntax tree, to be able to evaluate expressions
-/// 
+///
 /// This all comes from the defined grammar.pest
 pub fn build_root_node_from_expression(
     expression: &str,
