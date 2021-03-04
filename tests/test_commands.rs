@@ -108,18 +108,31 @@ fn tag_filter() {
 #[test]
 /// Check that the tag filter works
 fn depth_tree() {
-    let args = &[
+    let args_1 = &[
         "bal",
         "-f",
         "tests/example_files/demo.ledger",
         "--depth",
         "1",
     ];
-    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
-    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
-    assert_eq!(output.lines().into_iter().count(), 11);
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args_1).assert();
+    let output_1 = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    assert_eq!(output_1.lines().into_iter().count(), 11);
+    test_args(args_1);
 
-    test_args(args);
+    let args_2 = &[
+        "bal",
+        "-f",
+        "tests/example_files/demo.ledger",
+        "--flat",
+        "--depth",
+        "1",
+    ];
+    let assert_2 = Command::cargo_bin("dinero").unwrap().args(args_2).assert();
+    let output_2 = String::from_utf8(assert_2.get_output().to_owned().stdout).unwrap();
+    assert_eq!(output_2.lines().into_iter().count(), 11);
+
+    test_args(args_2);
 }
 
 #[test]
