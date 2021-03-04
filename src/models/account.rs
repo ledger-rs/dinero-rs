@@ -63,42 +63,6 @@ impl Account {
             + 1
     }
 
-    /// Parent name
-    ///
-    /// Returns the name of the parent account should have
-    /// ```rust
-    /// use dinero::models::Account;
-    /// let mut account = Account::from("Expenses:Groceries");
-    /// let mut parent = account.parent_name();
-    /// assert_eq!(parent, Some("Expenses".to_string()));
-    ///
-    /// account = Account::from("Expenses:Groceries:Supermarket");
-    /// parent = account.parent_name();
-    /// assert_eq!(parent, Some("Expenses:Groceries".to_string()));
-    ///
-    /// account = Account::from("Expenses");
-    /// parent = account.parent_name();
-    /// assert_eq!(parent, None);
-    /// ```
-    pub fn parent_name(&self) -> Option<String> {
-        match self.depth() {
-            1 => None,
-            _ => {
-                let split = self.name.split(":").collect::<Vec<&str>>();
-                match split.split_last() {
-                    None => panic!("Could not get parent of {}", self.name),
-                    Some((_, elements)) => Some(
-                        elements
-                            .iter()
-                            .map(|x| x.to_string())
-                            .collect::<Vec<String>>()
-                            .join(":"),
-                    ),
-                }
-            }
-        }
-    }
-
     pub fn is_match(&self, regex: Regex) -> bool {
         let mut list = self.matches.borrow_mut();
         match list.get(regex.as_str()) {
