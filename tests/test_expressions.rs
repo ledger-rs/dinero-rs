@@ -129,7 +129,7 @@ fn bad_comparison() {
         "-f",
         "tests/example_files/demo.ledger",
         "expr",
-        "5 eur < 3 usd",
+        "(2 * (5 eur)) < ((3 usd) / 5))",
     ];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args_1).assert();
     let output_1 = String::from_utf8(assert_1.get_output().to_owned().stderr).unwrap();
