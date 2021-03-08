@@ -7,6 +7,7 @@ use crate::{filter, CommonOpts};
 use colored::Colorize;
 use std::collections::HashMap;
 use terminal_size::{terminal_size, Width};
+
 /// Register report
 pub fn execute(options: &CommonOpts) -> Result<(), Error> {
     // Get options from options

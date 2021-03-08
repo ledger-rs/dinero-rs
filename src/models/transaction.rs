@@ -139,13 +139,13 @@ pub enum PostingType {
 
 impl Posting {
     pub fn new(
-        account: &Account,
+        account: &Rc<Account>,
         kind: PostingType,
         payee: &Payee,
         origin: PostingOrigin,
     ) -> Posting {
         Posting {
-            account: Rc::new(account.clone()),
+            account: account.clone(),
             amount: None,
             balance: None,
             cost: None,

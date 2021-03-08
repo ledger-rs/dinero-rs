@@ -4,6 +4,7 @@ use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 
 use crate::models::{FromDirective, HasAliases, HasName, Origin};
+use std::cmp::Ordering;
 
 /// Currency representation
 ///
@@ -110,11 +111,21 @@ impl PartialEq for Currency {
         self.name == other.name
     }
 }
-
 impl Eq for Currency {}
 
 impl Hash for Currency {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.name.hash(state);
+    }
+}
+
+impl Ord for Currency {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.name.cmp(&other.name)
+    }
+}
+impl PartialOrd for Currency {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.name.partial_cmp(&other.name)
     }
 }

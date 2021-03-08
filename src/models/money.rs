@@ -10,6 +10,8 @@ use num::{BigInt, Signed, Zero};
 use crate::models::balance::Balance;
 use crate::models::{Currency, HasName};
 use num::traits::Inv;
+use std::borrow::Borrow;
+use std::cmp::Ordering;
 use std::str::FromStr;
 
 /// Money representation: an amount and a currency
@@ -42,7 +44,7 @@ use std::str::FromStr;
 /// # assert_eq!(*b2.balance.get(&Some(eur.clone())).unwrap(), m1);
 /// # assert_eq!(*b2.balance.get(&Some(usd.clone())).unwrap(), d1);
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialOrd)]
 pub enum Money {
     Zero,
     Money {
@@ -159,6 +161,28 @@ impl PartialEq for Money {
     }
 }
 
+impl Ord for Money {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let self_amount = self.get_amount();
+        let other_amount = other.get_amount();
+        match self.get_commodity() {
+            None => self_amount.cmp(other_amount.borrow()),
+            Some(self_currency) => match other.get_commodity() {
+                None => self_amount.cmp(other_amount.borrow()),
+                Some(other_currency) => {
+                    if self_currency == other_currency {
+                        self_amount.cmp(other_amount.borrow())
+                    } else {
+                        panic!(
+                            "Can't compare different currencies. {} and {}.",
+                            self_currency, other_currency
+                        );
+                    }
+                }
+            },
+        }
+    }
+}
 impl Mul<BigRational> for Money {
     type Output = Money;
 

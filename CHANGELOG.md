@@ -6,6 +6,9 @@ Changelog file for dinero-rs project, a command line application for managing fi
 ### Changed
 - Now the whole file is processed using a formal grammar
 
+### Fixed
+- Now this can be done ```any(abs(amount) == 2)```, which failed previously
+- Much faster CI builds
 ## [0.16.0] - 2021-03-04
 ### Added
 - Virtual postings show correctly like this ```(account)```
