@@ -114,9 +114,7 @@ impl ParsedLedger {
                     let mut payee_to_add = None;
                     'outer: for (_, p) in payees_copy.iter() {
                         for p_alias in p.get_aliases().iter() {
-                            // println!("{:?}", p_alias); // todo delete
                             if p_alias.is_match(alias.as_str()) {
-                                // self.payees.add_alias(alias.to_string(), p);
                                 payee_to_add = Some(p);
                                 alias_to_add = alias.to_string();
                                 matched = true;

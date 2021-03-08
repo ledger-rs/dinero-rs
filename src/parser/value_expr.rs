@@ -49,7 +49,6 @@ pub fn eval_expression(
 
     // Build the abstract syntax tree
     let root = build_ast_from_expr(parsed, regexes);
-    // println!("{:?}", expression); //todo delete
     eval(&root, posting, transaction, commodities, regexes)
 }
 
@@ -255,31 +254,28 @@ pub fn eval(
             let left = eval(lhs, posting, transaction, commodities, regexes);
             let right = eval(rhs, posting, transaction, commodities, regexes);
             match op {
-                Binary::Eq => {
-                    match right {
-                        EvalResult::Regex(rhs) => match left {
-                            // TODO regex comparison with accounts is one source of slow speed
-                            EvalResult::Account(lhs) => EvalResult::Boolean(lhs.is_match(rhs)),
-                            EvalResult::Payee(lhs) => EvalResult::Boolean(lhs.is_match(rhs)),
-                            EvalResult::String(lhs) => match lhs {
-                                Some(lhs) => EvalResult::Boolean(rhs.is_match(lhs.as_str())),
-                                None => EvalResult::Boolean(false),
-                            },
-                            EvalResult::Note => {
-                                let mut result = false;
-                                for comment in transaction.comments.iter() {
-                                    if rhs.is_match(comment.comment.as_str()) {
-                                        result = true;
-                                        break;
-                                    }
-                                }
-                                EvalResult::Boolean(result)
-                            }
-                            x => panic!("Found {:?}", x),
+                Binary::Eq => match right {
+                    EvalResult::Regex(rhs) => match left {
+                        EvalResult::Account(lhs) => EvalResult::Boolean(lhs.is_match(rhs)),
+                        EvalResult::Payee(lhs) => EvalResult::Boolean(lhs.is_match(rhs)),
+                        EvalResult::String(lhs) => match lhs {
+                            Some(lhs) => EvalResult::Boolean(rhs.is_match(lhs.as_str())),
+                            None => EvalResult::Boolean(false),
                         },
-                        _ => EvalResult::Boolean(left == right),
-                    }
-                }
+                        EvalResult::Note => {
+                            let mut result = false;
+                            for comment in transaction.comments.iter() {
+                                if rhs.is_match(comment.comment.as_str()) {
+                                    result = true;
+                                    break;
+                                }
+                            }
+                            EvalResult::Boolean(result)
+                        }
+                        x => panic!("Found {:?}", x),
+                    },
+                    _ => EvalResult::Boolean(left == right),
+                },
                 Binary::Lt => EvalResult::Boolean(left < right),
                 Binary::Gt => EvalResult::Boolean(left > right),
                 Binary::Ge => EvalResult::Boolean(left >= right),
