@@ -171,8 +171,8 @@ mod tests {
         let mut list: List<Payee> = List::new();
         list.insert(Payee::from("ACME"));
         for _ in 0..2 {
-            let retrieved = list.get("ACME").unwrap();
-            list.add_alias("ACME, Inc.".to_string(), &retrieved.clone())
+            let retrieved = list.get("ACME").unwrap().clone();
+            list.add_alias("ACME, Inc.".to_string(), &retrieved)
         }
     }
 }

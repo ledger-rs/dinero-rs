@@ -4,7 +4,7 @@ use assert_cmd::Command;
 use std::path::PathBuf;
 
 #[test]
-#[should_panic("Should be money.")]
+#[should_panic(expected = "Should be money.")]
 /// The expression in an automated account should evaluate to money
 fn not_money() {
     let mut tokenizer: Tokenizer = Tokenizer::from(
