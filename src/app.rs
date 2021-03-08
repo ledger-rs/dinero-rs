@@ -98,7 +98,6 @@ pub struct CommonOpts {
     #[structopt(long = "--date-format")]
     date_format: Option<String>,
 
-    /// TODO force color
     #[structopt(long = "--force-color")]
     force_color: bool,
     /// TODO force pager

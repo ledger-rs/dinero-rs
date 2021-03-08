@@ -25,9 +25,8 @@ pub fn filter(
     }
 
     // Check for dates at the transaction level
-    // todo should do this at the posting level
     if let Some(date) = options.end {
-        if transaction.date.unwrap() >= date {
+        if posting.date.unwrap() >= date {
             return Ok(false);
         }
     }
