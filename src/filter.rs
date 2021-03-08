@@ -25,8 +25,9 @@ pub fn filter(
     }
 
     // Check for dates at the transaction level
+    // todo this should be at posting level
     if let Some(date) = options.end {
-        if posting.date.unwrap() >= date {
+        if transaction.date.unwrap() >= date {
             return Ok(false);
         }
     }
