@@ -3,23 +3,62 @@
 // Test in https:://pest.rs
 //
 
-journal = { (directive | transaction | indented | comment )+ }
-indented = _{ ws+ ~ (!end ~ ANY)* }
+journal = { SOI ~ (directive | blank_line | transaction | journal_comment )+ ~ EOI}
+blank_line = {ws* ~ NEWLINE }
+directives = {directive* ~ EOI}
+journal_comment = {(";" | "!" | "#") ~ (!end ~ ANY)* ~ end}
+
 // Directives
-directive = { price | commodity }
+directive = { include | price
+    // tag 
+    | account_dir 
+    | commodity 
+    | payee_dir 
+    }
+
+include = { "include" ~ws+ ~ (string | (!end ~ ANY)*)   ~ws*~end}
 price = {"P" ~ ws* ~ date ~ (ws ~ time)? ~ ws+ ~ currency ~ ws* ~number ~ ws* ~ currency ~ws* ~ comment? ~ end}
-commodity = { "commodity" ~ ws+ ~ currency ~ ws* ~ comment? ~ end}
+commodity = { "commodity" ~ ws+ ~ currency ~ ws* ~ comment? ~ end ~
+    (sep ~ 
+        ( 
+            comment 
+            | (property ~ ws+ ~ (string | ( !";" ~ !end ~ ANY )*) ~ ws* ~ comment?) 
+            | (flag ~ ws* ~ comment?)
+        )?
+    ~end)*
+    }
+payee_dir = { "payee" ~ ws+ ~ payee ~ ws* ~ comment? ~end ~ 
+    (sep ~ 
+        ( 
+            comment 
+            | (property ~ ws+ ~ (string | ( !";" ~ !end ~ ANY )*) ~ ws* ~ comment?) 
+        )? 
+    ~end)*
+    }
+account_dir = { "account" ~ ws+ ~ account ~ ws* ~ comment? ~ end ~
+    (sep ~ 
+        ( 
+            comment 
+            | (account_property ~ ws+ ~ (string | ( !";" ~ !end ~ ANY )*) ~ ws* ~ comment?) 
+            | (flag ~ ws* ~ comment?)
+        )?
+    ~end)*
+    }
+property = { "alias" }
+flag = { "default" }
+account_property = { "alias" | "payee" }
+// A transaction
 transaction_head = {
-    date ~ (ws ~ time)? ~          // date
+    date ~ (ws ~ time)? ~           // date
     ("=" ~ date ~ (ws ~ time)?)? ~  // effective_date
-    ws+ ~ status? ~                // status
-    ws* ~ code?                    // code
-    ~ ws* ~ description            // description
-    ~ ws* ~ ("|" ~ ws*~payee)?     // payee
+    ws+ ~ status? ~                 // status
+    ws* ~ code?                     // code
+    ~ ws* ~ description             // description
+    ~ ws* ~ ("|" ~ ws* ~payee)?     // payee
     ~ws* ~ comment? }               // comment
 transaction = {transaction_head
     ~ NEWLINE
-    ~ (sep ~ comment )*
+    ~ (sep ~ comment ~ end)*
     ~ posting+ }
 
 code = { "(" ~ string ~ ")" }
@@ -27,14 +66,21 @@ status = { "*"| "!" }
 quote = _{"\"" | "'"}
 payee = { string | (!"|" ~ !";" ~!end ~ ANY)* }
 description = { string | (!"|" ~ !";" ~!end ~ ANY)* }
-comment = {";" ~ (!end ~ ANY)* ~ end}
-posting = {  sep+ ~ status? ~ ( ("(" ~ account ~ ")") | ("[" ~ account ~ "]") | account )
-    ~ sep ~ ws* ~ ((money ~ ws*) ~ (("@@" | "@") ~ ws* ~ money ~ ws*)?)? ~
-    ("=" ~ ws* ~ money ~ ws*)? ~ comment? ~ (sep ~ comment)*}
-account = { string | unquoted }
+comment = {";" ~ (!end ~ ANY)*}
+
+posting = {  sep ~ status? ~ 
+	( ("(" ~ account ~ ")") | ("[" ~ account ~ "]") | account ) ~ 
+    ((sep ~ ws* ~ (money ~ ws*) ~ (("@@" | "@") ~ ws* ~ money ~ ws*)?)? ~
+    ("=" ~ ws* ~ money ~ ws*)? ~ ws* ~ comment? ~ end )
+    ~ (sep ~ comment ~ end)*
+    }
+    
+account = { string | ((unquoted ~ (" " ~ unquoted)*)) ~ (":" ~ (unquoted ~ (" " ~ unquoted)*))* }
 // Dates
 date = { year ~ date_sep ~ month ~ date_sep ~ day }
 time = { hour ~ ":" ~ minute ~ (":" ~ second) }
+datetime = { date ~ (ws ~ time)? }
+
 date_sep = { "." | "/" | "-"}
 year = { "-"? ~ bigint}
 month = {("1" ~ ("0" | "1" | "2")) | ("0"? ~ ASCII_NONZERO_DIGIT)}
@@ -65,18 +111,19 @@ primary = {
     (function ~ ws* ~ "(" ~ ws* ~ expr ~ ws* ~ ("," ~ ws* ~ expr ~ ws*)* ~ ")")
     }
 
-
 term = _{ variable | money | number | regex | string }
 money = { (number ~ ws* ~ currency) | (currency ~ ws* ~ number) }
-currency = { string | unquoted }
+currency = { string | unquoted_no_number }
 regex = { "/" ~ (!"/" ~ ANY)* ~ "/"}
 string = {
 	("\"" ~ (("\\\"") | (!"\"" ~ ANY))* ~ "\"") |
 	("'" ~ (("\\'") | (!"'" ~ ANY))* ~ "'")
     }
-reserved = _{"+" | "*" | "/" | "\\" | "|" | "%" | "<" | ">" | ":" | "?" |  "(" |  ")" | ";"}
+reserved = _{ "\n" | "+" | "*" | "/" | "\\" | "|" | "%" | "<" | ">" | ":" | "?" |  "(" |  ")" | ";"}
 unquoted = { !reserved ~ !"=" ~ !"-" ~ !"&" ~
     (!reserved ~ !SEPARATOR ~ ANY)+ }
+unquoted_no_number = { !reserved ~ !"=" ~ !"-" ~ !"&" ~
+    (!reserved ~ !SEPARATOR ~ !ASCII_DIGIT ~ ANY)+ }
 variable = {
     "account" |
     "payee" |

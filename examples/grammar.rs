@@ -17,12 +17,13 @@ fn main() {
 
     let content = read_to_string(path).unwrap();
 
-    let mut parsed = GrammarParser::parse(Rule::journal, content.as_str())
-        .expect("Could not parse transaction!") // unwrap the parse result
-        .next()
-        .unwrap()
-        .into_inner();
-    while let Some(element) = parsed.next() {
-        println!("{:?}: {}", element.as_rule(), element.as_str());
+    match GrammarParser::parse(Rule::journal, content.as_str()) {
+        Ok(mut parsed) => {
+            let mut elements = parsed.next().unwrap().into_inner();
+            while let Some(element) = elements.next() {
+                println!("{:?}: {}", element.as_rule(), element.as_str());
+            }
+        }
+        Err(e) => eprintln!("{:?}", e),
     }
 }
