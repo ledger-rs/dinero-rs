@@ -7,8 +7,8 @@ use std::path::PathBuf;
 fn test_include() {
     let p1 = PathBuf::from("tests/example_files/include.ledger".to_string());
     let mut tokenizer: Tokenizer = Tokenizer::from(&p1);
-    let res = tokenizer.tokenize();
-    // simply that it does not panick
+    let _res = tokenizer.tokenize();
+    // simply that it does not panic
     // todo change for something meaningful
     assert!(true);
 }

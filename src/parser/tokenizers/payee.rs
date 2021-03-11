@@ -16,9 +16,7 @@ impl<'a> Tokenizer<'a> {
         let mut parsed = element.into_inner();
         let name = parse_string(parsed.next().unwrap());
         let mut note: Option<String> = None;
-        let mut format: Option<String> = None;
         let mut comments: Vec<Comment> = vec![];
-        let mut default = false;
         let mut alias = HashSet::new();
 
         while let Some(part) = parsed.next() {
@@ -36,7 +34,6 @@ impl<'a> Tokenizer<'a> {
                         _ => {}
                     }
                 }
-                Rule::flag => default = true,
                 _ => {}
             }
         }

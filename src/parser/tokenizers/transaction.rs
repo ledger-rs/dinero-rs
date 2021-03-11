@@ -164,9 +164,7 @@ fn parse_posting(raw: Pair<Rule>, default_payee: &Option<String>) -> RawPosting 
                 }
             }
             Rule::number => posting.amount_expr = Some(format!("({})", part.as_str())),
-            Rule::value_expr | Rule::number => {
-                posting.amount_expr = Some(part.as_str().to_string())
-            }
+            Rule::value_expr => posting.amount_expr = Some(part.as_str().to_string()),
             Rule::comment => posting.comments.push(Comment {
                 comment: parse_string(part),
             }),

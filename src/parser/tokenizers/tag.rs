@@ -1,10 +1,5 @@
 use crate::models::Tag;
 
-use std::collections::HashSet;
-
-use regex::Regex;
-
-use crate::models::{Comment, Origin, Payee};
 use crate::parser::Tokenizer;
 
 use super::super::Rule;

@@ -11,7 +11,7 @@ use std::fs::read_to_string;
 use std::path::PathBuf;
 
 use crate::models::{Account, Comment, Currency, Payee, Transaction};
-use crate::{models, List, ParserError};
+use crate::{models, List};
 use pest::Parser;
 
 mod include;
@@ -20,7 +20,7 @@ pub mod tokenizers;
 mod utils;
 pub mod value_expr;
 
-use tokenizers::{account, commodity, payee, price, tag, transaction};
+use tokenizers::transaction;
 
 #[derive(Parser)]
 #[grammar = "grammar/grammar.pest"]
@@ -146,7 +146,7 @@ impl<'a> Tokenizer<'a> {
                         Rule::transaction | Rule::automated_transaction => {
                             ledger.transactions.push(self.parse_transaction(element));
                         }
-                        x => {
+                        _x => {
                             // eprintln!("{:?}", x);
                         }
                     }
