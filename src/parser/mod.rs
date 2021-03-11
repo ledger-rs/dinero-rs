@@ -158,7 +158,6 @@ impl<'a> Tokenizer<'a> {
         ledger
     }
 }
-/*
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -179,4 +178,3 @@ mod tests {
         assert_eq!(items.len(), 0, "Should be empty")
     }
 }
-*/

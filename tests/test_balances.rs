@@ -1,5 +1,4 @@
 use dinero::parser::Tokenizer;
-/*
 #[test]
 fn test_balances() {
     let mut tokenizer = Tokenizer::from(
@@ -22,4 +21,3 @@ fn test_balances() {
     let ledger = parsed.to_ledger(false);
     assert!(ledger.is_ok(), "This should balance");
 }
-*/
