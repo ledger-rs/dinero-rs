@@ -58,5 +58,5 @@ pub mod models;
 pub mod parser;
 
 pub use app::{run_app, CommonOpts};
-pub(crate) use error::{Error, LedgerError, ParserError};
+pub(crate) use error::{Error, LedgerError};
 pub use list::List;

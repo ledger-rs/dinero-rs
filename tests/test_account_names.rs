@@ -45,9 +45,9 @@ fn test_account_names() {
         ),
     ];
     for (i, mut tokenizer) in tokenizers.into_iter().enumerate() {
-        let parsed = tokenizer.tokenize().unwrap();
-        let mut num_accounts = parsed.accounts.len();
         println!("Test case #{}", i);
+        let parsed = tokenizer.tokenize();
+        let mut num_accounts = parsed.accounts.len();
         assert_eq!(num_accounts, 0, "There should be no accounts when parsed");
         num_accounts = parsed.to_ledger(true).unwrap().accounts.len();
         assert_eq!(num_accounts, 2, "There should be two accounts");

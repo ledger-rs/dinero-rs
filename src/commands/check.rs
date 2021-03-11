@@ -7,7 +7,7 @@ use crate::parser::Tokenizer;
 
 pub fn execute(path: PathBuf) -> Result<(), Error> {
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
-    let parsed = tokenizer.tokenize()?;
+    let parsed = tokenizer.tokenize();
 
     match parsed.to_ledger(false) {
         Ok(_) => println!(

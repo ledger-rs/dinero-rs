@@ -1,88 +1,53 @@
 use std::collections::HashSet;
 
-use lazy_static::lazy_static;
 use regex::Regex;
 
 use crate::models::{Comment, Origin, Payee};
-use crate::parser::chars::LineType;
-use crate::parser::tokenizers::comment;
-use crate::parser::{chars, Tokenizer};
-use crate::ParserError;
+use crate::parser::Tokenizer;
 
-pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Payee, ParserError> {
-    lazy_static! {
-        static ref RE: Regex = Regex::new(format!("{}{}{}",
-        r"(payee) +"            , // payee directive
-        r"(.*)"                 , // description
-        r"(  ;.*)?"             , // note
-        ).as_str()).unwrap();
-    }
-    let mystr = chars::get_line(tokenizer);
-    let caps = RE.captures(mystr.as_str()).unwrap();
+use super::super::Rule;
 
-    let mut name = String::new();
-    let mut detected: bool = false;
-    let mut note: Option<String> = None;
-    let mut comments: Vec<Comment> = vec![];
-    let mut alias = HashSet::new();
+use crate::parser::utils::parse_string;
 
-    for (i, cap) in caps.iter().enumerate() {
-        match cap {
-            Some(m) => {
-                match i {
-                    1 =>
-                    // payee
-                    {
-                        detected = true;
+use pest::iterators::Pair;
+
+impl<'a> Tokenizer<'a> {
+    pub(crate) fn parse_payee(&self, element: Pair<Rule>) -> Payee {
+        let mut parsed = element.into_inner();
+        let name = parse_string(parsed.next().unwrap());
+        let mut note: Option<String> = None;
+        let mut comments: Vec<Comment> = vec![];
+        let mut alias = HashSet::new();
+
+        while let Some(part) = parsed.next() {
+            match part.as_rule() {
+                Rule::comment => comments.push(Comment {
+                    comment: parse_string(part),
+                }),
+                Rule::payee_property => {
+                    let mut property = part.into_inner();
+                    match property.next().unwrap().as_rule() {
+                        Rule::alias => {
+                            alias.insert(parse_string(property.next().unwrap()));
+                        }
+                        Rule::note => note = Some(parse_string(property.next().unwrap())),
+                        _ => {}
                     }
-                    2 =>
-                    // description
-                    {
-                        name = m.as_str().to_string()
-                    }
-                    3 =>
-                    // note
-                    {
-                        note = Some(m.as_str().to_string())
-                    }
-                    _ => (),
                 }
+                _ => {}
             }
-            None => (),
         }
-    }
 
-    if !detected {
-        return Err(ParserError::UnexpectedInput(None));
+        let alias_regex: Vec<Regex> = alias
+            .iter()
+            .map(|x| Regex::new(x.clone().as_str()).unwrap())
+            .collect();
+        let payee = Payee::new(name, note, alias, alias_regex, Origin::FromDirective);
+        payee
     }
-    while let LineType::Indented = chars::consume_whitespaces_and_lines(tokenizer) {
-        match tokenizer.get_char().unwrap() {
-            ';' => comments.push(comment::parse(tokenizer)),
-            _ => match chars::get_string(tokenizer).as_str() {
-                "alias" => {
-                    alias.insert(chars::get_line(tokenizer).trim().to_string());
-                }
-                _ => {
-                    eprintln!("Error while parsing posting.");
-                    return Err(ParserError::UnexpectedInput(None));
-                }
-            },
-        }
-    }
-
-    let alias_regex: Vec<Regex> = alias
-        .iter()
-        .map(|x| Regex::new(x.clone().as_str()).unwrap())
-        .collect();
-    Ok(Payee::new(
-        name,
-        note,
-        alias,
-        alias_regex,
-        Origin::FromDirective,
-    ))
 }
 
+/*
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -105,3 +70,4 @@ mod tests {
         assert_eq!(payee.get_name(), "ACME");
     }
 }
+*/

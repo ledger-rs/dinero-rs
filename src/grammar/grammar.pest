@@ -3,29 +3,124 @@
 // Test in https:://pest.rs
 //
 
-// Directives
-directive = { price | commodity }
-price = {"P" ~ ws* ~ date ~ (ws ~ time)? ~ ws+ ~ currency ~ ws* ~number ~ ws* ~ currency ~ws* ~ comment? ~ end}
-commodity = { "commodity" ~ ws+ ~ currency ~ ws* ~ comment? ~ end}
-transaction = {
-    date ~ (ws ~ time)? ~          // date
-    ("=" ~ date ~ (ws ~ time)?)? ~  // effective_date
-    ws+ ~ status? ~                // status
-    ws* ~ code?                    // code
-    ~ ws* ~ description            // description
-    ~ ws* ~ ("|" ~ ws*~payee)?     // payee
-    ~ws* ~ comment?                // comment
-    ~ end }
+journal = { SOI ~ (directive | blank_line | transaction | automated_transaction | journal_comment )+ ~ ws* ~EOI}
+blank_line = {ws* ~ NEWLINE }
+directives = {directive* ~ EOI}
+journal_comment = {(";" | "!" | "#") ~ (!end ~ ANY)* ~ end}
 
+// Directives
+directive = { include | price
+    | tag_dir 
+    | account_dir 
+    | commodity 
+    | payee_dir 
+    }
+
+include = { "include" ~ws+ ~ glob   ~ws*~end}
+glob = { string | (!end ~ ANY)* }
+price = {"P" ~ ws* ~ date ~ (ws ~ time)? ~ ws+ ~ currency ~ ws* ~number ~ ws* ~ currency ~ws* ~ comment? ~ end}
+commodity = { "commodity" ~ ws+ ~ currency ~ ws* ~ comment? ~ end ~
+    (sep ~ 
+        ( 
+            comment 
+            | (commodity_property ) 
+            | (flag ~ ws* ~ comment?)
+        )?
+    ~end)*
+    }
+payee_dir = { "payee" ~ ws+ ~ payee ~ ws* ~ comment? ~end ~ 
+    (sep ~ 
+        ( 
+            comment 
+            | (payee_property) 
+        )? 
+    ~end)*
+    }
+tag_dir = { "tag" ~ ws+ ~ tag ~ ws* ~ comment? ~end ~ 
+    (sep ~ 
+        ( 
+            comment 
+            | (tag_property) 
+        )? 
+    ~end)*
+    }
+account_dir = { "account" ~ ws+ ~ account ~ ws* ~ comment? ~ end ~
+    (sep ~ 
+        ( 
+            comment 
+            | (account_property ) 
+            | (flag ~ ws* ~ comment?)
+        )?
+    ~end)*
+    }
+commodity_property = { (alias | note | format ) ~ ws+ ~ property_value }
+payee_property = { (alias | note) ~ ws+ ~ property_value }
+account_property = { (alias | payee_subdirective | check | assert | note | isin ) ~ ws+ ~ property_value }
+tag_property = { (check | assert) ~ ws+ ~ property_value }
+property_value = { string | (!end ~ ANY )*}
+alias = { "alias" }
+note = { "note" }
+format = { "format" }
+check = { "check" }
+assert = { "assert" }
+isin = {"isin"}
+payee_subdirective = {"payee"}
+flag = { default }
+default = {"default"}
+// A transaction
+transaction_head = {
+    transaction_date ~           // date
+    ("=" ~ effective_date)? ~  // effective_date
+    ws+ ~ status? ~                 // status
+    ws* ~ code?                     // code
+    ~ ws* ~ description             // description
+    ~ ws* ~ ("|" ~ ws* ~payee)?     // payee
+    ~ws* ~ comment? }    
+automated_transaction_head = {
+    "="  ~ ws* ~ description             // description
+    ~ws* ~ comment? }               // comment
+transaction = {transaction_head
+    ~ NEWLINE
+    ~ (sep ~ comment ~ end)*
+    ~ posting+ }
+automated_transaction = {automated_transaction_head
+    ~ NEWLINE
+    ~ (sep ~ comment ~ end)*
+    ~ (posting|automated_posting)* }
+transaction_date = {date ~ (ws ~ time)?}
+effective_date = {date ~ (ws ~ time)?}
 code = { "(" ~ string ~ ")" }
 status = { "*"| "!" }
 quote = _{"\"" | "'"}
 payee = { string | (!"|" ~ !";" ~!end ~ ANY)* }
+tag = { string | (!"|" ~ !";" ~!end ~ ANY)* }
 description = { string | (!"|" ~ !";" ~!end ~ ANY)* }
-comment = {";" ~ ANY*}
+comment = {";" ~ (!end ~ ANY)*}
 
+posting = { sep ~ status? ~ 
+	posting_kind ~ 
+    ((sep ~ ws* ~ (amount ~ ws*) ~ (cost ~ ws*)?)? ~
+    ws* ~balance? ~ ws* ~ comment? ~ end )
+    ~ (sep ~ comment ~ end)*
+    }
+automated_posting = { sep ~ status? ~ 
+	posting_kind ~ 
+    (sep ~ ws* ~ (value_expr | number) ~ ws* ~ comment? ~ end )
+    ~ (sep ~ comment ~ end)*
+    }
+amount = {money}
+cost = { ("@@" | "@") ~ ws* ~ money }
+balance = {"=" ~ ws* ~ money ~ ws*}
+posting_kind = {  virtual_no_balance | virtual_balance | real}
+real = { account }
+virtual_no_balance = { "(" ~ account ~ ")" }
+virtual_balance = { "[" ~ account ~ "]" }
+account = { string | ((unquoted ~ (" " ~ unquoted)*)) ~ (":" ~ (unquoted ~ (" " ~ unquoted)*))* }
+// Dates
 date = { year ~ date_sep ~ month ~ date_sep ~ day }
 time = { hour ~ ":" ~ minute ~ (":" ~ second) }
+datetime = { date ~ (ws ~ time)? }
+
 date_sep = { "." | "/" | "-"}
 year = { "-"? ~ bigint}
 month = {("1" ~ ("0" | "1" | "2")) | ("0"? ~ ASCII_NONZERO_DIGIT)}
@@ -56,18 +151,20 @@ primary = {
     (function ~ ws* ~ "(" ~ ws* ~ expr ~ ws* ~ ("," ~ ws* ~ expr ~ ws*)* ~ ")")
     }
 
-
 term = _{ variable | money | number | regex | string }
 money = { (number ~ ws* ~ currency) | (currency ~ ws* ~ number) }
-currency = { string | unquoted }
+currency = { string | unquoted_no_number }
 regex = { "/" ~ (!"/" ~ ANY)* ~ "/"}
 string = {
 	("\"" ~ (("\\\"") | (!"\"" ~ ANY))* ~ "\"") |
 	("'" ~ (("\\'") | (!"'" ~ ANY))* ~ "'")
     }
-reserved = _{"+" | "*" | "/" | "\\" | "|" | "%" | "<" | ">" | ":" | "?" |  "(" |  ")" | ";"}
+reserved = _{ "\n" | "+" | "*" | "/" | "\\" | "|" | "%" | "<" | ">" | ":" | "?" | "(" | ")" | ";" | "[" | "]" }
 unquoted = { !reserved ~ !"=" ~ !"-" ~ !"&" ~
     (!reserved ~ !SEPARATOR ~ ANY)+ }
+currency_parts = _{ !reserved ~ !"=" ~ !"-" ~ !"&" ~
+    (!reserved ~ !SEPARATOR ~ !ASCII_DIGIT ~ !"-" ~ ANY)+ }
+unquoted_no_number = {currency_parts ~ ("-" ~ currency_parts)*}
 variable = {
     "account" |
     "payee" |
@@ -96,7 +193,8 @@ variable = {
 number = { "-"? ~ bigint ~ ("." ~ bigint)? }
 bigint = _{ ASCII_DIGIT+ }
 ws = _{" "}
-end = { EOI | NEWLINE }
+sep = _{("\t" | " \t" | "  ") ~ SEPARATOR* }
+end = _{ EOI | NEWLINE }
 
 
 add = { "+" | "-" }

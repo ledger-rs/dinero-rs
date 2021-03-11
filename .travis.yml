@@ -31,7 +31,7 @@ script:
 - cargo test
 after_success: |
   if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
-    cargo tarpaulin --ignore-tests --out Xml --run-types AllTargets
+    cargo tarpaulin --ignore-tests --exclude-files examples/* --out Xml --run-types AllTargets
     bash <(curl -s https://codecov.io/bash)
     # If this build is not from a tag, create one
     if [[ "$TRAVIS_TAG" == "" ]]; then

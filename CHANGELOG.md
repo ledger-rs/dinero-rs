@@ -1,7 +1,11 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
 
-## [0.17.0]
+## [0.17.0] - planned
+### Added
+### Changed
+- Now the whole file is processed using a formal grammar
+
 ### Fixed
 - Now this can be done ```any(abs(amount) == 2)```, which failed previously
 - Much faster CI builds

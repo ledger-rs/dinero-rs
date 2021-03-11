@@ -7,15 +7,17 @@ use std::path::PathBuf;
 fn test_include() {
     let p1 = PathBuf::from("tests/example_files/include.ledger".to_string());
     let mut tokenizer: Tokenizer = Tokenizer::from(&p1);
-    let res = tokenizer.tokenize();
-    assert!(res.is_ok());
+    let _res = tokenizer.tokenize();
+    // simply that it does not panic
+    // todo change for something meaningful
+    assert!(true);
 }
 
 #[test]
 fn test_build_ledger_from_demo() {
     let p1 = PathBuf::from("tests/example_files/demo.ledger".to_string());
     let mut tokenizer: Tokenizer = Tokenizer::from(&p1);
-    let items = tokenizer.tokenize().unwrap();
+    let items = tokenizer.tokenize();
     let ledger = items.to_ledger(false);
     assert!(ledger.is_ok());
 }
@@ -32,10 +34,10 @@ fn test_fail() {
     );
     let parsed = tokenizer.tokenize();
     // It parses
-    assert!(parsed.is_ok());
+    assert!(true);
 
     // But to a wrong ledger
-    let ledger = parsed.unwrap().to_ledger(false);
+    let ledger = parsed.to_ledger(false);
     assert!(ledger.is_err());
 }
 
@@ -60,7 +62,7 @@ fn comment_no_spaces() {
         "
         .to_string(),
     );
-    let items = tokenizer.tokenize().unwrap();
+    let items = tokenizer.tokenize();
     let ledger = items.to_ledger(false);
     assert!(ledger.is_ok());
 }
@@ -74,7 +76,7 @@ fn comment_spaces() {
         "
         .to_string(),
     );
-    let items = tokenizer.tokenize().unwrap();
+    let items = tokenizer.tokenize();
     let ledger = items.to_ledger(false);
     assert!(ledger.is_ok());
 }
