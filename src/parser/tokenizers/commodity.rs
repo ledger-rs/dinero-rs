@@ -41,7 +41,7 @@ impl<'a> Tokenizer<'a> {
             }
         }
 
-        Currency {
+        let currency = Currency {
             name: name.trim().to_string(),
             origin: Origin::FromDirective,
             note,
@@ -49,6 +49,7 @@ impl<'a> Tokenizer<'a> {
             format,
             default,
             precision: None,
-        }
+        };
+        currency
     }
 }
