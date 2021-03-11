@@ -1,16 +1,60 @@
 use super::super::Rule;
-use crate::models::{Account, Origin};
 use crate::parser::Tokenizer;
-use crate::ParserError;
-use lazy_static::lazy_static;
-use num::bigint::ToBigInt;
+use crate::{
+    models::{Account, Origin},
+    parser::utils::parse_string,
+};
+
 use pest::iterators::Pair;
 use regex::Regex;
 use std::collections::HashSet;
 
 impl<'a> Tokenizer<'a> {
-    pub(crate) fn parse(&self, element: Pair<Rule>) -> Account {
-        unimplemented!("account");
+    pub(crate) fn parse_account(&self, element: Pair<Rule>) -> Account {
+        let mut parsed = element.into_inner();
+        let name = parse_string(parsed.next().unwrap());
+        let mut default = false;
+        let mut aliases = HashSet::new();
+        let mut check = Vec::new();
+        let mut assert = Vec::new();
+        let mut payee: Vec<Regex> = Vec::new();
+        let mut note = None;
+        let mut isin = None;
+
+        while let Some(part) = parsed.next() {
+            match part.as_rule() {
+                Rule::account_property => {
+                    let mut property = part.into_inner();
+                    match property.next().unwrap().as_rule() {
+                        Rule::alias => {
+                            aliases.insert(parse_string(property.next().unwrap()));
+                        }
+                        Rule::note => note = Some(parse_string(property.next().unwrap())),
+                        Rule::isin => isin = Some(parse_string(property.next().unwrap())),
+                        Rule::assert => assert.push(parse_string(property.next().unwrap())),
+                        Rule::check => check.push(parse_string(property.next().unwrap())),
+                        Rule::payee_subdirective => payee.push(
+                            Regex::new(parse_string(property.next().unwrap()).trim()).unwrap(),
+                        ),
+                        _ => {}
+                    }
+                }
+                Rule::flag => default = true,
+                _ => {},
+            }
+        }
+        let account = Account::new(
+            name,
+            Origin::FromDirective,
+            note,
+            isin,
+            aliases,
+            check,
+            assert,
+            payee,
+            default,
+        );
+        account
     }
 }
 /*

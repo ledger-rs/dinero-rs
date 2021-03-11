@@ -126,11 +126,14 @@ impl<'a> Tokenizer<'a> {
                                 Rule::price => {
                                     ledger.prices.push(self.parse_price(inner));
                                 }
-                                Rule::tag => {
+                                Rule::tag_dir => {
                                     ledger.tags.push(self.parse_tag(inner));
                                 }
                                 Rule::commodity => {
                                     ledger.commodities.insert(self.parse_commodity(inner));
+                                }
+                                Rule::account_dir => {
+                                    ledger.accounts.insert(self.parse_account(inner));
                                 }
                                 _ => {}
                             }

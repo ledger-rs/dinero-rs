@@ -2,11 +2,8 @@ use super::super::Rule;
 use std::collections::HashSet;
 
 use crate::models::{Comment, Currency, Origin};
-use crate::parser::tokenizers::comment;
 use crate::parser::utils::parse_string;
 use crate::parser::Tokenizer;
-use crate::ParserError;
-use pest::Parser;
 
 use pest::iterators::Pair;
 

@@ -47,13 +47,14 @@ account_dir = { "account" ~ ws+ ~ account ~ ws* ~ comment? ~ end ~
     (sep ~ 
         ( 
             comment 
-            | (account_property ~ ws+ ~ (string | ( !";" ~ !end ~ ANY )*) ~ ws* ~ comment?) 
+            | (account_property ) 
             | (flag ~ ws* ~ comment?)
         )?
     ~end)*
     }
 commodity_property = { (alias | note | format ) ~ ws+ ~ property_value }
 payee_property = { (alias | note) ~ ws+ ~ property_value }
+account_property = { (alias | payee_subdirective | check | assert | note | isin ) ~ ws+ ~ property_value }
 tag_property = { (check | assert) ~ ws+ ~ property_value }
 property_value = { string | (!end ~ ANY )*}
 alias = { "alias" }
@@ -61,9 +62,10 @@ note = { "note" }
 format = { "format" }
 check = { "check" }
 assert = { "assert" }
+isin = {"isin"}
+payee_subdirective = {"payee"}
 flag = { default }
 default = {"default"}
-account_property = { "alias" | "payee" }
 // A transaction
 transaction_head = {
     transaction_date ~           // date
@@ -87,10 +89,10 @@ tag = { string | (!"|" ~ !";" ~!end ~ ANY)* }
 description = { string | (!"|" ~ !";" ~!end ~ ANY)* }
 comment = {";" ~ (!end ~ ANY)*}
 
-posting = {  sep ~ status? ~ 
+posting = { sep ~ status? ~ 
 	posting_kind ~ 
     ((sep ~ ws* ~ (amount ~ ws*) ~ (cost ~ ws*)?)? ~
-    balance? ~ ws* ~ comment? ~ end )
+    ws* ~balance? ~ ws* ~ comment? ~ end )
     ~ (sep ~ comment ~ end)*
     }
 amount = {money}
