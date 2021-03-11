@@ -135,6 +135,9 @@ impl<'a> Tokenizer<'a> {
                                 Rule::account_dir => {
                                     ledger.accounts.insert(self.parse_account(inner));
                                 }
+                                Rule::payee_dir => {
+                                    ledger.payees.insert(self.parse_payee(inner));
+                                }
                                 _ => {}
                             }
                         }

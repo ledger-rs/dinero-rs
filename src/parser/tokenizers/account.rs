@@ -40,7 +40,7 @@ impl<'a> Tokenizer<'a> {
                     }
                 }
                 Rule::flag => default = true,
-                _ => {},
+                _ => {}
             }
         }
         let account = Account::new(
