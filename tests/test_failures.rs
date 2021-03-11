@@ -18,7 +18,7 @@ fn not_money() {
         .to_string(),
     );
     let parsed = tokenizer.tokenize();
-    
+
     // It parses -- it has not panicked
     assert!(true);
 

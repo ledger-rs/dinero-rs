@@ -10,7 +10,7 @@ fn test_include() {
     let res = tokenizer.tokenize();
     // simply that it does not panick
     // todo change for something meaningful
-    assert!(true); 
+    assert!(true);
 }
 
 #[test]
