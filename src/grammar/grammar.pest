@@ -22,7 +22,7 @@ commodity = { "commodity" ~ ws+ ~ currency ~ ws* ~ comment? ~ end ~
     (sep ~ 
         ( 
             comment 
-            | (property ~ ws+ ~ (string | ( !";" ~ !end ~ ANY )*) ~ ws* ~ comment?) 
+            | (commodity_property ) 
             | (flag ~ ws* ~ comment?)
         )?
     ~end)*
@@ -31,7 +31,7 @@ payee_dir = { "payee" ~ ws+ ~ payee ~ ws* ~ comment? ~end ~
     (sep ~ 
         ( 
             comment 
-            | (property ~ ws+ ~ (string | ( !";" ~ !end ~ ANY )*) ~ ws* ~ comment?) 
+            | (payee_property) 
         )? 
     ~end)*
     }
@@ -44,8 +44,14 @@ account_dir = { "account" ~ ws+ ~ account ~ ws* ~ comment? ~ end ~
         )?
     ~end)*
     }
-property = { "alias" }
-flag = { "default" }
+commodity_property = { (alias | note | format ) ~ ws+ ~ property_value }
+payee_property = { (alias) ~ ws+ ~ property_value }
+property_value = { string | (!end ~ ANY )*}
+alias = { "alias" }
+note = { "note" }
+format = { "format" }
+flag = { default }
+default = {"default"}
 account_property = { "alias" | "payee" }
 // A transaction
 transaction_head = {

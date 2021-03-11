@@ -126,6 +126,9 @@ impl<'a> Tokenizer<'a> {
                                 Rule::price => {
                                     ledger.prices.push(self.parse_price(inner));
                                 }
+                                Rule::commodity => {
+                                    ledger.commodities.insert(self.parse_commodity(inner));
+                                }
                                 _ => {}
                             }
                         }
@@ -133,7 +136,7 @@ impl<'a> Tokenizer<'a> {
                             ledger.transactions.push(self.parse_transaction(element));
                         }
                         x => {
-                            eprintln!("{:?}", x);
+                            // eprintln!("{:?}", x);
                         }
                     }
                 }
