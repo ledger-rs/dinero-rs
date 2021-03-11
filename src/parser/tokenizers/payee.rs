@@ -1,17 +1,55 @@
 use std::collections::HashSet;
 
-use lazy_static::lazy_static;
 use regex::Regex;
 
 use crate::models::{Comment, Origin, Payee};
-use crate::parser::tokenizers::comment;
 use crate::parser::Tokenizer;
-use crate::ParserError;
 
-pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<Payee, ParserError> {
-    unimplemented!("payye");
+use super::super::Rule;
+
+use crate::parser::utils::parse_string;
+
+use pest::iterators::Pair;
+
+impl<'a> Tokenizer<'a> {
+    pub(crate) fn parse_payee(&self, element: Pair<Rule>) -> Payee {
+        let mut parsed = element.into_inner();
+        let name = parse_string(parsed.next().unwrap());
+        let mut note: Option<String> = None;
+        let mut format: Option<String> = None;
+        let mut comments: Vec<Comment> = vec![];
+        let mut default = false;
+        let mut alias = HashSet::new();
+
+        while let Some(part) = parsed.next() {
+            match part.as_rule() {
+                Rule::comment => comments.push(Comment {
+                    comment: parse_string(part),
+                }),
+                Rule::commodity_property => {
+                    let mut property = part.into_inner();
+                    match property.next().unwrap().as_rule() {
+                        Rule::alias => {
+                            alias.insert(parse_string(property.next().unwrap()));
+                        }
+                        Rule::note => note = Some(parse_string(property.next().unwrap())),
+                        _ => {}
+                    }
+                }
+                Rule::flag => default = true,
+                x => panic!("{:?} not expected", x),
+            }
+        }
+
+        let alias_regex: Vec<Regex> = alias
+            .iter()
+            .map(|x| Regex::new(x.clone().as_str()).unwrap())
+            .collect();
+        Payee::new(name, note, alias, alias_regex, Origin::FromDirective)
+    }
 }
 
+/*
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -34,3 +72,4 @@ mod tests {
         assert_eq!(payee.get_name(), "ACME");
     }
 }
+*/

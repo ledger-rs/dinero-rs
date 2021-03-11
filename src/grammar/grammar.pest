@@ -45,7 +45,7 @@ account_dir = { "account" ~ ws+ ~ account ~ ws* ~ comment? ~ end ~
     ~end)*
     }
 commodity_property = { (alias | note | format ) ~ ws+ ~ property_value }
-payee_property = { (alias) ~ ws+ ~ property_value }
+payee_property = { (alias | note) ~ ws+ ~ property_value }
 property_value = { string | (!end ~ ANY )*}
 alias = { "alias" }
 note = { "note" }
