@@ -123,6 +123,9 @@ impl<'a> Tokenizer<'a> {
                                 Rule::include => {
                                     self.include(inner);
                                 }
+                                Rule::price => {
+                                    ledger.prices.push(self.parse_price(inner));
+                                }
                                 _ => {}
                             }
                         }
