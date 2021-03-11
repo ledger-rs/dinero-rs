@@ -121,7 +121,9 @@ impl<'a> Tokenizer<'a> {
                             let inner = element.into_inner().next().unwrap();
                             match inner.as_rule() {
                                 Rule::include => {
-                                    self.include(inner);
+                                    // This is the special case
+                                    let mut new_ledger = self.include(inner);
+                                    ledger.append(&mut new_ledger);
                                 }
                                 Rule::price => {
                                     ledger.prices.push(self.parse_price(inner));
