@@ -20,7 +20,7 @@ pub mod tokenizers;
 mod utils;
 pub mod value_expr;
 
-use tokenizers::{account, comment, commodity, payee, price, tag, transaction};
+use tokenizers::{account, commodity, payee, price, tag, transaction};
 
 #[derive(Parser)]
 #[grammar = "grammar/grammar.pest"]
