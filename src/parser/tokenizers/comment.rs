@@ -1,5 +1,5 @@
 use crate::models::Comment;
-use crate::parser::{chars, Tokenizer};
+use crate::parser::Tokenizer;
 
 /// Parses a comment
 ///
@@ -26,10 +26,7 @@ use crate::parser::{chars, Tokenizer};
 /// assert_eq!(items.len(), 2, "Should have parsed two comments")
 /// ```
 pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Comment {
-    tokenizer.position += 1;
-    tokenizer.line_position += 1;
-    chars::consume_whitespaces(tokenizer);
     return Comment {
-        comment: chars::get_line(tokenizer),
+        comment: unimplemented!("comment"),
     };
 }

@@ -1,5 +1,7 @@
 //! This module contains auxiliary parsers
 
+use crate::models::Money;
+
 use super::Rule;
 use chrono::NaiveDate;
 use num::{BigInt, BigRational};

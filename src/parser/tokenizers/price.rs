@@ -1,13 +1,14 @@
 use super::super::{GrammarParser, Rule};
 use crate::models::ParsedPrice;
 use crate::parser::utils::{parse_date, parse_rational, parse_string};
-use crate::parser::{chars, Tokenizer};
+use crate::parser::Tokenizer;
 use crate::ParserError;
 use pest::Parser;
 
 pub(crate) fn parse(tokenizer: &mut Tokenizer) -> Result<ParsedPrice, ParserError> {
-    let mystr = chars::get_line(tokenizer);
-    let mut parsed = GrammarParser::parse(Rule::price, mystr.as_str())
+    unimplemented!("price");
+    let mystr = "price";
+    let mut parsed = GrammarParser::parse(Rule::price, mystr)
         .expect("Could not parse price!") // unwrap the parse result
         .next()
         .unwrap()

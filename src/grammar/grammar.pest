@@ -49,8 +49,8 @@ flag = { "default" }
 account_property = { "alias" | "payee" }
 // A transaction
 transaction_head = {
-    date ~ (ws ~ time)? ~           // date
-    ("=" ~ date ~ (ws ~ time)?)? ~  // effective_date
+    transaction_date ~           // date
+    ("=" ~ effective_date)? ~  // effective_date
     ws+ ~ status? ~                 // status
     ws* ~ code?                     // code
     ~ ws* ~ description             // description
@@ -60,7 +60,8 @@ transaction = {transaction_head
     ~ NEWLINE
     ~ (sep ~ comment ~ end)*
     ~ posting+ }
-
+transaction_date = {date ~ (ws ~ time)?}
+effective_date = {date ~ (ws ~ time)?}
 code = { "(" ~ string ~ ")" }
 status = { "*"| "!" }
 quote = _{"\"" | "'"}
@@ -69,12 +70,18 @@ description = { string | (!"|" ~ !";" ~!end ~ ANY)* }
 comment = {";" ~ (!end ~ ANY)*}
 
 posting = {  sep ~ status? ~ 
-	( ("(" ~ account ~ ")") | ("[" ~ account ~ "]") | account ) ~ 
-    ((sep ~ ws* ~ (money ~ ws*) ~ (("@@" | "@") ~ ws* ~ money ~ ws*)?)? ~
-    ("=" ~ ws* ~ money ~ ws*)? ~ ws* ~ comment? ~ end )
+	posting_kind ~ 
+    ((sep ~ ws* ~ (amount ~ ws*) ~ (cost ~ ws*)?)? ~
+    balance? ~ ws* ~ comment? ~ end )
     ~ (sep ~ comment ~ end)*
     }
-    
+amount = {money}
+cost = { ("@@" | "@") ~ ws* ~ money }
+balance = {"=" ~ ws* ~ money ~ ws*}
+posting_kind = {  virtual_no_balance | virtual_balance | real}
+real = { account }
+virtual_no_balance = { "(" ~ account ~ ")" }
+virtual_balance = { "[" ~ account ~ "]" }
 account = { string | ((unquoted ~ (" " ~ unquoted)*)) ~ (":" ~ (unquoted ~ (" " ~ unquoted)*))* }
 // Dates
 date = { year ~ date_sep ~ month ~ date_sep ~ day }
@@ -122,8 +129,9 @@ string = {
 reserved = _{ "\n" | "+" | "*" | "/" | "\\" | "|" | "%" | "<" | ">" | ":" | "?" |  "(" |  ")" | ";"}
 unquoted = { !reserved ~ !"=" ~ !"-" ~ !"&" ~
     (!reserved ~ !SEPARATOR ~ ANY)+ }
-unquoted_no_number = { !reserved ~ !"=" ~ !"-" ~ !"&" ~
-    (!reserved ~ !SEPARATOR ~ !ASCII_DIGIT ~ ANY)+ }
+currency_parts = _{ !reserved ~ !"=" ~ !"-" ~ !"&" ~
+    (!reserved ~ !SEPARATOR ~ !ASCII_DIGIT ~ !"-" ~ ANY)+ }
+unquoted_no_number = {currency_parts ~ ("-" ~ currency_parts)*}
 variable = {
     "account" |
     "payee" |
@@ -153,7 +161,7 @@ number = { "-"? ~ bigint ~ ("." ~ bigint)? }
 bigint = _{ ASCII_DIGIT+ }
 ws = _{" "}
 sep = _{("\t" | " \t" | "  ") ~ SEPARATOR* }
-end = { EOI | NEWLINE }
+end = _{ EOI | NEWLINE }
 
 
 add = { "+" | "-" }

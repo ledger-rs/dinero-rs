@@ -20,7 +20,7 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
     let depth = options.depth;
     let no_balance_check = options.no_balance_check;
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
-    let items = tokenizer.tokenize()?;
+    let items = tokenizer.tokenize();
     let mut ledger = items.to_ledger(no_balance_check)?;
 
     let mut balances: HashMap<Rc<Account>, Balance> = HashMap::new();
