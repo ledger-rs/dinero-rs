@@ -8,7 +8,13 @@ use pest::iterators::Pair;
 impl<'a> Tokenizer<'a> {
     /// Parses a transaction
     pub(crate) fn parse_transaction(&self, element: Pair<Rule>) -> Transaction<RawPosting> {
-        let mut transaction = Transaction::<RawPosting>::new(TransactionType::Real);
+        let mut transaction = Transaction::<RawPosting>::new(
+            match element.as_rule() 
+            {
+                Rule::transaction => TransactionType::Real,
+                Rule::automated_transaction => TransactionType::Automated,
+                x => panic!("{:?}", x)
+            });
 
         let mut parsed_transaction = element.into_inner();
 
@@ -58,7 +64,7 @@ impl<'a> Tokenizer<'a> {
         //
         while let Some(part) = parsed_transaction.next() {
             match part.as_rule() {
-                Rule::posting => transaction
+                Rule::posting | Rule::automated_posting => transaction
                     .postings
                     .borrow_mut()
                     .push(parse_posting(part, &transaction.payee)),
@@ -110,7 +116,6 @@ impl RawPosting {
 
 /// Parses a posting
 fn parse_posting(raw: Pair<Rule>, default_payee: &Option<String>) -> RawPosting {
-    assert!(raw.as_rule() == Rule::posting);
 
     let mut posting = RawPosting::new();
     let mut elements = raw.into_inner();
@@ -161,6 +166,8 @@ fn parse_posting(raw: Pair<Rule>, default_payee: &Option<String>) -> RawPosting 
                     x => panic!("Expected amount, cost or balance {:?}", x),
                 }
             }
+            Rule::number => {posting.amount_expr = Some(format!("({})",part.as_str()))}
+            Rule::value_expr | Rule::number => {posting.amount_expr = Some(part.as_str().to_string())}
             Rule::comment => posting.comments.push(Comment {
                 comment: parse_string(part),
             }),

@@ -3,7 +3,7 @@
 // Test in https:://pest.rs
 //
 
-journal = { SOI ~ (directive | blank_line | transaction | journal_comment )+ ~ EOI}
+journal = { SOI ~ (directive | blank_line | transaction | automated_transaction | journal_comment )+ ~ ws* ~EOI}
 blank_line = {ws* ~ NEWLINE }
 directives = {directive* ~ EOI}
 journal_comment = {(";" | "!" | "#") ~ (!end ~ ANY)* ~ end}
@@ -74,11 +74,18 @@ transaction_head = {
     ws* ~ code?                     // code
     ~ ws* ~ description             // description
     ~ ws* ~ ("|" ~ ws* ~payee)?     // payee
+    ~ws* ~ comment? }    
+automated_transaction_head = {
+    "="  ~ ws* ~ description             // description
     ~ws* ~ comment? }               // comment
 transaction = {transaction_head
     ~ NEWLINE
     ~ (sep ~ comment ~ end)*
     ~ posting+ }
+automated_transaction = {automated_transaction_head
+    ~ NEWLINE
+    ~ (sep ~ comment ~ end)*
+    ~ (posting|automated_posting)* }
 transaction_date = {date ~ (ws ~ time)?}
 effective_date = {date ~ (ws ~ time)?}
 code = { "(" ~ string ~ ")" }
@@ -93,6 +100,11 @@ posting = { sep ~ status? ~
 	posting_kind ~ 
     ((sep ~ ws* ~ (amount ~ ws*) ~ (cost ~ ws*)?)? ~
     ws* ~balance? ~ ws* ~ comment? ~ end )
+    ~ (sep ~ comment ~ end)*
+    }
+automated_posting = { sep ~ status? ~ 
+	posting_kind ~ 
+    (sep ~ ws* ~ (value_expr | number) ~ ws* ~ comment? ~ end )
     ~ (sep ~ comment ~ end)*
     }
 amount = {money}
@@ -146,7 +158,7 @@ string = {
 	("\"" ~ (("\\\"") | (!"\"" ~ ANY))* ~ "\"") |
 	("'" ~ (("\\'") | (!"'" ~ ANY))* ~ "'")
     }
-reserved = _{ "\n" | "+" | "*" | "/" | "\\" | "|" | "%" | "<" | ">" | ":" | "?" |  "(" |  ")" | ";"}
+reserved = _{ "\n" | "+" | "*" | "/" | "\\" | "|" | "%" | "<" | ">" | ":" | "?" | "(" | ")" | ";" | "[" | "]" }
 unquoted = { !reserved ~ !"=" ~ !"-" ~ !"&" ~
     (!reserved ~ !SEPARATOR ~ ANY)+ }
 currency_parts = _{ !reserved ~ !"=" ~ !"-" ~ !"&" ~

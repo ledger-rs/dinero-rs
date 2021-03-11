@@ -141,7 +141,7 @@ impl<'a> Tokenizer<'a> {
                                 _ => {}
                             }
                         }
-                        Rule::transaction => {
+                        Rule::transaction | Rule::automated_transaction => {
                             ledger.transactions.push(self.parse_transaction(element));
                         }
                         x => {

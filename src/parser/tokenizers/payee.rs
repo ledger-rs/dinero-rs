@@ -26,7 +26,7 @@ impl<'a> Tokenizer<'a> {
                 Rule::comment => comments.push(Comment {
                     comment: parse_string(part),
                 }),
-                Rule::commodity_property => {
+                Rule::payee_property => {
                     let mut property = part.into_inner();
                     match property.next().unwrap().as_rule() {
                         Rule::alias => {
@@ -45,7 +45,8 @@ impl<'a> Tokenizer<'a> {
             .iter()
             .map(|x| Regex::new(x.clone().as_str()).unwrap())
             .collect();
-        Payee::new(name, note, alias, alias_regex, Origin::FromDirective)
+        let payee = Payee::new(name, note, alias, alias_regex, Origin::FromDirective);
+        payee
     }
 }
 
