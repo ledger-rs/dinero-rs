@@ -18,9 +18,10 @@ fn not_money() {
         .to_string(),
     );
     let parsed = tokenizer.tokenize();
-    // It parses
-    assert!(parsed.is_ok());
+    
+    // It parses -- it has not panicked
+    assert!(true);
 
     // But to a wrong ledger -- panics!
-    let ledger = parsed.unwrap().to_ledger(false);
+    let ledger = parsed.to_ledger(false);
 }

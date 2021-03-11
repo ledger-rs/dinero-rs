@@ -58,8 +58,10 @@ impl<'a> Tokenizer<'a> {
         //
         while let Some(part) = parsed_transaction.next() {
             match part.as_rule() {
-                Rule::posting => transaction.postings.borrow_mut().push(
-                    parse_posting(part, &transaction.payee)),
+                Rule::posting => transaction
+                    .postings
+                    .borrow_mut()
+                    .push(parse_posting(part, &transaction.payee)),
                 Rule::comment => transaction.comments.push(Comment {
                     comment: parse_string(part),
                 }),
