@@ -58,7 +58,8 @@ impl<'a> Tokenizer<'a> {
         //
         while let Some(part) = parsed_transaction.next() {
             match part.as_rule() {
-                Rule::posting => transaction.postings.borrow_mut().push(parse_posting(part)),
+                Rule::posting => transaction.postings.borrow_mut().push(
+                    parse_posting(part, &transaction.payee)),
                 Rule::comment => transaction.comments.push(Comment {
                     comment: parse_string(part),
                 }),
@@ -106,7 +107,7 @@ impl RawPosting {
 }
 
 /// Parses a posting
-fn parse_posting(raw: Pair<Rule>) -> RawPosting {
+fn parse_posting(raw: Pair<Rule>, default_payee: &Option<String>) -> RawPosting {
     assert!(raw.as_rule() == Rule::posting);
 
     let mut posting = RawPosting::new();
@@ -132,7 +133,7 @@ fn parse_posting(raw: Pair<Rule>) -> RawPosting {
                 let mut money = part.into_inner().next().unwrap().into_inner();
                 let amount: BigRational;
                 let currency: String;
-                let  money_part = money.next().unwrap();
+                let money_part = money.next().unwrap();
                 if money_part.as_rule() == Rule::number {
                     amount = parse_rational(money_part);
                     currency = parse_string(money.next().unwrap());
@@ -164,5 +165,6 @@ fn parse_posting(raw: Pair<Rule>) -> RawPosting {
             x => panic!("{:?}", x),
         }
     }
+    posting.payee = default_payee.clone();
     posting
 }
