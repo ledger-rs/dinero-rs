@@ -28,7 +28,7 @@ impl<'a> Tokenizer<'a> {
                         _ => {}
                     }
                 }
-                _x => {},
+                _x => {}
             }
         }
         Tag {
