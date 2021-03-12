@@ -3,11 +3,15 @@ use std::cell::RefCell;
 use crate::models::Tag;
 use lazy_static::lazy_static;
 use regex::Regex;
+
+use super::HasName;
 #[derive(Debug, Clone)]
 pub struct Comment {
     pub comment: String,
     calculated_tags: RefCell<bool>,
     tags: RefCell<Vec<Tag>>,
+    calculated_payee: RefCell<bool>,
+    payee: RefCell<Option<String>>,
 }
 
 impl From<String> for Comment {
@@ -16,6 +20,8 @@ impl From<String> for Comment {
             comment,
             calculated_tags: RefCell::new(false),
             tags: RefCell::new(vec![]),
+            calculated_payee: RefCell::new(false),
+            payee: RefCell::new(None),
         }
     }
 }
@@ -101,6 +107,22 @@ impl Comment {
             self.tags.borrow().clone()
         };
         tags
+    }
+
+    pub fn get_payee_str(&self) -> Option<String> {
+        let calculated_payee = *self.calculated_payee.borrow_mut();
+        if calculated_payee {
+            return self.payee.borrow().clone();
+        }
+        self.calculated_payee.replace(true);
+        for tag in self.get_tags().iter() {
+            if tag.value.is_none() | (tag.get_name().to_lowercase() != "payee") {
+                continue;
+            }
+            self.payee.replace(tag.value.clone());
+            return tag.value.clone();
+        }
+        None
     }
 }
 

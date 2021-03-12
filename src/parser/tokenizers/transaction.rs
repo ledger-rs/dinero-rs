@@ -40,7 +40,9 @@ impl<'a> Tokenizer<'a> {
                 }
                 Rule::comment => {
                     // it can only be a comment
-                    transaction.comments.push(Comment::from(parse_string(part)));
+                    transaction.comments.push(Comment::from(parse_string(
+                        part.into_inner().next().unwrap(),
+                    )));
                 }
                 x => panic!("Expected amount, cost or balance {:?}", x),
             }
@@ -64,7 +66,9 @@ impl<'a> Tokenizer<'a> {
                     .postings
                     .borrow_mut()
                     .push(parse_posting(part, &transaction.payee)),
-                Rule::comment => transaction.comments.push(Comment::from(parse_string(part))),
+                Rule::comment => transaction.comments.push(Comment::from(parse_string(
+                    part.into_inner().next().unwrap(),
+                ))),
                 Rule::blank_line => {}
                 x => panic!("{:?}", x),
             }
@@ -168,11 +172,24 @@ fn parse_posting(raw: Pair<Rule>, default_payee: &Option<String>) -> RawPosting 
             }
             Rule::number => posting.amount_expr = Some(format!("({})", part.as_str())),
             Rule::value_expr => posting.amount_expr = Some(part.as_str().to_string()),
-            Rule::comment => posting.comments.push(Comment::from(parse_string(part))),
+            Rule::comment => posting.comments.push(Comment::from(parse_string(
+                part.into_inner().next().unwrap(),
+            ))),
             Rule::blank_line => {}
             x => panic!("{:?}", x),
         }
     }
-    posting.payee = default_payee.clone();
+    for c in posting.comments.iter() {
+        match c.get_payee_str() {
+            Some(payee) => {
+                posting.payee = Some(payee);
+                break;
+            }
+            None => {}
+        }
+    }
+    if posting.payee.is_none() {
+        posting.payee = default_payee.clone();
+    }
     posting
 }

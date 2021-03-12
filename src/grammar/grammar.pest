@@ -97,7 +97,8 @@ payee = { string | (!"|" ~ !";" ~!end ~ ANY)* }
 tag = { string | (!"|" ~ !";" ~!end ~ ANY)* }
 description = { string | (!"|" ~ !";" ~!end ~ ANY)* }
 automated_description = { string | (!";" ~!end ~ ANY)* }
-comment = {";" ~ (!end ~ ANY)* ~ ws*}
+comment = {";" ~ ws* ~ comment_content~ ws*}
+comment_content = {(!end ~ ANY)*}
 
 posting = { sep ~ status? ~ 
 	posting_kind ~ 
