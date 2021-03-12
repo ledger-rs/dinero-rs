@@ -5,29 +5,29 @@
 2021-01-01 * Groceries
     ; :fruit:
     Expenses:Groceries   $100
-    Assets:Bank:Checking account
+    Assets:Bank - 1:Checking account
 
 2021-01-03 * Clothing
     ; :skirt:
     Expenses:Clothes   $69.37
-    Assets:Bank:Checking account   $-69.37
+    Assets:Bank - 1:Checking account   $-69.37
 
 2021-01-15 * Flights
     ; destination: spain
     Expenses:Unknown      200 EUR    ; this will get translated to Expenses:Flights
-    Assets:Bank:Checking account   $-210.12
+    Assets:Bank - 1:Checking account   $-210.12
 
 2021-01-16 * Alphabet Inc.
     Assets:Shares        2 GOOGL @ $957.37
-    Assets:Bank:Checking account
+    Assets:Bank - 1:Checking account
 
 2021-01-16 * ACME.
     Assets:Shares        2 ACME @@ $957.37
-    Assets:Bank:Checking account
+    Assets:Bank - 1:Checking account
 
 2021-01-27 * ACME, inc.
     Income:Salary     $-100
-    Assets:Bank:Checking account
+    Assets:Bank - 1:Checking account
 
 commodity €
     alias EUR
@@ -35,12 +35,15 @@ commodity €
 commodity USD
     alias $
 P 2021-01-23 AAPL 139.07 USD
-; Difficult things to parse that were in my ledger
-P 2018/01/14 17:37:11 BTC 13420.7 USD
-P 2013/12/11 EURUSD=X 1.376444 USD
-P 2015/08/07 ETH-USD 2.772120 USD
 
 payee ACME, inc.
     alias (?i)(.*acme.*)
 account Expenses:Travel
     payee Flights
+
+; Difficult things to parse that were in my ledger
+P 2018/01/14 17:37:11 BTC 13420.7 USD
+P 2013/12/11 EURUSD=X 1.376444 USD
+P 2015/08/07 ETH-USD 2.772120 USD
+commodity Acme_2021
+P 2015/08/07 Acme_2021 1000 USD

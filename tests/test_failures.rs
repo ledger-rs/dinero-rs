@@ -1,8 +1,5 @@
 use dinero::parser::Tokenizer;
 
-use assert_cmd::Command;
-use std::path::PathBuf;
-
 #[test]
 #[should_panic(expected = "Should be money.")]
 /// The expression in an automated account should evaluate to money
@@ -23,5 +20,6 @@ fn not_money() {
     assert!(true);
 
     // But to a wrong ledger -- panics!
-    let ledger = parsed.to_ledger(false);
+    let _ledger = parsed.to_ledger(false);
+    unreachable!("This has panicked")
 }
