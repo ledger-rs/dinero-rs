@@ -18,7 +18,7 @@ directive = { include | price
 
 include = { "include" ~ws+ ~ glob   ~ws*~end}
 glob = { string | (!end ~ ANY)* }
-price = {"P" ~ ws* ~ date ~ (ws ~ time)? ~ ws+ ~ currency ~ ws* ~number ~ ws* ~ currency ~ws* ~ comment? ~ end}
+price = {"P" ~ ws* ~ date ~ (ws ~ time)? ~ ws+ ~ commodity_in_directive ~ ws* ~number ~ ws* ~ commodity_in_directive ~ws* ~ comment? ~ end}
 commodity = { "commodity" ~ ws+ ~ commodity_in_directive ~ ws* ~ comment? ~ end ~
     (sep ~ 
         ( 
