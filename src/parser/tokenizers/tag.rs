@@ -28,7 +28,7 @@ impl<'a> Tokenizer<'a> {
                         _ => {}
                     }
                 }
-                x => panic!("{:?} not expected", x),
+                _x => {},
             }
         }
         Tag {
