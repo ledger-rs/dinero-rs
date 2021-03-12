@@ -154,7 +154,7 @@ primary = {
     }
 
 term = _{ variable | money | number | regex | string }
-money = { (number ~ ws* ~ currency) | (currency ~ ws* ~ number) }
+money = { (number ~ ws* ~ currency) | (currency ~ ws* ~ number) | ("0" ~ &(ws | sep | end ))}
 currency = { string | unquoted_no_number }
 regex = { "/" ~ (!"/" ~ ANY)* ~ "/"}
 string = {
