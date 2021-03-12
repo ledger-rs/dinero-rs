@@ -3,13 +3,6 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 #[derive(Debug)]
-pub enum ParserError {
-    CannotReadFile(String),
-    UnexpectedInput(Option<String>),
-    IncludeLoop(String),
-}
-
-#[derive(Debug)]
 pub enum LedgerError {
     TransactionIsNotBalanced,
     EmptyPostingShouldBeLast,
@@ -25,25 +18,6 @@ pub struct Error {
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", ColoredStrings(&self.message))
-    }
-}
-
-impl From<ParserError> for Error {
-    fn from(error: ParserError) -> Self {
-        match error {
-            ParserError::CannotReadFile(s) => Error {
-                message: vec![ColoredString::from(s.as_str())],
-            },
-            ParserError::IncludeLoop(s) => Error {
-                message: vec![ColoredString::from(s.as_str())],
-            },
-            ParserError::UnexpectedInput(s) => Error {
-                message: match s {
-                    None => vec![],
-                    Some(s) => vec![ColoredString::from(s.as_str())],
-                },
-            },
-        }
     }
 }
 
