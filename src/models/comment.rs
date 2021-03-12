@@ -1,9 +1,29 @@
+use std::cell::RefCell;
+
 use crate::models::Tag;
 use lazy_static::lazy_static;
 use regex::Regex;
 #[derive(Debug, Clone)]
 pub struct Comment {
     pub comment: String,
+    calculated_tags: RefCell<bool>,
+    tags: RefCell<Vec<Tag>>,
+}
+
+impl From<String> for Comment {
+    fn from(comment: String) -> Self {
+        Comment {
+            comment,
+            calculated_tags: RefCell::new(false),
+            tags: RefCell::new(vec![]),
+        }
+    }
+}
+
+impl From<&str> for Comment {
+    fn from(comment: &str) -> Self {
+        Comment::from(comment.to_string())
+    }
 }
 
 impl Comment {
@@ -16,61 +36,71 @@ impl Comment {
             r" *(.*): *(.*) *$"
             ).as_str()).unwrap();
         }
-
-        match RE_FLAGS.is_match(&self.comment) {
-            true => {
-                let value = RE_FLAGS
-                    .captures(&self.comment)
-                    .unwrap()
-                    .iter()
-                    .nth(1)
-                    .unwrap()
-                    .unwrap()
-                    .as_str();
-                let mut tags: Vec<Tag> = value
-                    .split(":")
-                    .map(|x| Tag {
-                        name: x.clone().to_string(),
-                        check: vec![],
-                        assert: vec![],
-                        value: None,
-                    })
-                    .collect();
-                tags.pop();
-                tags.remove(0);
-                tags
-            }
-            false => match RE_TAG_VALUE.is_match(&self.comment) {
-                true => {
-                    let captures = RE_TAG_VALUE.captures(&self.comment).unwrap();
-                    let name: String = captures
-                        .iter()
-                        .nth(1)
-                        .unwrap()
-                        .unwrap()
-                        .as_str()
-                        .to_string();
-                    if name.contains(":") {
-                        return vec![];
+        let calculated_tags = *self.calculated_tags.borrow_mut();
+        let tags = if !calculated_tags {
+            self.calculated_tags.replace(true);
+            self.tags
+                .borrow_mut()
+                .append(&mut match RE_FLAGS.is_match(&self.comment) {
+                    true => {
+                        let value = RE_FLAGS
+                            .captures(&self.comment)
+                            .unwrap()
+                            .iter()
+                            .nth(1)
+                            .unwrap()
+                            .unwrap()
+                            .as_str();
+                        let mut tags: Vec<Tag> = value
+                            .split(":")
+                            .map(|x| Tag {
+                                name: x.clone().to_string(),
+                                check: vec![],
+                                assert: vec![],
+                                value: None,
+                            })
+                            .collect();
+                        tags.pop();
+                        tags.remove(0);
+                        tags
                     }
-                    vec![Tag {
-                        name,
-                        check: vec![],
-                        assert: vec![],
-                        value: Some(
-                            captures
+                    false => match RE_TAG_VALUE.is_match(&self.comment) {
+                        true => {
+                            let captures = RE_TAG_VALUE.captures(&self.comment).unwrap();
+                            let name: String = captures
                                 .iter()
-                                .nth(2)
+                                .nth(1)
                                 .unwrap()
                                 .unwrap()
                                 .as_str()
-                                .to_string(),
-                        ),
-                    }]
-                }
-                false => Vec::new(),
-            },
-        }
+                                .to_string();
+                            if name.contains(":") {
+                                vec![]
+                            } else {
+                                vec![Tag {
+                                    name,
+                                    check: vec![],
+                                    assert: vec![],
+                                    value: Some(
+                                        captures
+                                            .iter()
+                                            .nth(2)
+                                            .unwrap()
+                                            .unwrap()
+                                            .as_str()
+                                            .to_string(),
+                                    ),
+                                }]
+                            }
+                        }
+                        false => vec![],
+                    },
+                });
+            self.tags.borrow().clone()
+        } else {
+            self.tags.borrow().clone()
+        };
+        tags
     }
 }
 
@@ -80,9 +110,7 @@ mod tests {
     use crate::models::HasName;
     #[test]
     fn multi_tag() {
-        let comment = Comment {
-            comment: ":tag_1:tag_2:tag_3:".to_string(),
-        };
+        let comment = Comment::from(":tag_1:tag_2:tag_3:");
         let tags = comment.get_tags();
         assert_eq!(tags.len(), 3, "There should be three tags");
         assert_eq!(tags[0].get_name(), "tag_1");
@@ -91,25 +119,19 @@ mod tests {
     }
     #[test]
     fn no_tag() {
-        let comment = Comment {
-            comment: ":tag_1:tag_2:tag_3: this is not valid".to_string(),
-        };
+        let comment = Comment::from(":tag_1:tag_2:tag_3: this is not valid");
         let tags = comment.get_tags();
         assert_eq!(tags.len(), 0, "There should no tags");
     }
     #[test]
     fn not_a_tag() {
-        let comment = Comment {
-            comment: "not a tag whatsoever".to_string(),
-        };
+        let comment = Comment::from("not a tag whatsoever");
         let tags = comment.get_tags();
         assert_eq!(tags.len(), 0, "There should no tags");
     }
     #[test]
     fn tag_value() {
-        let comment = Comment {
-            comment: "tag: value".to_string(),
-        };
+        let comment = Comment::from("tag: value");
         let tags = comment.get_tags();
         assert_eq!(tags.len(), 1, "There should be one tag");
         let tag = tags[0].clone();
@@ -118,9 +140,7 @@ mod tests {
     }
     #[test]
     fn tag_value_spaces() {
-        let comment = Comment {
-            comment: " tag: value with spaces".to_string(),
-        };
+        let comment = Comment::from("tag: value with spaces");
         let tags = comment.get_tags();
         assert_eq!(tags.len(), 1, "There should be one tag");
         let tag = tags[0].clone();

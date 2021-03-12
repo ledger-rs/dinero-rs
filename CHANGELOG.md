@@ -1,6 +1,9 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
 
+## [1.0.0] - planned
+### Added
+- Support for ```@``` syntax in comments and descriptions to specify payees.
 ## [0.17.0] - 2021-03-12
 ### Changed
 - Now the whole file is processed using a formal grammar

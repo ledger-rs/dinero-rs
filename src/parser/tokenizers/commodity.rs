@@ -19,9 +19,7 @@ impl<'a> Tokenizer<'a> {
 
         while let Some(part) = parsed.next() {
             match part.as_rule() {
-                Rule::comment => comments.push(Comment {
-                    comment: parse_string(part),
-                }),
+                Rule::comment => comments.push(Comment::from(parse_string(part))),
                 Rule::commodity_property => {
                     let mut property = part.into_inner();
                     match property.next().unwrap().as_rule() {

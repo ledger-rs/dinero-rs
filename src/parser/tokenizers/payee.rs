@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use regex::Regex;
 
-use crate::models::{Comment, Origin, Payee};
+use crate::models::{Origin, Payee};
 use crate::parser::Tokenizer;
 
 use super::super::Rule;
@@ -16,14 +16,11 @@ impl<'a> Tokenizer<'a> {
         let mut parsed = element.into_inner();
         let name = parse_string(parsed.next().unwrap());
         let mut note: Option<String> = None;
-        let mut comments: Vec<Comment> = vec![];
         let mut alias = HashSet::new();
 
         while let Some(part) = parsed.next() {
             match part.as_rule() {
-                Rule::comment => comments.push(Comment {
-                    comment: parse_string(part),
-                }),
+                Rule::comment => {}
                 Rule::payee_property => {
                     let mut property = part.into_inner();
                     match property.next().unwrap().as_rule() {

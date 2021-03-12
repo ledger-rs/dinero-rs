@@ -75,7 +75,7 @@ transaction_head = {
     (ws+ ~ status)? ~               // status
     ws* ~ code?                     // code
     ~ ws* ~ description             // description
-    ~ ws* ~ ("|" ~ ws* ~payee)?     // payee
+    ~ ws* ~ (("|"|"@") ~ ws* ~payee)?     // payee
     ~ws* ~ comment? }    
 automated_transaction_head = {
     "="  ~ ws* ~ automated_description     // description
