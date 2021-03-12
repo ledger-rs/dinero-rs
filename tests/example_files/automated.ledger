@@ -12,7 +12,7 @@
 = @"My favorite restaurant"
     ; :yummy:
 
-2021-01-01 * Flights
+2021-01-01=2021-01-02
     Income:Salary      -1000 EUR
     Assets:Checking account
 2021-01-05 * Rent

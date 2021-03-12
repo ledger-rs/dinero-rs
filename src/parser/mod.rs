@@ -152,7 +152,7 @@ impl<'a> Tokenizer<'a> {
                     }
                 }
             }
-            Err(e) => eprintln!("{:?}", e),
+            Err(e) => eprintln!("{:?}: {:?}", &self.file, e),
         }
         // dbg!(&ledger);
         ledger

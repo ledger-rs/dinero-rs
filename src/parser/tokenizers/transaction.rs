@@ -2,7 +2,7 @@ use super::super::Rule;
 use crate::models::{Comment, PostingType, PriceType, Transaction, TransactionType};
 use crate::parser::utils::{parse_date, parse_rational, parse_string};
 use crate::parser::Tokenizer;
-use num::rational::BigRational;
+use num::{rational::BigRational, BigInt};
 use pest::iterators::Pair;
 
 impl<'a> Tokenizer<'a> {
@@ -32,7 +32,7 @@ impl<'a> Tokenizer<'a> {
                 }
                 Rule::status => {}
                 Rule::code => {}
-                Rule::description => {
+                Rule::description | Rule::automated_description => {
                     transaction.description = parse_string(part).trim().to_string();
                 }
                 Rule::payee => {
@@ -69,6 +69,7 @@ impl<'a> Tokenizer<'a> {
                 Rule::comment => transaction.comments.push(Comment {
                     comment: parse_string(part),
                 }),
+                Rule::blank_line => {}
                 x => panic!("{:?}", x),
             }
         }
@@ -136,29 +137,35 @@ fn parse_posting(raw: Pair<Rule>, default_payee: &Option<String>) -> RawPosting 
                 };
                 let mut money = part.into_inner().next().unwrap().into_inner();
                 let amount: BigRational;
-                let currency: String;
-                let money_part = money.next().unwrap();
-                if money_part.as_rule() == Rule::number {
-                    amount = parse_rational(money_part);
-                    currency = parse_string(money.next().unwrap());
-                } else {
-                    currency = parse_string(money_part);
-                    amount = parse_rational(money.next().unwrap());
+                let mut currency = None;
+                match money.next() {
+                    Some(money_part) => match money_part.as_rule() {
+                        Rule::number => {
+                            amount = parse_rational(money_part);
+                            currency = Some(parse_string(money.next().unwrap()));
+                        }
+                        Rule::currency => {
+                            currency = Some(parse_string(money_part));
+                            amount = parse_rational(money.next().unwrap());
+                        }
+                        _ => amount = BigRational::new(BigInt::from(0), BigInt::from(1)),
+                    },
+                    None => amount = BigRational::new(BigInt::from(0), BigInt::from(1)),
                 }
 
                 match rule {
                     Rule::amount => {
                         posting.money_amount = Some(amount);
-                        posting.money_currency = Some(currency);
+                        posting.money_currency = currency;
                     }
                     Rule::cost => {
                         posting.cost_amount = Some(amount);
-                        posting.cost_currency = Some(currency);
+                        posting.cost_currency = currency;
                         posting.cost_type = cost_type;
                     }
                     Rule::balance => {
                         posting.balance_amount = Some(amount);
-                        posting.balance_currency = Some(currency);
+                        posting.balance_currency = currency;
                     }
                     x => panic!("Expected amount, cost or balance {:?}", x),
                 }
@@ -168,6 +175,7 @@ fn parse_posting(raw: Pair<Rule>, default_payee: &Option<String>) -> RawPosting 
             Rule::comment => posting.comments.push(Comment {
                 comment: parse_string(part),
             }),
+            Rule::blank_line => {}
             x => panic!("{:?}", x),
         }
     }

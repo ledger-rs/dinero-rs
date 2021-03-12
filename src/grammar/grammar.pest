@@ -3,7 +3,7 @@
 // Test in https:://pest.rs
 //
 
-journal = { SOI ~ (directive | blank_line | transaction | automated_transaction | journal_comment )+ ~ ws* ~EOI}
+journal = { SOI ~ (directive | blank_line | transaction | automated_transaction | journal_comment )* ~ ws* ~EOI}
 blank_line = {ws* ~ NEWLINE }
 directives = {directive* ~ EOI}
 journal_comment = {(";" | "!" | "#") ~ (!end ~ ANY)* ~ end}
@@ -18,8 +18,8 @@ directive = { include | price
 
 include = { "include" ~ws+ ~ glob   ~ws*~end}
 glob = { string | (!end ~ ANY)* }
-price = {"P" ~ ws* ~ date ~ (ws ~ time)? ~ ws+ ~ currency ~ ws* ~number ~ ws* ~ currency ~ws* ~ comment? ~ end}
-commodity = { "commodity" ~ ws+ ~ currency ~ ws* ~ comment? ~ end ~
+price = {"P" ~ ws* ~ date ~ (ws ~ time)? ~ ws+ ~ commodity_in_directive ~ ws* ~number ~ ws* ~ commodity_in_directive ~ws* ~ comment? ~ end}
+commodity = { "commodity" ~ ws+ ~ commodity_in_directive ~ ws* ~ comment? ~ end ~
     (sep ~ 
         ( 
             comment 
@@ -28,6 +28,7 @@ commodity = { "commodity" ~ ws+ ~ currency ~ ws* ~ comment? ~ end ~
         )?
     ~end)*
     }
+commodity_in_directive = { string | unquoted }
 payee_dir = { "payee" ~ ws+ ~ payee ~ ws* ~ comment? ~end ~ 
     (sep ~ 
         ( 
@@ -69,16 +70,16 @@ flag = { default }
 default = {"default"}
 // A transaction
 transaction_head = {
-    transaction_date ~           // date
-    ("=" ~ effective_date)? ~  // effective_date
-    ws+ ~ status? ~                 // status
+    transaction_date ~              // date
+    ("=" ~ effective_date)? ~       // effective_date
+    (ws+ ~ status)? ~               // status
     ws* ~ code?                     // code
     ~ ws* ~ description             // description
     ~ ws* ~ ("|" ~ ws* ~payee)?     // payee
     ~ws* ~ comment? }    
 automated_transaction_head = {
-    "="  ~ ws* ~ description             // description
-    ~ws* ~ comment? }               // comment
+    "="  ~ ws* ~ automated_description     // description
+    ~ws* ~ comment? }                      // comment
 transaction = {transaction_head
     ~ NEWLINE
     ~ (sep ~ comment ~ end)*
@@ -95,7 +96,8 @@ quote = _{"\"" | "'"}
 payee = { string | (!"|" ~ !";" ~!end ~ ANY)* }
 tag = { string | (!"|" ~ !";" ~!end ~ ANY)* }
 description = { string | (!"|" ~ !";" ~!end ~ ANY)* }
-comment = {";" ~ (!end ~ ANY)*}
+automated_description = { string | (!";" ~!end ~ ANY)* }
+comment = {";" ~ (!end ~ ANY)* ~ ws*}
 
 posting = { sep ~ status? ~ 
 	posting_kind ~ 
@@ -115,7 +117,8 @@ posting_kind = {  virtual_no_balance | virtual_balance | real}
 real = { account }
 virtual_no_balance = { "(" ~ account ~ ")" }
 virtual_balance = { "[" ~ account ~ "]" }
-account = { string | ((unquoted ~ (" " ~ unquoted)*)) ~ (":" ~ (unquoted ~ (" " ~ unquoted)*))* }
+account = { string | 
+    ((unquoted ~ ( (" - "|" = " ~ " & "|" ") ~ unquoted)*)) ~ (":" ~ (unquoted ~ ( (" - "|" = " ~ " & "|" ") ~ unquoted)*))* }
 // Dates
 date = { year ~ date_sep ~ month ~ date_sep ~ day }
 time = { hour ~ ":" ~ minute ~ (":" ~ second) }
@@ -152,14 +155,14 @@ primary = {
     }
 
 term = _{ variable | money | number | regex | string }
-money = { (number ~ ws* ~ currency) | (currency ~ ws* ~ number) }
+money = { (number ~ ws* ~ currency) | (currency ~ ws* ~ number) | ("0" ~ &(ws | sep | end ))}
 currency = { string | unquoted_no_number }
 regex = { "/" ~ (!"/" ~ ANY)* ~ "/"}
 string = {
 	("\"" ~ (("\\\"") | (!"\"" ~ ANY))* ~ "\"") |
 	("'" ~ (("\\'") | (!"'" ~ ANY))* ~ "'")
     }
-reserved = _{ "\n" | "+" | "*" | "/" | "\\" | "|" | "%" | "<" | ">" | ":" | "?" | "(" | ")" | ";" | "[" | "]" }
+reserved = _{ "\n" | "\t" | "+" | "*" | "/" | "\\" | "|" | "%" | "<" | ">" | ":" | "?" | "(" | ")" | ";" | "[" | "]" }
 unquoted = { !reserved ~ !"=" ~ !"-" ~ !"&" ~
     (!reserved ~ !SEPARATOR ~ ANY)+ }
 currency_parts = _{ !reserved ~ !"=" ~ !"-" ~ !"&" ~
@@ -192,9 +195,9 @@ variable = {
 // helpers
 number = { "-"? ~ bigint ~ ("." ~ bigint)? }
 bigint = _{ ASCII_DIGIT+ }
-ws = _{" "}
+ws = _{ " " | "\t" }
 sep = _{("\t" | " \t" | "  ") ~ SEPARATOR* }
-end = _{ EOI | NEWLINE }
+end = _{ EOI | NEWLINE | blank_line}
 
 
 add = { "+" | "-" }
