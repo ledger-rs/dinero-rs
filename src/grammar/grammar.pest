@@ -116,7 +116,8 @@ posting_kind = {  virtual_no_balance | virtual_balance | real}
 real = { account }
 virtual_no_balance = { "(" ~ account ~ ")" }
 virtual_balance = { "[" ~ account ~ "]" }
-account = { string | ((unquoted ~ (" " ~ unquoted)*)) ~ (":" ~ (unquoted ~ (" " ~ unquoted)*))* }
+account = { string | 
+    ((unquoted ~ ( (" - "|" = " ~ " & "|" ") ~ unquoted)*)) ~ (":" ~ (unquoted ~ ( (" - "|" = " ~ " & "|" ") ~ unquoted)*))* }
 // Dates
 date = { year ~ date_sep ~ month ~ date_sep ~ day }
 time = { hour ~ ":" ~ minute ~ (":" ~ second) }
