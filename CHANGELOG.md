@@ -1,8 +1,7 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
 
-## [0.17.0] - planned
-### Added
+## [0.17.0] - 2021-03-12
 ### Changed
 - Now the whole file is processed using a formal grammar
 
@@ -10,6 +9,7 @@ Changelog file for dinero-rs project, a command line application for managing fi
 - Now this can be done ```any(abs(amount) == 2)```, which failed previously
 - Much faster CI builds
 - Proper caching of regexes, [about 25% speed improvement](https://github.com/frosklis/dinero-rs/issues/40)
+
 ## [0.16.0] - 2021-03-04
 ### Added
 - Virtual postings show correctly like this ```(account)```
