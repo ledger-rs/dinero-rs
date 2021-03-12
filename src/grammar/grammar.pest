@@ -72,7 +72,7 @@ default = {"default"}
 transaction_head = {
     transaction_date ~              // date
     ("=" ~ effective_date)? ~       // effective_date
-    ws+ ~ status? ~                 // status
+    (ws+ ~ status)? ~               // status
     ws* ~ code?                     // code
     ~ ws* ~ description             // description
     ~ ws* ~ ("|" ~ ws* ~payee)?     // payee
