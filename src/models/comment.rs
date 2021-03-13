@@ -35,12 +35,10 @@ impl From<&str> for Comment {
 impl Comment {
     pub fn get_tags(&self) -> Vec<Tag> {
         lazy_static! {
-            static ref RE_FLAGS: Regex = Regex::new(format!("{}",
-            r"(:.+:) *$" , // the tags
-            ).as_str()).unwrap();
-            static ref RE_TAG_VALUE: Regex = Regex::new(format!("{}",
-            r" *(.*): *(.*) *$"
-            ).as_str()).unwrap();
+            // the tags
+            static ref RE_FLAGS: Regex = Regex::new(r"(:.+:) *$").unwrap();
+            // the value
+            static ref RE_VALUE: Regex = Regex::new(" *(.*): *(.*) *$").unwrap();
         }
         let calculated_tags = *self.calculated_tags.borrow_mut();
         let tags = if !calculated_tags {
@@ -70,9 +68,9 @@ impl Comment {
                         tags.remove(0);
                         tags
                     }
-                    false => match RE_TAG_VALUE.is_match(&self.comment) {
+                    false => match RE_VALUE.is_match(&self.comment) {
                         true => {
-                            let captures = RE_TAG_VALUE.captures(&self.comment).unwrap();
+                            let captures = RE_VALUE.captures(&self.comment).unwrap();
                             let name: String = captures
                                 .iter()
                                 .nth(1)
