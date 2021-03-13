@@ -182,4 +182,10 @@ mod tests {
         assert_eq!(tag.get_name(), "tag");
         assert_eq!(tag.value.unwrap(), "value with spaces".to_string());
     }
+    #[test]
+    fn date_in_comment() {
+        let comment = Comment::from("  [=2021/03/02]  ");
+        let date = comment.get_date().unwrap();
+        assert_eq!(date, NaiveDate::from_ymd(2021, 3, 2));
+    }
 }
