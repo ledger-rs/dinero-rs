@@ -144,7 +144,7 @@ impl Posting {
         kind: PostingType,
         payee: &Payee,
         origin: PostingOrigin,
-        date:NaiveDate,
+        date: NaiveDate,
     ) -> Posting {
         Posting {
             account: account.clone(),
@@ -298,7 +298,7 @@ impl Transaction<Posting> {
         // 1. Iterate over postings
         let mut fill_account = Rc::new(Account::from("this will never be used"));
         let mut fill_payee = None;
-        let mut fill_date :NaiveDate = NaiveDate::from_ymd(1900, 1, 1); // it will be overwritten
+        let mut fill_date: NaiveDate = NaiveDate::from_ymd(1900, 1, 1); // it will be overwritten
         let mut postings: Vec<Posting> = Vec::new();
 
         for p in self.postings.get_mut().iter() {
@@ -387,7 +387,7 @@ impl Transaction<Posting> {
                 balances.insert(p.account.clone(), Balance::from(balance.clone()));
                 postings.push(Posting {
                     account: p.account.clone(),
-                    date:p.date.clone(),  
+                    date: p.date.clone(),
                     amount: Some(money),
                     balance: p.balance.clone(),
                     cost: p.cost.clone(),

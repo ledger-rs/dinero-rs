@@ -13,7 +13,7 @@ pub(crate) fn parse_str_as_date(date: &str) -> NaiveDate {
         GrammarParser::parse(Rule::date, date)
             .unwrap()
             .next()
-            .unwrap()
+            .unwrap(),
     )
 }
 

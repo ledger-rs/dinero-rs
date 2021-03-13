@@ -117,7 +117,11 @@ impl RawPosting {
 }
 
 /// Parses a posting
-fn parse_posting(raw: Pair<Rule>, default_payee: &Option<String>, default_date: &Option<NaiveDate>) -> RawPosting {
+fn parse_posting(
+    raw: Pair<Rule>,
+    default_payee: &Option<String>,
+    default_date: &Option<NaiveDate>,
+) -> RawPosting {
     let mut posting = RawPosting::new();
     let mut elements = raw.into_inner();
     while let Some(part) = elements.next() {
