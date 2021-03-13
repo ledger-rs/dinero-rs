@@ -93,6 +93,7 @@ impl Comment {
                                             .unwrap()
                                             .unwrap()
                                             .as_str()
+                                            .trim()
                                             .to_string(),
                                     ),
                                 }]
@@ -130,10 +131,12 @@ impl Comment {
     pub fn get_date(&self) -> Option<NaiveDate> {
         lazy_static! {
             // the value
-            static ref RE_VALUE: Regex = Regex::new(r" *\[=(\d{4}.d{2}.d{2})\] *$").unwrap();
+            static ref RE_VALUE: Regex = Regex::new(r" *\[=(\d{4}.\d{2}.\d{2})\] *$").unwrap();
         }
         match RE_VALUE.is_match(&self.comment) {
-            true => Some(parse_str_as_date(&self.comment.as_str().split_at(1).1)),
+            true => Some(parse_str_as_date(
+                &self.comment.as_str().trim().split_at(2).1,
+            )),
             false => None,
         }
     }
@@ -187,5 +190,11 @@ mod tests {
         let comment = Comment::from("  [=2021/03/02]  ");
         let date = comment.get_date().unwrap();
         assert_eq!(date, NaiveDate::from_ymd(2021, 3, 2));
+    }
+    #[test]
+    fn payee_in_comment() {
+        let comment = Comment::from("  payee: claudio  ");
+        let payee = comment.get_payee_str().unwrap();
+        assert_eq!(payee, "claudio".to_string());
     }
 }
