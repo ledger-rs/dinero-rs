@@ -2,6 +2,7 @@ use super::super::Rule;
 use crate::models::{Comment, PostingType, PriceType, Transaction, TransactionType};
 use crate::parser::utils::{parse_date, parse_rational, parse_string};
 use crate::parser::Tokenizer;
+use chrono::NaiveDate;
 use num::{rational::BigRational, BigInt};
 use pest::iterators::Pair;
 
@@ -65,7 +66,7 @@ impl<'a> Tokenizer<'a> {
                 Rule::posting | Rule::automated_posting => transaction
                     .postings
                     .borrow_mut()
-                    .push(parse_posting(part, &transaction.payee)),
+                    .push(parse_posting(part, &transaction.payee, &transaction.date)),
                 Rule::comment => transaction.comments.push(Comment::from(parse_string(
                     part.into_inner().next().unwrap(),
                 ))),
@@ -81,6 +82,7 @@ impl<'a> Tokenizer<'a> {
 #[derive(Debug, Clone)]
 pub struct RawPosting {
     pub account: String,
+    pub date: Option<NaiveDate>,
     pub money_amount: Option<BigRational>,
     pub money_currency: Option<String>,
     pub cost_amount: Option<BigRational>,
@@ -98,6 +100,7 @@ impl RawPosting {
     fn new() -> RawPosting {
         RawPosting {
             account: String::new(),
+            date: None,
             money_amount: None,
             money_currency: None,
             cost_amount: None,
@@ -114,7 +117,7 @@ impl RawPosting {
 }
 
 /// Parses a posting
-fn parse_posting(raw: Pair<Rule>, default_payee: &Option<String>) -> RawPosting {
+fn parse_posting(raw: Pair<Rule>, default_payee: &Option<String>, default_date: &Option<NaiveDate>) -> RawPosting {
     let mut posting = RawPosting::new();
     let mut elements = raw.into_inner();
     while let Some(part) = elements.next() {
@@ -183,13 +186,21 @@ fn parse_posting(raw: Pair<Rule>, default_payee: &Option<String>) -> RawPosting 
         match c.get_payee_str() {
             Some(payee) => {
                 posting.payee = Some(payee);
-                break;
+            }
+            None => {}
+        }
+        match c.get_date() {
+            Some(date) => {
+                posting.date = Some(date);
             }
             None => {}
         }
     }
     if posting.payee.is_none() {
         posting.payee = default_payee.clone();
+    }
+    if posting.date.is_none() {
+        posting.date = default_date.clone();
     }
     posting
 }

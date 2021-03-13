@@ -36,6 +36,7 @@ pub struct Transaction<PostingType> {
 #[derive(Debug, Clone)]
 pub struct Posting {
     pub(crate) account: Rc<Account>,
+    pub date: NaiveDate,
     pub amount: Option<Money>,
     pub balance: Option<Money>,
     pub cost: Option<Cost>,
@@ -143,10 +144,12 @@ impl Posting {
         kind: PostingType,
         payee: &Payee,
         origin: PostingOrigin,
+        date:NaiveDate,
     ) -> Posting {
         Posting {
             account: account.clone(),
             amount: None,
+            date,
             balance: None,
             cost: None,
             kind: kind,
@@ -295,6 +298,7 @@ impl Transaction<Posting> {
         // 1. Iterate over postings
         let mut fill_account = Rc::new(Account::from("this will never be used"));
         let mut fill_payee = None;
+        let mut fill_date :NaiveDate = NaiveDate::from_ymd(1900, 1, 1); // it will be overwritten
         let mut postings: Vec<Posting> = Vec::new();
 
         for p in self.postings.get_mut().iter() {
@@ -360,6 +364,7 @@ impl Transaction<Posting> {
                 postings.push(Posting {
                     account: p.account.clone(),
                     amount: p.amount.clone(),
+                    date: p.date.clone(),
                     balance: p.balance.clone(),
                     cost: p.cost.clone(),
                     kind: PostingType::Real,
@@ -382,6 +387,7 @@ impl Transaction<Posting> {
                 balances.insert(p.account.clone(), Balance::from(balance.clone()));
                 postings.push(Posting {
                     account: p.account.clone(),
+                    date:p.date.clone(),  
                     amount: Some(money),
                     balance: p.balance.clone(),
                     cost: p.cost.clone(),
@@ -396,6 +402,7 @@ impl Transaction<Posting> {
                 // We do nothing, but this is the account for the empty post
                 fill_account = p.account.clone();
                 fill_payee = p.payee.clone();
+                fill_date = p.date.clone();
             }
         }
 
@@ -444,6 +451,7 @@ impl Transaction<Posting> {
                     comments: self.comments.clone(),
                     tags: RefCell::new(self.tags.clone()),
                     payee: fill_payee.clone(),
+                    date: fill_date.clone(),
                     transaction: self.postings.borrow()[0].transaction.clone(),
                     origin: PostingOrigin::FromTransaction,
                 });

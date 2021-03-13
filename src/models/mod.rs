@@ -280,6 +280,7 @@ impl ParsedLedger {
 
                                 let posting = Posting {
                                     account: account.clone(),
+                                    date: p.date.clone(),
                                     amount: money,
                                     balance: None,
                                     cost: None,
@@ -390,7 +391,7 @@ impl ParsedLedger {
                         self.accounts.get(&p.account)?.clone()
                     };
                     let mut posting: Posting =
-                        Posting::new(&account, p.kind, &payee, PostingOrigin::FromTransaction);
+                        Posting::new(&account, p.kind, &payee, PostingOrigin::FromTransaction, p.date.unwrap());
                     posting.tags = RefCell::new(transaction.tags.clone());
                     for comment in p.comments.iter() {
                         posting.tags.borrow_mut().append(&mut comment.get_tags());

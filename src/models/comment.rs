@@ -1,6 +1,7 @@
 use std::cell::RefCell;
-
+use crate::parser::utils::parse_str_as_date;
 use crate::models::Tag;
+use chrono::NaiveDate;
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -12,6 +13,8 @@ pub struct Comment {
     tags: RefCell<Vec<Tag>>,
     calculated_payee: RefCell<bool>,
     payee: RefCell<Option<String>>,
+    calculated_date: RefCell<bool>,
+    date: RefCell<Option<NaiveDate>>,
 }
 
 impl From<String> for Comment {
@@ -22,6 +25,8 @@ impl From<String> for Comment {
             tags: RefCell::new(vec![]),
             calculated_payee: RefCell::new(false),
             payee: RefCell::new(None),
+            calculated_date: RefCell::new(false),
+            date: RefCell::new(None),
         }
     }
 }
@@ -121,6 +126,26 @@ impl Comment {
             return tag.value.clone();
         }
         None
+    }
+
+    pub fn get_date(&self) -> Option<NaiveDate> {
+        lazy_static! {
+            // the value
+            static ref RE_VALUE: Regex = Regex::new(r" *\[=(\d{4}.d{2}.d{2})\] *$").unwrap();
+        }
+        let calculated_date = *self.calculated_date.borrow_mut();
+        let date = if !calculated_date {
+            self.calculated_date.replace(true);
+            self.date
+                .replace(match RE_VALUE.is_match(&self.comment) {
+                    true => Some(parse_str_as_date(&self.comment.as_str().split_at(1).1)),
+                    false => None,
+                });
+            self.date.borrow().clone()
+        } else {
+            self.date.borrow().clone()
+        };
+        date
     }
 }
 

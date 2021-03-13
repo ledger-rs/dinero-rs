@@ -1,10 +1,21 @@
 //! This module contains auxiliary parsers
 
-use super::Rule;
+use super::{GrammarParser, Rule};
 use chrono::NaiveDate;
 use num::{BigInt, BigRational};
 use pest::iterators::Pair;
+
+use pest::Parser;
 use std::str::FromStr;
+
+pub(crate) fn parse_str_as_date(date: &str) -> NaiveDate {
+    parse_date(
+        GrammarParser::parse(Rule::date, date)
+            .unwrap()
+            .next()
+            .unwrap()
+    )
+}
 
 /// Parses a date
 pub(crate) fn parse_date(date: Pair<Rule>) -> NaiveDate {
