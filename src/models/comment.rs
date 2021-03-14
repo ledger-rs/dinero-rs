@@ -48,14 +48,8 @@ impl Comment {
                 .borrow_mut()
                 .append(&mut match RE_FLAGS.is_match(&self.comment) {
                     true => {
-                        let value = RE_FLAGS
-                            .captures(&self.comment)
-                            .unwrap()
-                            .iter()
-                            .nth(1)
-                            .unwrap()
-                            .unwrap()
-                            .as_str();
+                        let captures = RE_FLAGS.captures(&self.comment).unwrap().iter();
+                        let value = captures.nth(1).unwrap().unwrap().as_str();
                         let mut tags: Vec<Tag> = value
                             .split(":")
                             .map(|x| Tag {
@@ -71,14 +65,9 @@ impl Comment {
                     }
                     false => match RE_VALUE.is_match(&self.comment) {
                         true => {
-                            let captures = RE_VALUE.captures(&self.comment).unwrap();
-                            let name: String = captures
-                                .iter()
-                                .nth(1)
-                                .unwrap()
-                                .unwrap()
-                                .as_str()
-                                .to_string();
+                            let captures = RE_VALUE.captures(&self.comment).unwrap().iter();
+                            let name: String =
+                                captures.nth(1).unwrap().unwrap().as_str().to_string();
                             if name.contains(":") {
                                 vec![]
                             } else {
