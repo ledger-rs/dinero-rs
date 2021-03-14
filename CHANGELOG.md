@@ -1,10 +1,11 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
 
-## [1.0.0] - planned
+## [0.18.0] - planned
 ### Added
 - Support for specifying payees via posting comments.
 - Added support for dates in posting comments
+- Added support for specifying currency formats
 ### Changed
 - Date comparisons are done at the posting level rather than the transaction level
 ## [0.17.0] - 2021-03-12

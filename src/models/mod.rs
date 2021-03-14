@@ -4,7 +4,7 @@ use std::collections::{HashMap, HashSet};
 pub use account::Account;
 pub use balance::Balance;
 pub use comment::Comment;
-pub use currency::Currency;
+pub use currency::{Currency, DigitGrouping};
 pub use models::{ParsedPrice, Tag};
 pub use money::Money;
 pub use payee::Payee;
