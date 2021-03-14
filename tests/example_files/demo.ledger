@@ -32,8 +32,10 @@
 commodity €
     alias EUR
     alias EURUSD=X
+    format 1.234,00 €
 commodity USD
     alias $
+    format -$1,234.00
 P 2021-01-23 AAPL 139.07 USD
 
 payee ACME, inc.

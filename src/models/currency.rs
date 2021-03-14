@@ -171,7 +171,7 @@ impl Currency {
         let mut first = parsed.next().unwrap();
         let mut integer_format = None;
         let mut currency_format = None;
-        
+
         if first.as_rule() == Rule::currency_format_positive {
             if first.as_str().starts_with("-") {
                 self.negative_amount_display = NegativeAmountDisplay::BeforeSymbolAndNumber;
