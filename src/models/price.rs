@@ -316,19 +316,6 @@ mod tests {
         let items = tokenizer.tokenize();
         let ledger = items.to_ledger(false).unwrap();
 
-        let mut balances: HashMap<Rc<Account>, Balance> = HashMap::new();
-
-        for t in ledger.transactions.iter() {
-            for p in t.postings.borrow().iter() {
-                let mut cur_bal = balances
-                    .get(&p.account)
-                    .unwrap_or(&Balance::new())
-                    .to_owned();
-                cur_bal = cur_bal + Balance::from(p.amount.as_ref().unwrap().clone());
-                balances.insert(p.account.clone(), cur_bal.to_owned());
-            }
-        }
-
         let currency = ledger.commodities.get("EUR").unwrap();
         let multipliers = conversion(
             currency.clone(),
