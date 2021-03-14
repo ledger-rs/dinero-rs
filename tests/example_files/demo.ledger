@@ -9,7 +9,7 @@
 
 2021-01-03 * Clothing
     ; :skirt:
-    Expenses:Clothes   $69.37
+    Expenses:Clothes   $69.37  ; payee:  Clothing shop
     Assets:Bank - 1:Checking account   $-69.37
 
 2021-01-15 * Flights

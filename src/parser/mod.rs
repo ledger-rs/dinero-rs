@@ -17,7 +17,7 @@ use pest::Parser;
 mod include;
 // pub mod tokenizers;
 pub mod tokenizers;
-mod utils;
+pub(crate) mod utils;
 pub mod value_expr;
 
 use tokenizers::transaction;

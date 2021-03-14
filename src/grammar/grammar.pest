@@ -75,7 +75,7 @@ transaction_head = {
     (ws+ ~ status)? ~               // status
     ws* ~ code?                     // code
     ~ ws* ~ description             // description
-    ~ ws* ~ ("|" ~ ws* ~payee)?     // payee
+    ~ ws* ~ (("|"|"@") ~ ws* ~payee)?     // payee
     ~ws* ~ comment? }    
 automated_transaction_head = {
     "="  ~ ws* ~ automated_description     // description
@@ -97,7 +97,8 @@ payee = { string | (!"|" ~ !";" ~!end ~ ANY)* }
 tag = { string | (!"|" ~ !";" ~!end ~ ANY)* }
 description = { string | (!"|" ~ !";" ~!end ~ ANY)* }
 automated_description = { string | (!";" ~!end ~ ANY)* }
-comment = {";" ~ (!end ~ ANY)* ~ ws*}
+comment = {";" ~ ws* ~ comment_content~ ws*}
+comment_content = {(!end ~ ANY)*}
 
 posting = { sep ~ status? ~ 
 	posting_kind ~ 

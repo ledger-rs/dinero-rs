@@ -212,8 +212,8 @@ fn payees_command() {
     let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
     assert_eq!(
         output.lines().into_iter().count(),
-        5,
-        "Because of the aliases, there should be only 5 payees, not 6."
+        6,
+        "Because of the aliases, there should be only 6 payees, not 7."
     );
 
     test_args(args);
@@ -262,6 +262,16 @@ fn automated_add_tag() {
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
     let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
     assert_eq!(output.lines().into_iter().count(), 2);
+
+    test_args(args);
+}
+
+#[test]
+fn payee_from_comments() {
+    let args = &["reg", "-f", "tests/example_files/demo.ledger", "@shop"];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    assert_eq!(output.lines().into_iter().count(), 1);
 
     test_args(args);
 }

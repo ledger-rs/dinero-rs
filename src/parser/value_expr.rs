@@ -177,7 +177,7 @@ pub fn eval(
         Node::Account => EvalResult::Account(posting.account.clone()),
         Node::Payee => EvalResult::Payee(posting.payee.clone().unwrap()),
         Node::Note => EvalResult::Note,
-        Node::Date => EvalResult::Date(transaction.date.clone().unwrap()),
+        Node::Date => EvalResult::Date(posting.date.clone()),
         Node::Regex(r) => EvalResult::Regex(r.clone()),
         Node::String(r) => EvalResult::String(Some(r.clone())),
         Node::Number(n) => EvalResult::Number(n.clone()),
