@@ -38,15 +38,14 @@ impl<'a> Tokenizer<'a> {
             }
         }
 
-        let currency = Currency {
-            name: name.trim().to_string(),
-            origin: Origin::FromDirective,
-            note,
-            aliases,
-            format,
-            default,
-            precision: None,
-        };
+        let mut currency = Currency::from_directive(name.trim().to_string());
+        currency.set_aliases(aliases);
+        if default {
+            currency.set_default();
+        }
+        if note.is_some() {
+            currency.set_note(note.unwrap())
+        }
         currency
     }
 }

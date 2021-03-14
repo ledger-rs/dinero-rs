@@ -47,15 +47,26 @@ use std::cmp::Ordering;
 /// ```
 #[derive(Debug, Clone)]
 pub struct Currency {
-    pub(crate) name: String,
-    pub(crate) origin: Origin,
-    pub(crate) note: Option<String>,
-    pub(crate) aliases: HashSet<String>,
-    pub(crate) format: Option<String>,
-    pub(crate) default: bool,
-    pub(crate) precision: Option<usize>,
+    name: String,
+    origin: Origin,
+    note: Option<String>,
+    aliases: HashSet<String>,
+    format: Option<String>,
+    default: bool,
+    precision: Option<usize>,
 }
 impl Currency {
+    pub fn from_directive(name: String) -> Self {
+        Currency {
+            name,
+            origin: Origin::FromDirective,
+            note: None,
+            aliases: HashSet::new(),
+            format: None,
+            default: false,
+            precision: None,
+        }
+    }
     pub fn get_precision(&self) -> usize {
         match self.precision {
             Some(p) => p,
@@ -64,6 +75,15 @@ impl Currency {
     }
     pub fn set_precision(&mut self, precision: usize) {
         self.precision = Some(precision);
+    }
+    pub fn set_note(&mut self, note: String) {
+        self.note = Some(note);
+    }
+    pub fn set_default(&mut self) {
+        self.default = true;
+    }
+    pub fn set_aliases(&mut self, aliases: HashSet<String>) {
+        self.aliases = aliases;
     }
 }
 
@@ -85,15 +105,9 @@ impl HasAliases for Currency {
 }
 impl<'a> From<&'a str> for Currency {
     fn from(name: &'a str) -> Self {
-        Currency {
-            name: String::from(name),
-            origin: Origin::Other,
-            note: None,
-            aliases: Default::default(),
-            format: None,
-            default: false,
-            precision: None,
-        }
+        let mut cur = Currency::from_directive(name.to_string());
+        cur.origin = Origin::Other;
+        cur
     }
 }
 

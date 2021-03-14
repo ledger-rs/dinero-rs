@@ -273,17 +273,17 @@ pub enum NegativeAmountDisplay {
 pub enum DecimalSeparator {
     Dot,
     Comma,
-    Other(char)
+    Other(char),
 }
 pub enum DigitGrouping {
     Thousands,
     Indian,
-    None
+    None,
 }
 
 pub enum ThousandsSeparator {
     Dot,
     Comma,
     Space,
-    Other(char)
+    Other(char),
 }
