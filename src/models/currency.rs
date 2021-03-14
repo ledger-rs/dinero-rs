@@ -54,7 +54,48 @@ pub struct Currency {
     format: Option<String>,
     default: bool,
     precision: Option<usize>,
+    symbol_placement: CurrencySymbolPlacement,
+    negative_amount_display: NegativeAmountDisplay,
+    decimal_separator: DecimalSeparator,
+    digit_grouping: DigitGrouping,
+    thousands_separator: ThousandsSeparator,
 }
+
+#[derive(Clone, Copy, Debug)]
+pub enum CurrencySymbolPlacement {
+    BeforeAmount,
+    AfterAmount,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum NegativeAmountDisplay {
+    BeforeSymbolAndNumber,      // UK   -£127.54   or Spain  -127,54 €
+    BeforeNumberBehindCurrency, // Denmark	kr-127,54
+    AfterNumber,                // Netherlands € 127,54-
+    Parentheses,                // US	($127.54)
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum DecimalSeparator {
+    Dot,
+    Comma,
+    Other(char),
+}
+#[derive(Clone, Copy, Debug)]
+pub enum DigitGrouping {
+    Thousands,
+    Indian,
+    None,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum ThousandsSeparator {
+    Dot,
+    Comma,
+    Space,
+    Other(char),
+}
+
 impl Currency {
     pub fn from_directive(name: String) -> Self {
         Currency {
@@ -65,12 +106,21 @@ impl Currency {
             format: None,
             default: false,
             precision: None,
+            symbol_placement: CurrencySymbolPlacement::AfterAmount,
+            negative_amount_display: NegativeAmountDisplay::BeforeSymbolAndNumber,
+            decimal_separator: DecimalSeparator::Comma,
+            digit_grouping: DigitGrouping::Thousands,
+            thousands_separator: ThousandsSeparator::Space,
         }
     }
-    pub fn get_precision(&self) -> usize {
-        match self.precision {
-            Some(p) => p,
-            None => 2,
+    pub fn get_precision(&self) -> Option<usize> {
+        self.precision
+    }
+    pub fn get_decimal_separator_str(&self) -> char {
+        match self.decimal_separator {
+            DecimalSeparator::Dot => '.',
+            DecimalSeparator::Comma => ',',
+            DecimalSeparator::Other(x) => x
         }
     }
     pub fn set_precision(&mut self, precision: usize) {

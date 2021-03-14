@@ -220,35 +220,50 @@ impl Display for Money {
         match self {
             Money::Zero => write!(f, "{}", "0"),
             Money::Money { amount, currency } => {
+                // Suppose: -1.234.567,000358 EUR
                 // num = trunc + fract
-                let decimals: usize = currency.get_precision();
                 let base: i32 = 10;
-                let mut integer_part = amount.trunc();
+                let mut integer_part = amount.trunc(); // -1.234.567
+
+                // Read decimals from format, two as default
+                let decimals = match currency.get_precision() {
+                    Some(p) => p,
+                    None => {
+                        if amount.fract().is_zero() {
+                            0
+                        } else {
+                            2
+                        }
+                    }
+                };
                 let decimal_part = (amount.fract() * BigInt::from(base.pow(decimals as u32 + 2)))
                     .abs()
                     .trunc();
-                let mut decimal_str =
-                    format!("{:0width$}", decimal_part.numer(), width = decimals + 2);
-                decimal_str.truncate(decimals + 1);
-
-                let mut decimal = if u64::from_str(&decimal_str).unwrap() % 10 >= 5 {
-                    u64::from_str(&decimal_str).unwrap() / 10 + 1
-                } else {
-                    u64::from_str(&decimal_str).unwrap() / 10
-                };
-                let len = format!("{}", decimal).len();
-                if len == decimals + 1 {
-                    decimal = 0;
-                    if integer_part.is_positive() {
-                        integer_part += BigInt::from(1);
-                    } else {
-                        integer_part -= BigInt::from(1);
+                let mut decimal_str = if decimals == 0 {String::new()} else {
+                    format!("{:0width$}",decimal_part.numer(), width = decimals + 2)};
+                    if decimals >0 {
+                        decimal_str.truncate(decimals + 1);
+                        
+                        let mut decimal = if u64::from_str(&decimal_str).unwrap() % 10 >= 5 {
+                            u64::from_str(&decimal_str).unwrap() / 10 + 1
+                        } else {
+                        u64::from_str(&decimal_str).unwrap() / 10
+                    };
+                    let len = format!("{}", decimal).len();
+                    if len == decimals + 1 {
+                        decimal = 0;
+                        if integer_part.is_positive() {
+                            integer_part += BigInt::from(1);
+                        } else {
+                            integer_part -= BigInt::from(1);
+                        }
                     }
+                    let decimal_separator = currency.get_decimal_separator_str();
+                    decimal_str = format!("{}{:0width$}", decimal_separator,decimal, width = decimals);
                 }
-                decimal_str = format!("{:0width$}", decimal, width = decimals);
                 write!(
                     f,
-                    "{}.{} {}",
+                    "{}{} {}",
                     integer_part.numer(),
                     decimal_str,
                     currency.get_name()
@@ -256,34 +271,4 @@ impl Display for Money {
             }
         }
     }
-}
-
-pub enum CurrencySymbolPlacement {
-    BeforeAmount,
-    AfterAmount,
-}
-
-pub enum NegativeAmountDisplay {
-    BeforeSymbolAndNumber,      // UK   -£127.54   or Spain  -127,54 €
-    BeforeNumberBehindCurrency, // Denmark	kr-127,54
-    AfterNumber,                // Netherlands € 127,54-
-    Parentheses,                // US	($127.54)
-}
-
-pub enum DecimalSeparator {
-    Dot,
-    Comma,
-    Other(char),
-}
-pub enum DigitGrouping {
-    Thousands,
-    Indian,
-    None,
-}
-
-pub enum ThousandsSeparator {
-    Dot,
-    Comma,
-    Space,
-    Other(char),
 }
