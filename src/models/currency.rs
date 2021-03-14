@@ -171,7 +171,7 @@ impl Currency {
         let mut first = parsed.next().unwrap();
         let mut integer_format = None;
         let mut currency_format = None;
-        // dbg!(&first);
+        
         if first.as_rule() == Rule::currency_format_positive {
             if first.as_str().starts_with("-") {
                 self.negative_amount_display = NegativeAmountDisplay::BeforeSymbolAndNumber;
@@ -191,7 +191,7 @@ impl Currency {
                 }
                 currency_format = parsed.next();
             }
-            Rule::property_value => {
+            Rule::currency_string => {
                 currency_format = Some(first);
                 let mut rule = parsed.next().unwrap();
                 if rule.as_rule() == Rule::space {
@@ -209,6 +209,7 @@ impl Currency {
         // Get thousands separator and type of separation
         match integer_format {
             Some(x) => {
+                let start = x.as_span().start();
                 let mut separators = vec![];
                 let num_chars = x.as_str().len();
                 for sep in x.into_inner() {
@@ -219,11 +220,11 @@ impl Currency {
                     self.set_precision(0);
                     self.digit_grouping = DigitGrouping::None;
                 } else {
-                    self.set_precision(num_chars - separators[len - 1].1);
+                    self.set_precision(num_chars - separators[len - 1].1 + start - 1);
                     self.set_decimal_separator(separators[len - 1].0);
                 }
                 if len > 1 {
-                    self.set_thousands_separator(separators[len-2].0);
+                    self.set_thousands_separator(separators[len - 2].0);
                 }
                 if len > 2 {
                     let n = separators[len - 2].1 - separators[len - 3].1;
@@ -295,5 +296,30 @@ impl Ord for Currency {
 impl PartialOrd for Currency {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.name.partial_cmp(&other.name)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn format_1() {
+        let format = "-1.234,00 €";
+        let mut currency = Currency::from_directive(format.to_string());
+        currency.set_format(format.to_string());
+
+        assert_eq!(currency.get_precision(), Some(2));
+        assert_eq!(currency.get_thousands_separator_str(), '.');
+        assert_eq!(currency.get_decimal_separator_str(), ',');
+    }
+    #[test]
+    fn format_2() {
+        let format = "($1,234.00)";
+        let mut currency = Currency::from_directive(format.to_string());
+        currency.set_format(format.to_string());
+
+        assert_eq!(currency.get_precision(), Some(2));
+        assert_eq!(currency.get_thousands_separator_str(), ',');
+        assert_eq!(currency.get_decimal_separator_str(), '.');
     }
 }

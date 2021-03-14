@@ -18,6 +18,11 @@ P 2020-07-01 EUR 1.5 USD
 commodity €
     alias EUR
     format -1.234,00 €
+commodity $
+    alias USD
+    format ($1,234.00)
+commodity ACME
+    format -1 ACME
 ; I have 2 ACME Shares
 ; worth 2000 EUR
 ; worth 3000 USD because the last exchange rate was 1.5
