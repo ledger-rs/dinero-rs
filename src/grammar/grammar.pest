@@ -214,3 +214,22 @@ gt = { ">" }
 ge = { ">=" }
 le = { "<=" }
 lt = { "<" }
+
+
+// Currency format, for the format directive
+decimal_part = { decimal_point ~ ASCII_DIGIT+}
+decimal_point = {!ASCII_DIGIT ~ ANY}
+number_separator = {!ASCII_DIGIT ~ ANY}
+integer_part = { ASCII_DIGIT+ ~ (number_separator ~ASCII_DIGIT+)*}
+currency_format_positive = { 
+    (integer_part ~ space? ~ property_value) |
+    (property_value ~ space? ~ "-"? ~ integer_part ) 
+    }
+currency_format = {
+    ("-" ~ currency_format_positive) |
+    ("(" ~ currency_format_positive ~ ")") |
+    ("-" ~ integer_part  ~ space? ~ property_value) |
+    (property_value ~ space? ~ integer_part  ~ "-") 
+    | currency_format_positive
+}
+space = {" "}

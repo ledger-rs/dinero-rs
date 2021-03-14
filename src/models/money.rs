@@ -278,7 +278,7 @@ impl Display for Money {
 
                 let integer_str = {
                     match currency.get_digit_grouping() {
-                        DigitGrouping::None => integer_part.numer().to_string(), // Do nothing
+                        DigitGrouping::None => integer_part.numer().abs().to_string(), // Do nothing
                         grouping => {
                             let mut group_size = 3;
                             let mut counter = 0;
