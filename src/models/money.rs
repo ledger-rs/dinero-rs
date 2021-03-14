@@ -8,6 +8,7 @@ use num::rational::BigRational;
 use num::{BigInt, Signed, Zero};
 
 use crate::models::balance::Balance;
+use crate::models::currency::DigitGrouping;
 use crate::models::{Currency, HasName};
 use num::traits::Inv;
 use std::borrow::Borrow;
@@ -22,13 +23,13 @@ use std::str::FromStr;
 /// Money can be added, in which case it returns a balance, as it can have several currencies
 /// # Examples
 /// ```rust
-/// # use dinero::models::{Money, Balance, Currency};
+/// # use dinero::models::{Money, Balance, Currency, DigitGrouping};
 /// # use num::rational::BigRational;
 /// # use std::rc::Rc;
 /// use num::BigInt;
 /// #
 /// let usd = Rc::new(Currency::from("usd"));
-/// let eur = Rc::new(Currency::from("eur"));
+/// let mut eur = Rc::new(Currency::from("eur"));
 ///
 /// let zero = Money::new();
 /// let m1 = Money::from((eur.clone(), BigRational::from(BigInt::from(100))));
@@ -43,6 +44,19 @@ use std::str::FromStr;
 /// # assert_eq!(b2.balance.len(), 2);
 /// # assert_eq!(*b2.balance.get(&Some(eur.clone())).unwrap(), m1);
 /// # assert_eq!(*b2.balance.get(&Some(usd.clone())).unwrap(), d1);
+///
+/// // There are various display formats
+/// // -4_285_714.28571... EUR
+/// let mut euro = Currency::from("eur");
+/// euro.set_decimal_separator(',');
+/// euro.set_thousands_separator('.');
+/// euro.set_digit_grouping(DigitGrouping::Indian);
+/// let rc_euro = Rc::new(euro);
+/// let money = Money::from((rc_euro, BigRational::new(BigInt::from(-30000000), BigInt::from(7))));
+/// assert_eq!(format!("{}", &money), "-42.85.714,29 eur");
+/// assert_ne!(format!("{}", &money), "-4285714,29 eur");
+///
+///
 /// ```
 #[derive(Clone, Debug, PartialOrd)]
 pub enum Money {
@@ -209,10 +223,6 @@ impl<'a> Neg for Money {
     }
 }
 
-//
-// How to display money amounts
-//
-
 impl Display for Money {
     // [This is what Microsoft says about currency formatting](https://docs.microsoft.com/en-us/globalization/locale/currency-formatting)
 
@@ -239,14 +249,17 @@ impl Display for Money {
                 let decimal_part = (amount.fract() * BigInt::from(base.pow(decimals as u32 + 2)))
                     .abs()
                     .trunc();
-                let mut decimal_str = if decimals == 0 {String::new()} else {
-                    format!("{:0width$}",decimal_part.numer(), width = decimals + 2)};
-                    if decimals >0 {
-                        decimal_str.truncate(decimals + 1);
-                        
-                        let mut decimal = if u64::from_str(&decimal_str).unwrap() % 10 >= 5 {
-                            u64::from_str(&decimal_str).unwrap() / 10 + 1
-                        } else {
+                let mut decimal_str = if decimals == 0 {
+                    String::new()
+                } else {
+                    format!("{:0width$}", decimal_part.numer(), width = decimals + 2)
+                };
+                if decimals > 0 {
+                    decimal_str.truncate(decimals + 1);
+
+                    let mut decimal = if u64::from_str(&decimal_str).unwrap() % 10 >= 5 {
+                        u64::from_str(&decimal_str).unwrap() / 10 + 1
+                    } else {
                         u64::from_str(&decimal_str).unwrap() / 10
                     };
                     let len = format!("{}", decimal).len();
@@ -259,15 +272,40 @@ impl Display for Money {
                         }
                     }
                     let decimal_separator = currency.get_decimal_separator_str();
-                    decimal_str = format!("{}{:0width$}", decimal_separator,decimal, width = decimals);
+                    decimal_str =
+                        format!("{}{:0width$}", decimal_separator, decimal, width = decimals);
                 }
-                write!(
-                    f,
-                    "{}{} {}",
-                    integer_part.numer(),
-                    decimal_str,
-                    currency.get_name()
-                )
+
+                let integer_str = {
+                    match currency.get_digit_grouping() {
+                        DigitGrouping::None => integer_part.numer().to_string(), // Do nothing
+                        grouping => {
+                            let mut group_size = 3;
+                            let mut counter = 0;
+                            let mut reversed = vec![];
+                            let thousands_separator = currency.get_thousands_separator_str();
+                            for c in integer_part.to_string().chars().rev() {
+                                if c == '-' {
+                                    reversed.push(c);
+                                    continue;
+                                }
+
+                                if counter == group_size {
+                                    reversed.push(thousands_separator);
+                                    if grouping == DigitGrouping::Indian {
+                                        group_size = 2;
+                                    }
+                                    counter = 0;
+                                }
+                                reversed.push(c);
+                                counter += 1;
+                            }
+                            reversed.iter().rev().collect()
+                        }
+                    }
+                };
+
+                write!(f, "{}{} {}", integer_str, decimal_str, currency.get_name())
             }
         }
     }

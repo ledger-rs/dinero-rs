@@ -81,7 +81,7 @@ pub enum DecimalSeparator {
     Comma,
     Other(char),
 }
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DigitGrouping {
     Thousands,
     Indian,
@@ -120,8 +120,37 @@ impl Currency {
         match self.decimal_separator {
             DecimalSeparator::Dot => '.',
             DecimalSeparator::Comma => ',',
-            DecimalSeparator::Other(x) => x
+            DecimalSeparator::Other(x) => x,
         }
+    }
+    pub fn set_decimal_separator(&mut self, separator: char) {
+        self.decimal_separator = match separator {
+            '.' => DecimalSeparator::Dot,
+            ',' => DecimalSeparator::Comma,
+            x => DecimalSeparator::Other(x),
+        };
+    }
+    pub fn get_thousands_separator_str(&self) -> char {
+        match self.thousands_separator {
+            ThousandsSeparator::Dot => '.',
+            ThousandsSeparator::Comma => ',',
+            ThousandsSeparator::Space => '\u{202f}',
+            ThousandsSeparator::Other(x) => x,
+        }
+    }
+    pub fn set_thousands_separator(&mut self, separator: char) {
+        self.thousands_separator = match separator {
+            '.' => ThousandsSeparator::Dot,
+            ',' => ThousandsSeparator::Comma,
+            '\u{202f}' => ThousandsSeparator::Space,
+            x => ThousandsSeparator::Other(x),
+        };
+    }
+    pub fn get_digit_grouping(&self) -> DigitGrouping {
+        self.digit_grouping
+    }
+    pub fn set_digit_grouping(&mut self, grouping: DigitGrouping) {
+        self.digit_grouping = grouping
     }
     pub fn set_precision(&mut self, precision: usize) {
         self.precision = Some(precision);
