@@ -1,6 +1,9 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
 
+## [0.19.0] - 2021-xx-xx
+### Added
+- If you have a Mac, now you can ```brew install dinero```
 ## [0.18.0] - 2021-03-14
 ### Added
 - Support for specifying payees via posting comments.
