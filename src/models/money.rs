@@ -8,7 +8,7 @@ use num::rational::BigRational;
 use num::{BigInt, Signed, Zero};
 
 use crate::models::balance::Balance;
-use crate::models::currency::DigitGrouping;
+use crate::models::currency::{CurrencySymbolPlacement, DigitGrouping, NegativeAmountDisplay};
 use crate::models::{Currency, HasName};
 use num::traits::Inv;
 use std::borrow::Borrow;
@@ -286,7 +286,6 @@ impl Display for Money {
                             let thousands_separator = currency.get_thousands_separator_str();
                             for c in integer_part.to_string().chars().rev() {
                                 if c == '-' {
-                                    reversed.push(c);
                                     continue;
                                 }
 
@@ -305,7 +304,47 @@ impl Display for Money {
                     }
                 };
 
-                write!(f, "{}{} {}", integer_str, decimal_str, currency.get_name())
+                let amount_str = format!("{}{}", integer_str, decimal_str);
+                match currency.symbol_placement {
+                    CurrencySymbolPlacement::BeforeAmount => {
+                        if integer_part.is_negative() {
+                            match currency.negative_amount_display {
+                                NegativeAmountDisplay::BeforeSymbolAndNumber => {
+                                    write!(f, "-{}{}", currency.get_name(), amount_str)
+                                }
+                                NegativeAmountDisplay::BeforeNumberBehindCurrency => {
+                                    write!(f, "{}-{}", currency.get_name(), amount_str)
+                                }
+                                NegativeAmountDisplay::AfterNumber => {
+                                    write!(f, "{}{}-", currency.get_name(), amount_str)
+                                }
+                                NegativeAmountDisplay::Parentheses => {
+                                    write!(f, "({}{})", currency.get_name(), amount_str)
+                                }
+                            }
+                        } else {
+                            write!(f, "{}{}", currency.get_name(), amount_str)
+                        }
+                    }
+                    CurrencySymbolPlacement::AfterAmount => {
+                        if integer_part.is_negative() {
+                            match currency.negative_amount_display {
+                                NegativeAmountDisplay::BeforeSymbolAndNumber
+                                | NegativeAmountDisplay::BeforeNumberBehindCurrency => {
+                                    write!(f, "-{} {}", amount_str, currency.get_name())
+                                }
+                                NegativeAmountDisplay::AfterNumber => {
+                                    write!(f, "{}- {}", amount_str, currency.get_name())
+                                }
+                                NegativeAmountDisplay::Parentheses => {
+                                    write!(f, "({} {})", amount_str, currency.get_name())
+                                }
+                            }
+                        } else {
+                            write!(f, "{} {}", amount_str, currency.get_name())
+                        }
+                    }
+                }
             }
         }
     }
