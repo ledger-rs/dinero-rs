@@ -1,6 +1,9 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
 
+## [0.18.1] - 2021-03-15
+### Fixed
+- Don't panic on end of input
 ## [0.18.0] - 2021-03-14
 ### Added
 - Support for specifying payees via posting comments.
