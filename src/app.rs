@@ -108,11 +108,11 @@ pub struct CommonOpts {
 
     /// Accounts, tags or commodities not previously declared will cause warnings.
     #[structopt(long = "--strict")]
-    strict: bool,
+    pub strict: bool,
 
     /// Accounts, tags or commodities not previously declared will cause errors.
     #[structopt(long = "--pedantic")]
-    pedantic: bool,
+    pub pedantic: bool,
 
     /// TODO Unrealized gains
     #[structopt(long = "--unrealized-gains")]
@@ -122,9 +122,8 @@ pub struct CommonOpts {
     unrealized_losses: Option<String>,
 }
 
-
-impl CommonOpts{
-    pub fn new()->Self {
+impl CommonOpts {
+    pub fn new() -> Self {
         CommonOpts {
             input_file: PathBuf::new(),
             init_file: None,
@@ -145,7 +144,6 @@ impl CommonOpts{
             pedantic: false,
             unrealized_gains: None,
             unrealized_losses: None,
-
         }
     }
 }
@@ -249,7 +247,6 @@ pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
 
             accounts::execute(options.input_file.clone(), &options)
         }
-        
     } {
         let err_str = format!("{}", e);
         if err_str.len() > 0 {

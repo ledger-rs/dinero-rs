@@ -1,6 +1,6 @@
 use chrono::Utc;
-use dinero::{CommonOpts, models::conversion};
 use dinero::parser::Tokenizer;
+use dinero::{models::conversion, CommonOpts};
 use num::traits::Inv;
 use num::{BigInt, BigRational};
 

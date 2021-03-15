@@ -1,4 +1,4 @@
-use dinero::{CommonOpts, parser::Tokenizer};
+use dinero::{parser::Tokenizer, CommonOpts};
 
 #[test]
 #[should_panic(expected = "Should be money.")]

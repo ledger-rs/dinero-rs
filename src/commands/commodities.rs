@@ -1,6 +1,9 @@
-use crate::{CommonOpts, models::{Currency, HasName}};
 use crate::parser::Tokenizer;
 use crate::Error;
+use crate::{
+    models::{Currency, HasName},
+    CommonOpts,
+};
 use std::ops::Deref;
 use std::path::PathBuf;
 

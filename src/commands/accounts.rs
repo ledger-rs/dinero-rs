@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
-use crate::{CommonOpts, error::Error};
 use crate::models::{Account, HasName};
 use crate::parser::Tokenizer;
+use crate::{error::Error, CommonOpts};
 use std::ops::Deref;
 
 pub fn execute(path: PathBuf, options: &CommonOpts) -> Result<(), Error> {

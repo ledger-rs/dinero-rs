@@ -1,8 +1,8 @@
 use std::ops::Deref;
 use std::path::PathBuf;
 
-use crate::{CommonOpts, parser::Tokenizer};
 use crate::Error;
+use crate::{parser::Tokenizer, CommonOpts};
 
 pub fn execute(path: PathBuf, options: &CommonOpts) -> Result<(), Error> {
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);

@@ -91,14 +91,28 @@ impl ParsedLedger {
         for alias in commodity_strs {
             match self.commodities.get(&alias) {
                 Ok(_) => {} // do nothing
-                Err(_) => self.commodities.insert(Currency::from(alias.as_str())),
+                Err(_) => {
+                    if options.pedantic {
+                        panic!("Warning: commodity {} not declared.", &alias);
+                    }
+                    if options.strict {
+                        eprintln!("Warning: commodity {} not declared.", &alias);
+                    }
+                    self.commodities.insert(Currency::from(alias.as_str()));
+                },
             }
         }
         // Accounts
         for alias in account_strs {
             match self.accounts.get(&alias) {
                 Ok(_) => {} // do nothing
-                Err(_) => self.accounts.insert(Account::from(alias.as_str())),
+                Err(_) => {
+                    if options.pedantic {
+                        panic!("Warning: account {} not declared.", &alias);
+                    }
+                    if options.strict {
+                        eprintln!("Warning: account {} not declared.", &alias);
+                    }self.accounts.insert(Account::from(alias.as_str()))},
             }
         }
 

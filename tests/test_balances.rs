@@ -1,4 +1,4 @@
-use dinero::{CommonOpts, parser::Tokenizer};
+use dinero::{parser::Tokenizer, CommonOpts};
 #[test]
 fn test_balances() {
     let mut tokenizer = Tokenizer::from(
