@@ -28,13 +28,15 @@ before_script: |
 
 script:
 - cargo build
-after_script: |
+- |
   if [[ "$TRAVIS_RUST_VERSION" != stable ]]; then
     cargo test
+  else
+    cargo tarpaulin --ignore-tests --exclude-files examples/* src/main.rs --out Xml --run-types AllTargets
   fi
+
 after_success: |
   if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
-    cargo tarpaulin --ignore-tests --exclude-files examples/* src/main.rs --out Xml --run-types AllTargets
     bash <(curl -s https://codecov.io/bash)
     # If this build is not from a tag, create one
     if [[ "$TRAVIS_TAG" == "" ]]; then
