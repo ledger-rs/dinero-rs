@@ -1,5 +1,5 @@
 use chrono::Utc;
-use dinero::models::conversion;
+use dinero::{CommonOpts, models::conversion};
 use dinero::parser::Tokenizer;
 use num::traits::Inv;
 use num::{BigInt, BigRational};
@@ -37,7 +37,7 @@ commodity ACME
         .to_string(),
     );
     let items = tokenizer.tokenize();
-    let ledger = items.to_ledger(false).unwrap();
+    let ledger = items.to_ledger(&CommonOpts::new()).unwrap();
     let eur = ledger.get_commodities().get("eur").unwrap();
     let usd = ledger.get_commodities().get("usd").unwrap();
     let acme = ledger.get_commodities().get("acme").unwrap();

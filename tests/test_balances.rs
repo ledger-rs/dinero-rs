@@ -1,4 +1,4 @@
-use dinero::parser::Tokenizer;
+use dinero::{CommonOpts, parser::Tokenizer};
 #[test]
 fn test_balances() {
     let mut tokenizer = Tokenizer::from(
@@ -18,6 +18,6 @@ fn test_balances() {
         .to_string(),
     );
     let parsed = tokenizer.tokenize();
-    let ledger = parsed.to_ledger(false);
+    let ledger = parsed.to_ledger(&CommonOpts::new());
     assert!(ledger.is_ok(), "This should balance");
 }

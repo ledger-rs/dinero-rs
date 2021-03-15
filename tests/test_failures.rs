@@ -1,4 +1,4 @@
-use dinero::parser::Tokenizer;
+use dinero::{CommonOpts, parser::Tokenizer};
 
 #[test]
 #[should_panic(expected = "Should be money.")]
@@ -20,6 +20,6 @@ fn not_money() {
     assert!(true);
 
     // But to a wrong ledger -- panics!
-    let _ledger = parsed.to_ledger(false);
+    let _ledger = parsed.to_ledger(&CommonOpts::new());
     unreachable!("This has panicked")
 }

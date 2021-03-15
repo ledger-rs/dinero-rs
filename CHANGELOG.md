@@ -2,7 +2,8 @@
 Changelog file for dinero-rs project, a command line application for managing finances.
 
 ## [0.21.0] - xxx
-
+### Added
+- ```strict``` and ```pedantic``` options
 ## [0.20.0] - 2021-03-15
 ### Fixed
 - Version numbers back on track
