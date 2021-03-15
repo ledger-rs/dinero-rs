@@ -93,13 +93,13 @@ impl ParsedLedger {
                 Ok(_) => {} // do nothing
                 Err(_) => {
                     if options.pedantic {
-                        panic!("Warning: commodity {} not declared.", &alias);
+                        panic!("Error: commodity {} not declared.", &alias);
                     }
                     if options.strict {
                         eprintln!("Warning: commodity {} not declared.", &alias);
                     }
                     self.commodities.insert(Currency::from(alias.as_str()));
-                },
+                }
             }
         }
         // Accounts
@@ -108,11 +108,13 @@ impl ParsedLedger {
                 Ok(_) => {} // do nothing
                 Err(_) => {
                     if options.pedantic {
-                        panic!("Warning: account {} not declared.", &alias);
+                        panic!("Error: account {} not declared.", &alias);
                     }
                     if options.strict {
                         eprintln!("Warning: account {} not declared.", &alias);
-                    }self.accounts.insert(Account::from(alias.as_str()))},
+                    }
+                    self.accounts.insert(Account::from(alias.as_str()))
+                }
             }
         }
 

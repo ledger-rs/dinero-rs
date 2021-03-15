@@ -3,7 +3,13 @@ use common::{test_args, test_err};
 mod common;
 #[test]
 fn date_filters() {
-    let args1 = &["bal", "--init-file","tests/example_files/empty_ledgerrc", "-f", "tests/example_files/demo.ledger"];
+    let args1 = &[
+        "bal",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
+        "-f",
+        "tests/example_files/demo.ledger",
+    ];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args1).assert();
     let mut output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
     assert_eq!(output.lines().into_iter().count(), 17);
@@ -54,7 +60,15 @@ fn commodity_alias() {
     let mut outputs = Vec::new();
     let aliases = vec!["EUR", "eur"];
     for alias in aliases {
-        let args = &["bal", "--init-file","tests/example_files/empty_ledgerrc", "-f", "tests/example_files/demo.ledger", "-X", alias];
+        let args = &[
+            "bal",
+            "--init-file",
+            "tests/example_files/empty_ledgerrc",
+            "-f",
+            "tests/example_files/demo.ledger",
+            "-X",
+            alias,
+        ];
         let assert = Command::cargo_bin("dinero").unwrap().args(args).assert();
         outputs.push(String::from_utf8(assert.get_output().to_owned().stdout).unwrap());
         test_args(args);
@@ -65,7 +79,13 @@ fn commodity_alias() {
 #[test]
 /// Check that the register report is showing virtual postings
 fn virtual_postings() {
-    let args = &["reg", "--init-file","tests/example_files/empty_ledgerrc", "-f", "tests/example_files/virtual_postings.ledger"];
+    let args = &[
+        "reg",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
+        "-f",
+        "tests/example_files/virtual_postings.ledger",
+    ];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
     let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
     test_args(args);
@@ -155,7 +175,13 @@ fn account_filter() {
 #[test]
 /// Check the accounts command
 fn accounts_command() {
-    let args = &["accounts", "--init-file","tests/example_files/empty_ledgerrc", "-f", "tests/example_files/demo.ledger"];
+    let args = &[
+        "accounts",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
+        "-f",
+        "tests/example_files/demo.ledger",
+    ];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
     let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
     assert_eq!(output.lines().into_iter().count(), 7);
@@ -166,7 +192,13 @@ fn accounts_command() {
 #[test]
 /// Check the prices command
 fn prices_command() {
-    let args = &["prices", "--init-file","tests/example_files/empty_ledgerrc", "-f", "tests/example_files/demo.ledger"];
+    let args = &[
+        "prices",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
+        "-f",
+        "tests/example_files/demo.ledger",
+    ];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
     let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
     assert_eq!(output.lines().into_iter().count(), 8);
@@ -177,7 +209,13 @@ fn prices_command() {
 #[test]
 /// Check the payees command
 fn payees_command() {
-    let args = &["payees", "--init-file","tests/example_files/empty_ledgerrc", "-f", "tests/example_files/demo.ledger"];
+    let args = &[
+        "payees",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
+        "-f",
+        "tests/example_files/demo.ledger",
+    ];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
     let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
     assert_eq!(
@@ -192,7 +230,13 @@ fn payees_command() {
 #[test]
 /// Check the commodities command
 fn commodities_command() {
-    let args = &["commodities", "--init-file","tests/example_files/empty_ledgerrc", "-f", "tests/example_files/demo.ledger"];
+    let args = &[
+        "commodities",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
+        "-f",
+        "tests/example_files/demo.ledger",
+    ];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
     let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
 
@@ -203,7 +247,13 @@ fn commodities_command() {
 #[test]
 /// If this fails it means that it created an extra posting
 fn automated_fail() {
-    let args = &["reg", "--init-file","tests/example_files/empty_ledgerrc", "-f", "tests/example_files/automated_fail.ledger"];
+    let args = &[
+        "reg",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
+        "-f",
+        "tests/example_files/automated_fail.ledger",
+    ];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
     let output_err = String::from_utf8(assert_1.get_output().to_owned().stderr).unwrap();
     assert_eq!(output_err.lines().into_iter().count(), 5);
@@ -213,7 +263,13 @@ fn automated_fail() {
 
 #[test]
 fn automated_value_expression() {
-    let args = &["reg", "--init-file","tests/example_files/empty_ledgerrc", "-f", "tests/example_files/automated.ledger"];
+    let args = &[
+        "reg",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
+        "-f",
+        "tests/example_files/automated.ledger",
+    ];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
     let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
     assert_eq!(output.lines().into_iter().count(), 11);
@@ -238,10 +294,36 @@ fn automated_add_tag() {
 
 #[test]
 fn payee_from_comments() {
-    let args = &["reg", "--init-file","tests/example_files/empty_ledgerrc", "-f", "tests/example_files/demo.ledger", "@shop"];
+    let args = &[
+        "reg",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
+        "-f",
+        "tests/example_files/demo.ledger",
+        "@shop",
+    ];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
     let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
     assert_eq!(output.lines().into_iter().count(), 1);
 
     test_args(args);
+}
+
+#[test]
+/// Check that strict works
+fn strict() {
+    let args_1 = &["bal", "-f", "tests/example_files/demo.ledger", "--strict"];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args_1).assert();
+    let output_1 = String::from_utf8(assert_1.get_output().to_owned().stderr).unwrap();
+    assert!(output_1.lines().into_iter().count() > 3);
+    test_args(args_1);
+}
+
+#[test]
+#[should_panic()]
+/// Check that pedantic works
+fn pedantic() {
+    let args_1 = &["bal", "-f", "tests/example_files/demo.ledger", "--pedantic"];
+
+    test_args(args_1);
 }
