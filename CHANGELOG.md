@@ -2,7 +2,8 @@
 Changelog file for dinero-rs project, a command line application for managing finances.
 
 ## [0.21.0] - xxx
-
+### Changed
+- Continuos integration pipeline is now better. No more problems like what happened between releases 0.18 and 0.20.
 ## [0.20.0] - 2021-03-15
 ### Fixed
 - Version numbers back on track
