@@ -30,7 +30,7 @@ install: |
   
 # before_script: Scripts to run before the script stage
 before_script: |
-  if [[ "$TRAVIS_RUST_VERSION" == stable && "$TRAVIS_EVENT_TYPE" == cron]]; then
+  if [[ "$TRAVIS_RUST_VERSION" == stable && "$TRAVIS_EVENT_TYPE" == cron ]]; then
     for TAG in $(git tag | grep -)
     do
       git push --delete https://${GITHUB_TOKEN}@github.com/frosklis/dinero-rs.git  $TAG 
