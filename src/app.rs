@@ -148,10 +148,8 @@ pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
             match option.chars().nth(0) {
                 Some(c) => match c {
                     '-' => {
-                        assert!(
-                            line.starts_with("--"),
-                            format!("Bad config file {:?}\n{}", file, line)
-                        );
+                        let message = format!("Bad config file {:?}\n{}", file, line);
+                        assert!(line.starts_with("--"), message,);
                         let mut iter = line.split_whitespace();
                         let option = iter.next().unwrap();
                         if !args.iter().any(|x| {
