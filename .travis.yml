@@ -79,7 +79,7 @@ after_success: |
     echo "Tag name:           -${TRAVIS_TAG}-"
     # If this build is not from a tag, create one
     if [[ "$TRAVIS_TAG" == "" ]]; then
-      if [[ "$TRAVIS_BRANCH" == "master" && "$TRAVIS_EVENT_TYPE" != "cron" ]]; then
+      if [[ "$TRAVIS_BRANCH" == "master" && "$TRAVIS_EVENT_TYPE" == "pull_request" ]]; then
         # If the build is from master we actually create a tag
         # Build a tag
         # This prints the version number
