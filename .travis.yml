@@ -1,3 +1,9 @@
+# CI pipeline for travis 
+# the goals are to
+# - automate builds
+# - report code coverage
+# - deploy automatically for several platforms
+
 cache: cargo
 before_cache:
     - find ./target/debug -type f -maxdepth 1 -delete
@@ -7,6 +13,7 @@ before_cache:
 language: rust
 rust:
   - stable
+  - 1.31.0
   - beta
   - nightly
 jobs:
