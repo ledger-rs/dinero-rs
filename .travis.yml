@@ -94,5 +94,33 @@ after_success: |
 
 # after_failure: Scripts to run after a failing script stage
 # before_deploy: Scripts to run before the deploy stage
+before_deploy: |
+  if [[ "$TRAVIS_RUST_VERSION" != stable ]]; then
+    travis_terminate 0
+  else   # Create the releases
+    # Macs
+    cargo build --release --target x86_64-apple-darwin &
+    # New macs
+    cargo build --release --target aarch64-apple-darwin & 
+    # Raspberry
+    cargo build --release --target armv7-unknown-linux-gnueabihf &
+    # Linux ARM
+    cargo build --release --target aarch64-unknown-linux-gnu &
+    # Linux x86
+    cargo build --release --target x86_64-unknown-linux-gnu &
+    # Windows 
+    cargo build --release --target x86_64-pc-windows-gnu &
+    cargo build --release --target x86_64-pc-windows-msvc &
+    wait
+  fi
+  
+deploy:
+  provider: releases
+  token: $GITHUB_TOKEN
+  file: <file>
+  release_notes_file: Changelog.md
+  edge: true # opt in to dpl v2
+  on:
+    tags: true
 # after_deploy: Scripts to run after the deploy stage
 # after_script: Scripts to run as the last stage
