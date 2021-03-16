@@ -108,7 +108,6 @@ before_deploy: |
   if [[ "$TRAVIS_RUST_VERSION" != stable ]]; then
     travis_terminate 0
   else   # Create the releases
-  x86_64-pc-windows-msvc
     # Macs
     cargo build --release --target x86_64-apple-darwin &
     # New macs
