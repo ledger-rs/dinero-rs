@@ -24,9 +24,12 @@ jobs:
 # before_install: Scripts to run before the install stage
 # install: Scripts to run at the install stage
 install: |
+  echo "Rust: ${TRAVIS_RUST_VERSION}"
+  echo "Event: ${TRAVIS_EVENT_TYPE}"
+  echo "Tag: ${TRAVIS_TAG"
   if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
     cargo install cargo-tarpaulin
-    if [[ "$TRAVIS_EVENT_TYPE" == "tag" ]]; then
+    if [[ "$TRAVIS_TAG" != "" ]]; then
       echo "Installing additional targets."
       rustup target add x86_64-apple-darwin &
       rustup target add aarch64-apple-darwin  &
