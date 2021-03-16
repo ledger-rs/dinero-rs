@@ -21,34 +21,32 @@ jobs:
     - rust: beta
   fast_finish: true
 
-stages:
-  - name: install
-    if: env(TRAVIS_RUST_VERSION) = stable
-  - name: before_script
-    if: type = cron AND env(TRAVIS_RUST_VERSION) = stable
-    
 # before_install: Scripts to run before the install stage
 # install: Scripts to run at the install stage
-install:  
-  - cargo install cargo-tarpaulin
-
-  # before_script: Scripts to run before the script stage
+install: |
+  if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
+    cargo install cargo-tarpaulin
+  fi
+  
+# before_script: Scripts to run before the script stage
 before_script: |
-  for TAG in $(git tag | grep -)
-  do
-    git push --delete https://${GITHUB_TOKEN}@github.com/frosklis/dinero-rs.git  $TAG 
-  done
+  if [[ "$TRAVIS_RUST_VERSION" == stable && "$TRAVIS_EVENT_TYPE" == cron]]; then
+    for TAG in $(git tag | grep -)
+    do
+      git push --delete https://${GITHUB_TOKEN}@github.com/frosklis/dinero-rs.git  $TAG 
+    done
+  fi
 
 
 # script: Scripts to run at the script stage
 script:
-- cargo build
-- |
-  if [[ "$TRAVIS_RUST_VERSION" != stable ]]; then
-    cargo test
-  else
-    cargo tarpaulin --ignore-tests --exclude-files examples/* src/main.rs --out Xml --run-types AllTargets
-  fi
+  - cargo build
+  - |
+    if [[ "$TRAVIS_RUST_VERSION" != stable ]]; then
+      cargo test
+    else
+      cargo tarpaulin --ignore-tests --exclude-files examples/* src/main.rs --out Xml --run-types AllTargets
+    fi
 
 
 # before_cache: Scripts to run before storing a build cache
