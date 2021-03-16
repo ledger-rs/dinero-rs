@@ -4,36 +4,40 @@
 # - report code coverage
 # - deploy automatically for several platforms
 
-cache: cargo
-dist: bionic
-before_cache:
-    - find ./target/debug -type f -maxdepth 1 -delete
-    - rm -fr ./target/debug/{deps,.fingerprint}/{*ra_*,*test*,*tools*,*gen_lsp*,*thread_worker*,*dinero*}
-    - rm -f  ./target/.rustc_info.json
-    - rm -rf /home/travis/.cargo/registry/index/github.com*
 language: rust
 rust:
   - stable
   - 1.38.0
   - beta
   - nightly
+cache: cargo
+dist: bionic
 jobs:
   allow_failures:
     - rust: nightly
     - rust: beta
   fast_finish: true
 
-before_script: |
-  if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
-    cargo install cargo-tarpaulin
-  fi
-  if [[ "$TRAVIS_EVENT_TYPE" == cron ]]; then
-    for TAG in $(git tag | grep -)
-    do
-      git push --delete https://${GITHUB_TOKEN}@github.com/frosklis/dinero-rs.git  $TAG 
-    done
-  fi 
+stages:
+  - name: install
+    if: env(TRAVIS_RUST_VERSION) = stable
+  - name: before_script
+    if: type = cron AND env(TRAVIS_RUST_VERSION) = stable
+    
+# before_install: Scripts to run before the install stage
+# install: Scripts to run at the install stage
+install:  
+  - cargo install cargo-tarpaulin
 
+  # before_script: Scripts to run before the script stage
+before_script: |
+  for TAG in $(git tag | grep -)
+  do
+    git push --delete https://${GITHUB_TOKEN}@github.com/frosklis/dinero-rs.git  $TAG 
+  done
+
+
+# script: Scripts to run at the script stage
 script:
 - cargo build
 - |
@@ -43,6 +47,16 @@ script:
     cargo tarpaulin --ignore-tests --exclude-files examples/* src/main.rs --out Xml --run-types AllTargets
   fi
 
+
+# before_cache: Scripts to run before storing a build cache
+before_cache:
+  - find ./target/debug -type f -maxdepth 1 -delete
+  - rm -fr ./target/debug/{deps,.fingerprint}/{*ra_*,*test*,*tools*,*gen_lsp*,*thread_worker*,*dinero*}
+  - rm -f  ./target/.rustc_info.json
+  - rm -rf /home/travis/.cargo/registry/index/github.com*
+
+
+# after_success: Scripts to run after a successful script stage
 after_success: |
   if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
     # upload to codecov.io coverage results
@@ -77,3 +91,8 @@ after_success: |
     fi 
   fi
   
+
+# after_failure: Scripts to run after a failing script stage
+# before_deploy: Scripts to run before the deploy stage
+# after_deploy: Scripts to run after the deploy stage
+# after_script: Scripts to run as the last stage
