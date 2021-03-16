@@ -10,7 +10,10 @@ rust:
   - 1.38.0
   - beta
   - nightly
-cache: cargo
+cache:
+  directories:
+    - /home/travis/.cargo
+
 dist: bionic
 jobs:
   allow_failures:
@@ -53,8 +56,7 @@ before_cache:
   - find ./target/debug -type f -maxdepth 1 -delete
   - rm -fr ./target/debug/{deps,.fingerprint}/{*ra_*,*test*,*tools*,*gen_lsp*,*thread_worker*,*dinero*}
   - rm -f  ./target/.rustc_info.json
-  - rm -rf /home/travis/.cargo/registry/index/github.com*
-
+  - rm -rf /home/travis/.cargo/registry
 
 # after_success: Scripts to run after a successful script stage
 after_success: |
