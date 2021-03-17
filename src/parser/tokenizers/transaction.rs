@@ -183,6 +183,7 @@ fn parse_posting(
                 part.into_inner().next().unwrap(),
             ))),
             Rule::blank_line => {}
+            Rule::EOI => {}
             x => panic!("{:?}", x),
         }
     }

@@ -1,9 +1,20 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
 
-## [0.19.0] - 2021-xx-xx
+## [0.21.0] - xxx
 ### Added
 - If you have a Mac, now you can ```brew install dinero```
+### Changed
+- Continuous integration pipeline is now better. No more problems like what happened between releases 0.18 and 0.20.
+## [0.20.0] - 2021-03-15
+### Fixed
+- Version numbers back on track
+## [0.19.0] - 2021-03-15
+- Same as 0.18.1 due to a mistake
+## [0.18.1] - 2021-03-15
+### Fixed
+- Don't panic on end of input
+>>>>>>> master
 ## [0.18.0] - 2021-03-14
 ### Added
 - Support for specifying payees via posting comments.
