@@ -24,8 +24,22 @@ jobs:
 # before_install: Scripts to run before the install stage
 # install: Scripts to run at the install stage
 install: |
+  echo "Rust: ${TRAVIS_RUST_VERSION}"
+  echo "Event: ${TRAVIS_EVENT_TYPE}"
+  echo "Tag: ${TRAVIS_TAG}"
   if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
     cargo install cargo-tarpaulin
+    if [[ "$TRAVIS_TAG" != "" ]]; then
+      echo "Installing additional targets."
+      rustup target add x86_64-apple-darwin
+      rustup target add aarch64-apple-darwin 
+      rustup target add armv7-unknown-linux-gnueabihf
+      rustup target add aarch64-unknown-linux-gnu
+      rustup target add x86_64-unknown-linux-gnu
+      rustup target add x86_64-pc-windows-gnu
+      # rustup target add x86_64-pc-windows-msvctarget
+      echo "finished rustup installation"
+    fi
   fi
   
 # before_script: Scripts to run before the script stage
@@ -69,7 +83,7 @@ after_success: |
     echo "Tag name:           -${TRAVIS_TAG}-"
     # If this build is not from a tag, create one
     if [[ "$TRAVIS_TAG" == "" ]]; then
-      if [[ "$TRAVIS_BRANCH" == "master" && "$TRAVIS_EVENT_TYPE" != "cron" ]]; then
+      if [[ "$TRAVIS_BRANCH" == "master" && "$TRAVIS_EVENT_TYPE" == "pull_request" ]]; then
         # If the build is from master we actually create a tag
         # Build a tag
         # This prints the version number
@@ -84,7 +98,7 @@ after_success: |
       if [[ "$TRAVIS_TAG" != "$version" ]]; then
         echo "Expected $TRAVIS_TAG from tag name."
         echo "Found $version in Cargo.toml"
-        exit 1
+        travis_terminate 1
       fi
       rm cobertura.xml
       cargo publish --token ${CARGO_TOKEN}
@@ -95,30 +109,39 @@ after_success: |
 # after_failure: Scripts to run after a failing script stage
 # before_deploy: Scripts to run before the deploy stage
 before_deploy: |
-  if [[ "$TRAVIS_RUST_VERSION" != stable ]]; then
+  if [[ "$TRAVIS_RUST_VERSION" != stable || "$TRAVIS_TAG" != *"build"* ]]; then
     travis_terminate 0
-  else   # Create the releases
-    # Macs
-    cargo build --release --target x86_64-apple-darwin &
+  else   
+  # Create the releases
+  # Macs
+    sudo apt install build-essential
+    # cargo build --release --target x86_64-apple-darwin 
     # New macs
-    cargo build --release --target aarch64-apple-darwin & 
+    # cargo build --release --target aarch64-apple-darwin 
     # Raspberry
-    cargo build --release --target armv7-unknown-linux-gnueabihf &
+    # cargo build --release --target armv7-unknown-linux-gnueabihf
     # Linux ARM
-    cargo build --release --target aarch64-unknown-linux-gnu &
+    # cargo build --release --target aarch64-unknown-linux-gnu
     # Linux x86
-    cargo build --release --target x86_64-unknown-linux-gnu &
+    # cargo build --release --target x86_64-unknown-linux-gnu
     # Windows 
-    cargo build --release --target x86_64-pc-windows-gnu &
-    cargo build --release --target x86_64-pc-windows-msvc &
-    wait
+    cargo build --release --target x86_64-pc-windows-gnu
+    tree /home/travis/build/frosklis/dinero-rs/target/ -L 3
+    # cargo build --release --target x86_64-pc-windows-msvc
+
+    # Package everything
+    # tar -czf dinero-mac-x86_64.tar.gz /home/travis/build/frosklis/dinero-rs/target/x86_64-apple-darwin/release/dinero
+    # tar -czf dinero-mac-aarch64.tar.gz /home/travis/build/frosklis/dinero-rs/target/aarch64-apple-darwin/release/dinero
+    cd /home/travis/build/frosklis/dinero-rs/target/x86_64-pc-windows-gnu/release/
+    tar -czf dinero-windows-x86_64.tar.gz dinero.exe
+    mv dinero-windows-x86_64.tar.gz /home/travis/build/frosklis/dinero-rs/
   fi
   
 deploy:
   provider: releases
   token: $GITHUB_TOKEN
-  file: <file>
-  release_notes_file: Changelog.md
+  file: "*.gz"
+  release_notes_file: CHANGELOG.md
   edge: true # opt in to dpl v2
   on:
     tags: true
