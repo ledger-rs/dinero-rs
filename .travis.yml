@@ -98,7 +98,7 @@ after_success: |
       if [[ "$TRAVIS_TAG" != "$version" ]]; then
         echo "Expected $TRAVIS_TAG from tag name."
         echo "Found $version in Cargo.toml"
-        exit 1
+        travis_terminate 1
       fi
       rm cobertura.xml
       cargo publish --token ${CARGO_TOKEN}
@@ -109,12 +109,12 @@ after_success: |
 # after_failure: Scripts to run after a failing script stage
 # before_deploy: Scripts to run before the deploy stage
 before_deploy: |
-  if [[ "$TRAVIS_RUST_VERSION" != stable ]]; then
+  if [[ "$TRAVIS_RUST_VERSION" != stable || "$TRAVIS_TAG" != *"build"* ]]; then
     travis_terminate 0
   else   
   # Create the releases
   # Macs
-    sudo snap install tree
+    sudo apt install build-essential
     # cargo build --release --target x86_64-apple-darwin 
     # New macs
     # cargo build --release --target aarch64-apple-darwin 
@@ -132,7 +132,9 @@ before_deploy: |
     # Package everything
     # tar -czf dinero-mac-x86_64.tar.gz /home/travis/build/frosklis/dinero-rs/target/x86_64-apple-darwin/release/dinero
     # tar -czf dinero-mac-aarch64.tar.gz /home/travis/build/frosklis/dinero-rs/target/aarch64-apple-darwin/release/dinero
-    tar -czf dinero-windows-x86_64.tar.gz /home/travis/build/frosklis/dinero-rs/target/x86_64-pc-windows-gnu/release/dinero.exe
+    cd /home/travis/build/frosklis/dinero-rs/target/x86_64-pc-windows-gnu/release/
+    tar -czf dinero-windows-x86_64.tar.gz dinero.exe
+    mv dinero-windows-x86_64.tar.gz /home/travis/build/frosklis/dinero-rs/
   fi
   
 deploy:
