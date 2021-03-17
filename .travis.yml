@@ -26,7 +26,7 @@ jobs:
 install: |
   echo "Rust: ${TRAVIS_RUST_VERSION}"
   echo "Event: ${TRAVIS_EVENT_TYPE}"
-  echo "Tag: ${TRAVIS_TAG"
+  echo "Tag: ${TRAVIS_TAG}"
   if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
     cargo install cargo-tarpaulin
     if [[ "$TRAVIS_TAG" != "" ]]; then
