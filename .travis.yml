@@ -136,7 +136,7 @@ before_deploy: |
 deploy:
   provider: releases
   token: $GITHUB_TOKEN
-  file: *.gz
+  file: "*.gz"
   release_notes_file: CHANGELOG.md
   edge: true # opt in to dpl v2
   on:
