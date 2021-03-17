@@ -115,12 +115,9 @@ before_deploy: |
   # Create the releases
   # Macs
     sudo snap install tree
-    tree /home/travis/build/frosklis/dinero-rs/target/
-    cargo build --release --target x86_64-apple-darwin 
-    tree /home/travis/build/frosklis/dinero-rs/target/
+    # cargo build --release --target x86_64-apple-darwin 
     # New macs
-    cargo build --release --target aarch64-apple-darwin 
-    tree /home/travis/build/frosklis/dinero-rs/target/
+    # cargo build --release --target aarch64-apple-darwin 
     # Raspberry
     # cargo build --release --target armv7-unknown-linux-gnueabihf
     # Linux ARM
@@ -129,13 +126,13 @@ before_deploy: |
     # cargo build --release --target x86_64-unknown-linux-gnu
     # Windows 
     cargo build --release --target x86_64-pc-windows-gnu
-    tree /home/travis/build/frosklis/dinero-rs/target/
+    tree /home/travis/build/frosklis/dinero-rs/target/ -L 3
     # cargo build --release --target x86_64-pc-windows-msvc
 
     # Package everything
-    tar -czf dinero-mac-x86_64.tar.gz /home/travis/build/frosklis/dinero-rs/target/x86_64-apple-darwin/release/dinero
-    tar -czf dinero-mac-aarch64.tar.gz /home/travis/build/frosklis/dinero-rs/target/aarch64-apple-darwin/release/dinero
-    tar -czf dinero-windows-x86_64.tar.gz /home/travis/build/frosklis/dinero-rs/target/x86_64-pc-windows-gnu/release/dinero
+    # tar -czf dinero-mac-x86_64.tar.gz /home/travis/build/frosklis/dinero-rs/target/x86_64-apple-darwin/release/dinero
+    # tar -czf dinero-mac-aarch64.tar.gz /home/travis/build/frosklis/dinero-rs/target/aarch64-apple-darwin/release/dinero
+    tar -czf dinero-windows-x86_64.tar.gz /home/travis/build/frosklis/dinero-rs/target/x86_64-pc-windows-gnu/release/dinero.exe
   fi
   
 deploy:
