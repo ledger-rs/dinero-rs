@@ -113,19 +113,18 @@ before_deploy: |
     travis_terminate 0
   else   # Create the releases
     # Macs
-    cargo build --release --target x86_64-apple-darwin &
+    cargo build --release --target x86_64-apple-darwin
     # New macs
-    cargo build --release --target aarch64-apple-darwin & 
+    cargo build --release --target aarch64-apple-darwin 
     # Raspberry
-    cargo build --release --target armv7-unknown-linux-gnueabihf &
+    # cargo build --release --target armv7-unknown-linux-gnueabihf
     # Linux ARM
-    cargo build --release --target aarch64-unknown-linux-gnu &
+    # cargo build --release --target aarch64-unknown-linux-gnu
     # Linux x86
-    cargo build --release --target x86_64-unknown-linux-gnu &
+    # cargo build --release --target x86_64-unknown-linux-gnu
     # Windows 
-    cargo build --release --target x86_64-pc-windows-gnu &
-    # cargo build --release --target x86_64-pc-windows-msvc &
-    wait
+    cargo build --release --target x86_64-pc-windows-gnu
+    # cargo build --release --target x86_64-pc-windows-msvc
   fi
   
 deploy:
