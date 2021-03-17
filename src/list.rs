@@ -51,6 +51,27 @@ impl<'a, T: Eq + Hash + HasName + Clone + FromDirective + HasAliases + Debug> Li
             }
         }
     }
+    /// Removes an ```element``` in the list
+    pub fn remove(&mut self, element: &T) {
+        let found = self.list.get(&element.get_name().to_lowercase());
+        match found {
+            Some(x) => {
+                for alias in x.get_aliases() {
+                    self.aliases.remove(&alias.to_lowercase());
+                }
+                self.list.remove(&element.get_name().to_lowercase());
+            }
+            None => {
+                for alias in element.get_aliases() {
+                    let value = self.aliases.remove(&alias.to_lowercase());
+                    if let Some(x) = value {
+                        self.list.remove(&x);
+                    }
+                    self.list.remove(&alias.to_lowercase());
+                }
+            }
+        }
+    }
     /// Add an alias
     pub fn add_alias(&mut self, alias: String, for_element: &'a T) {
         let element = self.aliases.get(&alias.to_lowercase());

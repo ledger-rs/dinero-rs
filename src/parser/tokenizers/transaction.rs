@@ -85,11 +85,14 @@ pub struct RawPosting {
     pub date: Option<NaiveDate>,
     pub money_amount: Option<BigRational>,
     pub money_currency: Option<String>,
+    pub money_format: Option<String>,
     pub cost_amount: Option<BigRational>,
     pub cost_currency: Option<String>,
+    pub cost_format: Option<String>,
     pub cost_type: Option<PriceType>,
     pub balance_amount: Option<BigRational>,
     pub balance_currency: Option<String>,
+    pub balance_format: Option<String>,
     pub comments: Vec<Comment>,
     pub amount_expr: Option<String>,
     pub kind: PostingType,
@@ -112,6 +115,9 @@ impl RawPosting {
             amount_expr: None,
             kind: PostingType::Real,
             payee: None,
+            money_format: None,
+            cost_format: None,
+            balance_format: None,
         }
     }
 }
@@ -143,6 +149,7 @@ fn parse_posting(
                     Some(PriceType::PerUnit)
                 };
                 let mut money = part.into_inner().next().unwrap().into_inner();
+                let money_format = money.as_str().to_string();
                 let amount: BigRational;
                 let mut currency = None;
                 match money.next() {
@@ -164,15 +171,18 @@ fn parse_posting(
                     Rule::amount => {
                         posting.money_amount = Some(amount);
                         posting.money_currency = currency;
+                        posting.money_format = Some(money_format);
                     }
                     Rule::cost => {
                         posting.cost_amount = Some(amount);
                         posting.cost_currency = currency;
                         posting.cost_type = cost_type;
+                        posting.cost_format = Some(money_format);
                     }
                     Rule::balance => {
                         posting.balance_amount = Some(amount);
                         posting.balance_currency = currency;
+                        posting.balance_format = Some(money_format);
                     }
                     x => panic!("Expected amount, cost or balance {:?}", x),
                 }
