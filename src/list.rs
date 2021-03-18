@@ -150,10 +150,20 @@ impl<'a, T: Eq + Hash + HasName + Clone + FromDirective + HasAliases + Debug> Li
     }
 }
 
-impl<T: Clone> List<T> {
+impl<T: Clone + FromDirective + HasAliases + Debug + Eq + Hash + HasName> List<T> {
     pub fn append(&mut self, other: &List<T>) {
-        self.list.extend(other.to_owned().list.into_iter());
-        self.aliases.extend(other.to_owned().aliases.into_iter());
+        for (key, value) in other.list.iter() {
+            if value.is_from_directive() {
+                self.list.insert(key.clone(), value.clone());
+                for alias in value.get_aliases().iter() {
+                    self.aliases.insert(alias.to_lowercase(), key.clone());
+                }
+            } else {
+                if self.get(key).is_err() {
+                    self.list.insert(key.clone(), value.clone());
+                }
+            }
+        }
     }
 }
 

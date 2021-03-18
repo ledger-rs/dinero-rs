@@ -62,6 +62,6 @@ pub(crate) fn parse_string(string: Pair<Rule>) -> String {
         Rule::currency | Rule::commodity_in_directive => {
             parse_string(string.into_inner().next().unwrap())
         }
-        _ => string.as_str().to_string(),
+        _ => string.as_str().trim().to_string(),
     }
 }

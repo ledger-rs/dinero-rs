@@ -60,7 +60,6 @@ impl ParsedLedger {
         let mut payee_strs = HashSet::<String>::new();
 
         // 1. Populate the directive lists
-
         for transaction in self.transactions.iter() {
             for p in transaction.postings.borrow().iter() {
                 account_strs.insert(p.account.clone());
@@ -84,6 +83,7 @@ impl ParsedLedger {
                 Err(_) => self.commodities.insert(Currency::from(alias.as_str())),
             }
         }
+
         // Accounts
         for alias in account_strs {
             match self.accounts.get(&alias) {
