@@ -115,7 +115,8 @@ before_deploy: |
   # Create the releases
   # Macs
     sudo apt install build-essential
-    # cargo build --release --target x86_64-apple-darwin 
+    # Intel macs
+    cargo build --release --target x86_64-apple-darwin 
     # New macs
     # cargo build --release --target aarch64-apple-darwin 
     # Raspberry
@@ -130,11 +131,17 @@ before_deploy: |
     # cargo build --release --target x86_64-pc-windows-msvc
 
     # Package everything
-    # tar -czf dinero-mac-x86_64.tar.gz /home/travis/build/frosklis/dinero-rs/target/x86_64-apple-darwin/release/dinero
+    cd /home/travis/build/frosklis/dinero-rs/target/x86_64-apple-darwin/release
+    tar -czf dinero-mac-x86_64.tar.gz dinero
+    mv dinero-mac-x86_64.tar.gz /home/travis/build/frosklis/dinero-rs/
     # tar -czf dinero-mac-aarch64.tar.gz /home/travis/build/frosklis/dinero-rs/target/aarch64-apple-darwin/release/dinero
     cd /home/travis/build/frosklis/dinero-rs/target/x86_64-pc-windows-gnu/release/
     tar -czf dinero-windows-x86_64.tar.gz dinero.exe
     mv dinero-windows-x86_64.tar.gz /home/travis/build/frosklis/dinero-rs/
+
+    # SHA 256 for brew
+    cd /home/travis/build/frosklis/dinero-rs/
+    sha_256=$(shasum -a 256 dinero-mac-x86_64.tar.gz | cut -f 1 -d " ")
   fi
   
 deploy:
