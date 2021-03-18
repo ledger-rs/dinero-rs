@@ -199,7 +199,8 @@ impl Currency {
                     rule = parsed.next().unwrap();
                 }
                 integer_format = Some(rule);
-                self.negative_amount_display = NegativeAmountDisplay::AfterNumber;
+                // todo think
+                self.negative_amount_display = NegativeAmountDisplay::BeforeNumberBehindCurrency;
             }
             other => {
                 panic!("Other: {:?}", other);

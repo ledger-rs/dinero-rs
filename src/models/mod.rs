@@ -67,16 +67,6 @@ impl ParsedLedger {
                 if let Some(payee) = p.payee.clone() {
                     payee_strs.insert(payee);
                 }
-                // Currencies
-                if let Some(c) = &p.money_currency {
-                    commodity_strs.insert(c.clone());
-                }
-                if let Some(c) = &p.cost_currency {
-                    commodity_strs.insert(c.clone());
-                }
-                if let Some(c) = &p.balance_currency {
-                    commodity_strs.insert(c.clone());
-                }
             }
         }
         for price in self.prices.iter() {
