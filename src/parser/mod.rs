@@ -12,6 +12,7 @@ use std::path::PathBuf;
 
 use crate::models::{Account, Comment, Currency, Payee, Transaction};
 use crate::{models, List};
+use models::{HasAliases, HasName};
 use pest::Parser;
 
 mod include;
