@@ -3,23 +3,27 @@
 # - automate builds
 # - report code coverage
 # - deploy automatically for several platforms
-
 language: rust
-rust:
-  - stable
-  - 1.38.0
-  - beta
-  - nightly
-cache:
-  directories:
-    - /home/travis/.cargo
-
 dist: bionic
 jobs:
+  include:
+  - rust:
+    - stable
+    - 1.38.0
+    - beta
+    - nightly
+    os: linux
+  - rust: stable
+    os: osx
   allow_failures:
     - rust: nightly
     - rust: beta
   fast_finish: true
+    
+cache:
+  directories:
+    - /home/travis/.cargo
+
 
 # before_install: Scripts to run before the install stage
 # install: Scripts to run at the install stage
