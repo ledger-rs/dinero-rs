@@ -111,6 +111,11 @@ after_success: |
       fi
       rm cobertura.xml
       cargo publish --token ${CARGO_TOKEN}
+
+      echo "Bump for future development"
+      message=$(source scripts/ci_bump_version.sh)
+      git commit -a -m "${message}"
+      git push https://${GITHUB_TOKEN}@github.com/frosklis/dinero-rs.git
     fi 
   fi
   
