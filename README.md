@@ -56,3 +56,5 @@ Report filtering by account name and by date.
 I use ledger-cli extensively for my personal finances. My goal is to be able to run all the commands I use the most with my own tool while at the same time learning Rust.
 
 Run ```dinero --help``` for a list of available commands and options.
+
+If you use this software and want to say thanks, [feel free to buy me a coffee](https://www.buymeacoffee.com/7CLlJGE).
