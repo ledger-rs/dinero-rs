@@ -8,14 +8,16 @@ dist: bionic
 os:
   - linux
   - osx
-rust:
-  - stable
-  - 1.38.0
-  - beta
-  - nightly
 jobs:
   include:
   - os: linux
+    rust: stable
+  - os: linux
+    rust: 1.38.0
+  - os: linux
+    rust: beta
+  - os: linux
+    rust: nightly
   - rust: stable
     os: osx
   allow_failures:
