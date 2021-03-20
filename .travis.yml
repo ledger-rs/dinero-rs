@@ -109,7 +109,7 @@ after_success: |
 # after_failure: Scripts to run after a failing script stage
 # before_deploy: Scripts to run before the deploy stage
 before_deploy: |
-  if [[ "$TRAVIS_RUST_VERSION" != stable || "$TRAVIS_TAG" != *"build"* ]]; then
+  if [[ "$TRAVIS_RUST_VERSION" != stable || "$TRAVIS_TAG" == *"build"* ]]; then
     travis_terminate 0
   else   
     # Create the releases
