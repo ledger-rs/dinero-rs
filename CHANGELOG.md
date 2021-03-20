@@ -2,14 +2,18 @@
 Changelog file for dinero-rs project, a command line application for managing finances.
 
 ## [0.22.0] - xxx
+=======
+### Added
+- Slightly better handling of currency formats
 ### Changed
 - Better CI pipeline
+
 ## [0.21.0] - 2021-03-20
 ### Added
 - Infer currency format from the journal file
 - ```isin``` is a valid property for commodities
 ### Changed
-- Continuos integration pipeline is now better. No more problems like what happened between releases 0.18 and 0.20.
+- Continuous integration pipeline is now better. No more problems like what happened between releases 0.18 and 0.20.
 ### Fixed
 - Commodities get parsed properly, always removing quotes
 ## [0.20.0] - 2021-03-15

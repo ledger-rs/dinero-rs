@@ -1,7 +1,7 @@
 use super::super::Rule;
 use std::collections::HashSet;
 
-use crate::models::{Comment, Currency, Origin};
+use crate::models::{Comment, Currency};
 use crate::parser::utils::parse_string;
 use crate::parser::Tokenizer;
 
