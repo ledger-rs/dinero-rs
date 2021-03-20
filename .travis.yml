@@ -112,12 +112,12 @@ before_deploy: |
   if [[ "$TRAVIS_RUST_VERSION" != stable || "$TRAVIS_TAG" != *"build"* ]]; then
     travis_terminate 0
   else   
-  # Create the releases
-  # Macs
+    # Create the releases
+    # Macs
     sudo apt install build-essential
-    # cargo build --release --target x86_64-apple-darwin 
+    cargo build --release --target x86_64-apple-darwin 
     # New macs
-    # cargo build --release --target aarch64-apple-darwin 
+    cargo build --release --target aarch64-apple-darwin 
     # Raspberry
     # cargo build --release --target armv7-unknown-linux-gnueabihf
     # Linux ARM
@@ -126,12 +126,18 @@ before_deploy: |
     # cargo build --release --target x86_64-unknown-linux-gnu
     # Windows 
     cargo build --release --target x86_64-pc-windows-gnu
-    tree /home/travis/build/frosklis/dinero-rs/target/ -L 3
-    # cargo build --release --target x86_64-pc-windows-msvc
 
+    #
     # Package everything
-    # tar -czf dinero-mac-x86_64.tar.gz /home/travis/build/frosklis/dinero-rs/target/x86_64-apple-darwin/release/dinero
-    # tar -czf dinero-mac-aarch64.tar.gz /home/travis/build/frosklis/dinero-rs/target/aarch64-apple-darwin/release/dinero
+    #
+    cd /home/travis/build/frosklis/dinero-rs/target/x86_64-apple-darwin/
+    tar -czf dinero-mac-x86_64.tar.gz release/dinero
+    mv dinero-mac-x86_64.tar.gz /home/travis/build/frosklis/dinero-rs
+
+    cd /home/travis/build/frosklis/dinero-rs/target/aarch64-apple-darwin/
+    tar -czf dinero-mac-aarch64.tar.gz release/dinero
+    mv dinero-mac-aarch64.tar.gz /home/travis/build/frosklis/dinero-rs
+
     cd /home/travis/build/frosklis/dinero-rs/target/x86_64-pc-windows-gnu/release/
     tar -czf dinero-windows-x86_64.tar.gz dinero.exe
     mv dinero-windows-x86_64.tar.gz /home/travis/build/frosklis/dinero-rs/
