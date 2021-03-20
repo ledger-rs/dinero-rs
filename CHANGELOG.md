@@ -1,6 +1,7 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
 
+## [0.22.0]
 ## [0.21.0] - 2021-03-20
 ### Added
 - Infer currency format from the journal file
