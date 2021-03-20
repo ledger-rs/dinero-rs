@@ -15,12 +15,7 @@ rust:
   - nightly
 jobs:
   include:
-  - rust:
-    - stable
-    - 1.38.0
-    - beta
-    - nightly
-    os: linux
+  - os: linux
   - rust: stable
     os: osx
   allow_failures:
