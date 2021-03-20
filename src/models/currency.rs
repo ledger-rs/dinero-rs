@@ -169,8 +169,8 @@ impl Currency {
             .into_inner();
 
         let mut first = parsed.next().unwrap();
-        let mut integer_format = None;
-        let mut currency_format = None;
+        let integer_format;
+        let currency_format;
 
         if first.as_rule() == Rule::currency_format_positive {
             if first.as_str().starts_with("-") {
@@ -184,10 +184,11 @@ impl Currency {
         match first.as_rule() {
             Rule::integer_part => {
                 integer_format = Some(first);
-                let mut rule = parsed.next().unwrap();
+                let rule = parsed.next().unwrap();
                 if rule.as_rule() == Rule::space {
                     // TODO ??? decimal_format = Some(rule);
-                    rule = parsed.next().unwrap();
+                    // rule = parsed.next().unwrap();
+                    parsed.next().unwrap();
                 }
                 currency_format = parsed.next();
             }
