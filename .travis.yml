@@ -19,7 +19,7 @@ jobs:
       rust: stable
   exclude:
     - os: osx
-      env: TRAVIS_TAG=""
+      env: TRAVIS_TAG=
   allow_failures:
     - rust: nightly
     - rust: beta
