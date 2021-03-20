@@ -3,30 +3,46 @@
 # - automate builds
 # - report code coverage
 # - deploy automatically for several platforms
-
 language: rust
-rust:
-  - stable
-  - 1.38.0
-  - beta
-  - nightly
-cache:
-  directories:
-    - /home/travis/.cargo
-
 dist: bionic
 jobs:
+  include:
+    - os: linux
+      rust: stable
+    - os: linux
+      rust: 1.38.0
+    - os: linux
+      rust: beta
+    - os: linux
+      rust: nightly
+    - os: osx
+      rust: stable
   allow_failures:
     - rust: nightly
     - rust: beta
   fast_finish: true
+    
+cache:
+  directories:
+    - /home/travis/.cargo
 
 # before_install: Scripts to run before the install stage
+before_install: |
+  echo "OS: ${TRAVIS_OS_NAME}"
+  echo "OS: ${TRAVIS_OS_NAME}"
+  echo "Event: -${TRAVIS_EVENT_TYPE}-"
+  echo "Tag: -${TRAVIS_TAG}-"
+  if [[ $TRAVIS_TAG == "" ]]; then
+    if [[ $TRAVIS_OS_NAME == "osx" ]]; then
+    echo "Mac restricted to tags. Exiting."
+      travis_terminate 0
+    fi  
+  fi
 # install: Scripts to run at the install stage
 install: |
-  echo "Rust: ${TRAVIS_RUST_VERSION}"
-  echo "Event: ${TRAVIS_EVENT_TYPE}"
-  echo "Tag: ${TRAVIS_TAG}"
+  echo "Rust: -${TRAVIS_RUST_VERSION}-"
+  echo "Event: -${TRAVIS_EVENT_TYPE}-"
+  echo "Tag: -${TRAVIS_TAG}-"
   if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
     cargo install cargo-tarpaulin
     if [[ "$TRAVIS_TAG" != "" ]]; then
@@ -94,7 +110,7 @@ after_success: |
       fi
 
     # If it is from a tag...
-    elif [[ "$TRAVIS_TAG" != *"build"* ]]; then
+    elif [[ "$TRAVIS_TAG" != "*build*" ]]; then
       if [[ "$TRAVIS_TAG" != "$version" ]]; then
         echo "Expected $TRAVIS_TAG from tag name."
         echo "Found $version in Cargo.toml"
@@ -109,7 +125,13 @@ after_success: |
 # after_failure: Scripts to run after a failing script stage
 # before_deploy: Scripts to run before the deploy stage
 before_deploy: |
-  if [[ "$TRAVIS_RUST_VERSION" != stable || "$TRAVIS_TAG" == *"build"* ]]; then
+  echo "Operating system: ${TRAVIS_OS_NAME}"
+  if [[ "$TRAVIS_OS_NAME" != "osx" ]]; then
+    echo "Deploy phase restricted to osx"
+    travis_terminate 0
+  fi
+  echo "This is a mac"
+  if [[ "$TRAVIS_RUST_VERSION" != stable || "$TRAVIS_TAG" == "*build*" ]]; then
     travis_terminate 0
   else   
     # Create the releases
