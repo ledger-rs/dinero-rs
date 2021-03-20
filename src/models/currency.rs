@@ -62,13 +62,13 @@ pub struct Currency {
     thousands_separator: Separator,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CurrencySymbolPlacement {
     BeforeAmount,
     AfterAmount,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum NegativeAmountDisplay {
     BeforeSymbolAndNumber,      // UK   -£127.54   or Spain  -127,54 €
     BeforeNumberBehindCurrency, // Denmark	kr-127,54
@@ -170,12 +170,10 @@ impl Currency {
 
         let mut first = parsed.next().unwrap();
         let integer_format;
-        let currency_format;
 
         if first.as_rule() == Rule::currency_format_positive {
-            if first.as_str().starts_with("-") {
-                self.negative_amount_display = NegativeAmountDisplay::BeforeSymbolAndNumber;
-            } else if first.as_str().starts_with("(") {
+            self.negative_amount_display = NegativeAmountDisplay::BeforeSymbolAndNumber;
+            if first.as_str().starts_with("(") {
                 self.negative_amount_display = NegativeAmountDisplay::Parentheses;
             }
             parsed = first.into_inner();
@@ -186,22 +184,18 @@ impl Currency {
                 integer_format = Some(first);
                 let rule = parsed.next().unwrap();
                 if rule.as_rule() == Rule::space {
-                    // TODO ??? decimal_format = Some(rule);
-                    // rule = parsed.next().unwrap();
-                    parsed.next().unwrap();
+                    parsed.next();
                 }
-                currency_format = parsed.next();
+                parsed.next();
             }
             Rule::currency_string => {
-                currency_format = Some(first);
                 let mut rule = parsed.next().unwrap();
                 if rule.as_rule() == Rule::space {
-                    // TODO ??? decimal_format = Some(rule);
                     rule = parsed.next().unwrap();
                 }
                 integer_format = Some(rule);
-                // todo think
-                self.negative_amount_display = NegativeAmountDisplay::BeforeNumberBehindCurrency;
+                self.symbol_placement = CurrencySymbolPlacement::BeforeAmount;
+                self.negative_amount_display = NegativeAmountDisplay::BeforeSymbolAndNumber;
             }
             other => {
                 panic!("Other: {:?}", other);
@@ -313,6 +307,15 @@ mod tests {
         assert_eq!(currency.get_precision(), Some(2));
         assert_eq!(currency.get_thousands_separator_str(), '.');
         assert_eq!(currency.get_decimal_separator_str(), ',');
+        assert_eq!(currency.get_digit_grouping(), DigitGrouping::Thousands);
+        assert_eq!(
+            currency.symbol_placement,
+            CurrencySymbolPlacement::AfterAmount
+        );
+        assert_eq!(
+            currency.negative_amount_display,
+            NegativeAmountDisplay::BeforeSymbolAndNumber
+        );
     }
     #[test]
     fn format_2() {
@@ -323,5 +326,14 @@ mod tests {
         assert_eq!(currency.get_precision(), Some(2));
         assert_eq!(currency.get_thousands_separator_str(), ',');
         assert_eq!(currency.get_decimal_separator_str(), '.');
+        assert_eq!(currency.get_digit_grouping(), DigitGrouping::Thousands);
+        assert_eq!(
+            currency.symbol_placement,
+            CurrencySymbolPlacement::BeforeAmount
+        );
+        assert_eq!(
+            currency.negative_amount_display,
+            NegativeAmountDisplay::BeforeSymbolAndNumber
+        );
     }
 }
