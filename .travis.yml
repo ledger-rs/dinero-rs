@@ -28,8 +28,12 @@ cache:
 
 # before_install: Scripts to run before the install stage
 before_install: |
-  if [[ "$TRAVIS_TAG" == "" ]]; then
-    if [[ "$TRAVIS_OS_NAME" != "osx" ]]; then
+  echo "OS: ${TRAVIS_OS_NAME}"
+  echo "OS: ${TRAVIS_OS_NAME}"
+  echo "Event: -${TRAVIS_EVENT_TYPE}-"
+  echo "Tag: -${TRAVIS_TAG}-"
+  if [[ $TRAVIS_TAG == "" ]]; then
+    if [[ $TRAVIS_OS_NAME == "osx" ]]; then
     echo "Mac restricted to tags. Exiting."
       travis_terminate 0
     fi  
