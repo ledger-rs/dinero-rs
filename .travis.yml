@@ -5,21 +5,21 @@
 # - deploy automatically for several platforms
 language: rust
 dist: bionic
-os:
-  - linux
-  - osx
 jobs:
   include:
-  - os: linux
-    rust: stable
-  - os: linux
-    rust: 1.38.0
-  - os: linux
-    rust: beta
-  - os: linux
-    rust: nightly
-  - rust: stable
-    os: osx
+    - os: linux
+      rust: stable
+    - os: linux
+      rust: 1.38.0
+    - os: linux
+      rust: beta
+    - os: linux
+      rust: nightly
+    - os: osx
+      rust: stable
+  exclude:
+    - os: osx
+      env: TRAVIS_TAG=""
   allow_failures:
     - rust: nightly
     - rust: beta
