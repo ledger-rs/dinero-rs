@@ -19,7 +19,7 @@ directive = { include | price
 include = { "include" ~ws+ ~ glob   ~ws*~end}
 glob = { string | (!end ~ ANY)* }
 price = {"P" ~ ws* ~ date ~ (ws ~ time)? ~ ws+ ~ commodity_in_directive ~ ws* ~number ~ ws* ~ commodity_in_directive ~ws* ~ comment? ~ end}
-commodity = { "commodity" ~ ws+ ~ commodity_in_directive ~ ws* ~ comment? ~ end ~
+commodity = { "commodity" ~ ws+ ~ commodity_spec ~ ws* ~ comment? ~ end ~
     (sep ~ 
         ( 
             comment 
@@ -28,6 +28,7 @@ commodity = { "commodity" ~ ws+ ~ commodity_in_directive ~ ws* ~ comment? ~ end 
         )?
     ~end)*
     }
+commodity_spec = { string | (!";" ~!end ~ ANY)* }
 commodity_in_directive = { string | unquoted }
 payee_dir = { "payee" ~ ws+ ~ payee ~ ws* ~ comment? ~end ~ 
     (sep ~ 
@@ -54,7 +55,7 @@ account_dir = { "account" ~ ws+ ~ account ~ ws* ~ comment? ~ end ~
         )?
     ~end)*
     }
-commodity_property = { (alias | note | format ) ~ ws+ ~ property_value }
+commodity_property = { (alias | note | format | isin) ~ ws+ ~ property_value }
 payee_property = { (alias | note) ~ ws+ ~ property_value }
 account_property = { (alias | payee_subdirective | check | assert | note | isin ) ~ ws+ ~ property_value }
 tag_property = { (check | assert) ~ ws+ ~ property_value }

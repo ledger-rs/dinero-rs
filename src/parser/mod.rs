@@ -12,6 +12,7 @@ use std::path::PathBuf;
 
 use crate::models::{Account, Comment, Currency, Payee, Transaction};
 use crate::{models, List};
+use models::{HasAliases, HasName};
 use pest::Parser;
 
 mod include;
@@ -132,7 +133,9 @@ impl<'a> Tokenizer<'a> {
                                     ledger.tags.push(self.parse_tag(inner));
                                 }
                                 Rule::commodity => {
-                                    ledger.commodities.insert(self.parse_commodity(inner));
+                                    let commodity = self.parse_commodity(inner);
+                                    ledger.commodities.remove(&commodity);
+                                    ledger.commodities.insert(commodity);
                                 }
                                 Rule::account_dir => {
                                     ledger.accounts.insert(self.parse_account(inner));
@@ -144,7 +147,26 @@ impl<'a> Tokenizer<'a> {
                             }
                         }
                         Rule::transaction | Rule::automated_transaction => {
-                            ledger.transactions.push(self.parse_transaction(element));
+                            let transaction = self.parse_transaction(element);
+                            for posting in transaction.postings.borrow().iter() {
+                                let currencies = &[
+                                    (&posting.money_currency, &posting.money_format),
+                                    (&posting.cost_currency, &posting.cost_format),
+                                    (&posting.balance_currency, &posting.balance_format),
+                                ];
+                                for (currency, format) in currencies {
+                                    if let Some(c) = currency {
+                                        let found = ledger.commodities.get(c);
+                                        if found.is_err() {
+                                            let mut commodity = Currency::from(c.as_str());
+                                            commodity
+                                                .set_format(format.as_ref().unwrap().to_owned());
+                                            ledger.commodities.insert(commodity);
+                                        }
+                                    }
+                                }
+                            }
+                            ledger.transactions.push(transaction);
                         }
                         _x => {
                             // eprintln!("{:?}", x);
