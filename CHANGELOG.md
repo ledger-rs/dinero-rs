@@ -1,5 +1,6 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
+## [0.23.0] - xxx
 
 ## [0.22.0] - 2021-03-21
 ### Added
