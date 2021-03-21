@@ -237,3 +237,18 @@ currency_format = {
 }
 space = {" "}
 currency_string = { ( string | (!ASCII_DIGIT ~ !space ~ ANY)*) }
+
+//
+// Format strings
+//
+substitution = { "%" ~ left_aligned? ~ min_width? ~ max_width? ~ (value_expr | datefmt | single_letter_variable )  }
+left_aligned = {"-"}
+min_width = { bigint }
+max_width = { "." ~ bigint }
+single_letter_variable = {
+    "P"      // payee
+    | "%"    // percent sign
+    | "t"    // --amount
+    | "T"    // --total
+}
+datefmt = { "[" ~(!"]" ~ ANY)* ~ "]"}
