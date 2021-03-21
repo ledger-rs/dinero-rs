@@ -10,8 +10,6 @@
 #   Rust stable
 #   - upload tarpaulin coverage report 
 #   - publish to crates.io - only when tag is something nonempty that does not have "build" in it
-
-language: rust
 dist: bionic
 os:
   - linux
