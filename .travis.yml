@@ -212,7 +212,6 @@ deploy:
     local_dir: docs/book
     keep_history: true
     on:
-      os: linux
       rust: stable
       branch: master
     target_branch: gh-pages
