@@ -14,6 +14,12 @@ dist: bionic
 os:
   - linux
   - osx
+language: rust
+rust:
+  - stable
+  - 1.38.0
+  - beta
+  - nightly
 jobs:
   include:
     - os: linux
