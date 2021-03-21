@@ -3,6 +3,7 @@ Changelog file for dinero-rs project, a command line application for managing fi
 ## [0.23.0] - xxx
 ### Added
 - Accounts now have a ```country``` property
+- Documentation is now available at github.
 ### Changed
 - Accounts no longer support ```isin``` property. They do support ```iban```, which is what should have always been.
 
