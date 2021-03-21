@@ -213,7 +213,7 @@ deploy:
     local-dir: docs/book
     keep-history: false
     on:
-      condition: $TRAVIS_OS_NAME = linux
+      condition: env(TRAVIS_OS_NAME) = linux
       rust: stable
       branch: master
     target_branch: gh-pages
