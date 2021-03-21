@@ -13,6 +13,9 @@
 
 language: rust
 dist: bionic
+os:
+  - linux
+  - osx
 jobs:
   include:
     - os: linux
@@ -44,8 +47,12 @@ install: |
   if [[ "$TRAVIS_RUST_VERSION" == stable && $TRAVIS_OS_NAME == "linux" ]]; then
     echo "Installing tarpaulin"
     cargo install cargo-tarpaulin
+    if [[ $TRAVIS_BRANCH == master ]]; then
+      echo "Installing mdbook"
+      cargo install mdbook
+    fi
   else
-    echo "Not installing tarpaulin"
+    echo "Not installing tarpaulin or mdbook"
   fi
   
   
@@ -182,7 +189,14 @@ before_deploy: |
     # Linux x86
     # cargo build --release --target x86_64-unknown-linux-gnu
 
+  
+  else
+    # Build the book
+    cd docs
+    mdbook build
+    mdbook test  
   fi
+  
   
 deploy:
   - provider: releases
