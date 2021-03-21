@@ -19,7 +19,8 @@ impl<'a> Tokenizer<'a> {
         let mut assert = Vec::new();
         let mut payee: Vec<Regex> = Vec::new();
         let mut note = None;
-        let mut isin = None;
+        let mut iban = None;
+        let mut country = None;
 
         while let Some(part) = parsed.next() {
             match part.as_rule() {
@@ -30,7 +31,8 @@ impl<'a> Tokenizer<'a> {
                             aliases.insert(parse_string(property.next().unwrap()));
                         }
                         Rule::note => note = Some(parse_string(property.next().unwrap())),
-                        Rule::isin => isin = Some(parse_string(property.next().unwrap())),
+                        Rule::iban => iban = Some(parse_string(property.next().unwrap())),
+                        Rule::country => country = Some(parse_string(property.next().unwrap())),
                         Rule::assert => assert.push(parse_string(property.next().unwrap())),
                         Rule::check => check.push(parse_string(property.next().unwrap())),
                         Rule::payee_subdirective => payee.push(
@@ -47,7 +49,8 @@ impl<'a> Tokenizer<'a> {
             name,
             Origin::FromDirective,
             note,
-            isin,
+            iban,
+            country,
             aliases,
             check,
             assert,
@@ -80,7 +83,7 @@ mod tests {
     note An account for everyday expenses
     ; this line will be ignored
     alias checking account
-    isin 123456789
+    iban 123456789
     payee Employer
     "
             .to_string(),
