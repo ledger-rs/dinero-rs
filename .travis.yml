@@ -23,13 +23,6 @@ rust:
 jobs:
   include:
     - os: linux
-      rust: stable
-    - os: linux
-      rust: 1.38.0
-    - os: linux
-      rust: beta
-    - os: linux
-      rust: nightly
     - os: osx
       rust: stable
   exclude:
