@@ -102,9 +102,9 @@ after_success: |
       fi
 
     # If it is from a tag...
-    elif [[ "$TRAVIS_TAG" != "*build*" ]]; then
+    elif [[ $TRAVIS_TAG != *build* ]]; then
       echo "Publishing to crates.io"
-      if [[ "$TRAVIS_TAG" != "$version" ]]; then
+      if [[ "$TRAVIS_TAG" != $version ]]; then
         echo "Expected $TRAVIS_TAG from tag name."
         echo "Found $version in Cargo.toml"
         travis_terminate 1
