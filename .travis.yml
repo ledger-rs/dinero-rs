@@ -205,13 +205,12 @@ deploy:
       condition: $TRAVIS_OS_NAME = osx
       rust: stable
       tags: true
-  - provider: pages
-    strategy: git
+  - provider: pages:git
     edge: true
     cleanup: false
-    github-token: $GITHUB_TOKEN
-    local-dir: docs/book
-    keep-history: false
+    token: $GITHUB_TOKEN
+    local_dir: docs/book
+    keep_history: true
     on:
       condition: $TRAVIS_OS_NAME == "linux"
       rust: stable
