@@ -49,7 +49,7 @@ fn include_glob() {
         .args(&["prices", "-f", "tests/example_files/include.ledger"])
         .assert();
     let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
-    assert_eq(output.lines().into_iter().count() > 50); // It is 101
+    assert!(output.lines().into_iter().count() > 50); // It is 101
 }
 
 #[test]
