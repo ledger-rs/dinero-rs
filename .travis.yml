@@ -35,7 +35,7 @@ jobs:
     
 cache:
   directories:
-    - /home/travis/.cargo
+    - ${HOME}/.cargo
 
 # before_install: Scripts to run before the install stage
 # install: Scripts to run at the install stage
@@ -54,7 +54,7 @@ before_script: |
   if [[ "$TRAVIS_RUST_VERSION" == stable && "$TRAVIS_EVENT_TYPE" == cron ]]; then
     for TAG in $(git tag | grep -)
     do
-      git push --delete https://${GITHUB_TOKEN}@github.com/frosklis/dinero-rs.git  $TAG 
+      git push --delete https://${GITHUB_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git  $TAG 
     done
   fi
 
@@ -77,7 +77,7 @@ before_cache:
   - find ./target/debug -type f -maxdepth 1 -delete
   - rm -fr ./target/debug/{deps,.fingerprint}/{*ra_*,*test*,*tools*,*gen_lsp*,*thread_worker*,*dinero*}
   - rm -f  ./target/.rustc_info.json
-  - rm -rf /home/travis/.cargo/registry
+  - rm -rf ${HOME}/.cargo/registry
 
 # after_success: Scripts to run after a successful script stage
 # If the build comes from a tag named appropriately
@@ -98,7 +98,7 @@ after_success: |
         export line_number=$(grep -En "version = \"([0-9]+\.[0-9]+.[0-9]+)\"" Cargo.toml | grep -Eo -m 1 "[0-9]+" | head -n 1)
         sed -i "${line_number}s/.*/version = \"${version}-build-${TRAVIS_BUILD_NUMBER}\"/" Cargo.toml 
         git tag -a -m "[ci skip] automated tag from Travis" ${version}-build-${TRAVIS_BUILD_NUMBER}
-        git push -f --tags https://${GITHUB_TOKEN}@github.com/frosklis/dinero-rs.git
+        git push -f --tags https://${GITHUB_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git
       fi
 
     # If it is from a tag...
@@ -115,7 +115,7 @@ after_success: |
       echo "Bump for future development"
       message=$(source scripts/ci_bump_version.sh)
       git commit -a -m "${message}"
-      git push https://${GITHUB_TOKEN}@github.com/frosklis/dinero-rs.git
+      git push https://${GITHUB_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git
     fi 
   fi
   
@@ -149,9 +149,9 @@ before_deploy: |
   echo "------------------------"
   rustup target add x86_64-apple-darwin
   cargo build --release --target x86_64-apple-darwin 
-  cd /home/travis/build/frosklis/dinero-rs/target/x86_64-apple-darwin/release/
+  cd ${HOME}/build/${TRAVIS_REPO_SLUG}/target/x86_64-apple-darwin/release/
   tar -czf dinero-mac-x86_64.tar.gz dinero
-  mv dinero-mac-x86_64.tar.gz /home/travis/build/frosklis/dinero-rs
+  mv dinero-mac-x86_64.tar.gz ${HOME}/build/${TRAVIS_REPO_SLUG}
 
   # New macs
   echo "----------------------"
@@ -159,9 +159,9 @@ before_deploy: |
   echo "----------------------"
   rustup target add aarch64-apple-darwin 
   cargo build --release --target aarch64-apple-darwin 
-  cd /home/travis/build/frosklis/dinero-rs/target/aarch64-apple-darwin/release/
+  cd ${HOME}/build/${TRAVIS_REPO_SLUG}/target/aarch64-apple-darwin/release/
   tar -czf dinero-mac-aarch64.tar.gz dinero
-  mv dinero-mac-aarch64.tar.gz /home/travis/build/frosklis/dinero-rs
+  mv dinero-mac-aarch64.tar.gz ${HOME}/build/${TRAVIS_REPO_SLUG}
   
   # Windows 
   echo "---------------------"
@@ -169,9 +169,9 @@ before_deploy: |
   echo "---------------------"
   rustup target add x86_64-pc-windows-gnu
   cargo build --release --target x86_64-pc-windows-gnu
-  cd /home/travis/build/frosklis/dinero-rs/target/x86_64-pc-windows-gnu/release/
+  cd ${HOME}/build/${TRAVIS_REPO_SLUG}/target/x86_64-pc-windows-gnu/release/
   tar -czf dinero-windows-x86_64.tar.gz dinero.exe
-  mv dinero-windows-x86_64.tar.gz /home/travis/build/frosklis/dinero-rs/
+  mv dinero-windows-x86_64.tar.gz ${HOME}/build/${TRAVIS_REPO_SLUG}/
 
   # Raspberry
   # rustup target add armv7-unknown-linux-gnueabihf
