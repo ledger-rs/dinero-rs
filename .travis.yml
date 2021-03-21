@@ -27,7 +27,7 @@ jobs:
       rust: stable
   exclude:
     - os: osx
-      if: env(TRAVIS_TAG) IS blank
+      if: tag IS blank
   allow_failures:
     - rust: nightly
     - rust: beta
