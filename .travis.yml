@@ -114,6 +114,7 @@ after_success: |
 
       echo "Bump for future development"
       message=$(source scripts/ci_bump_version.sh)
+      git checkout master
       git commit -a -m "${message}"
       git push https://${GITHUB_TOKEN}@github.com/frosklis/dinero-rs.git
     fi 
