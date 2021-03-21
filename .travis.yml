@@ -205,7 +205,7 @@ deploy:
       condition: $TRAVIS_OS_NAME = osx
       rust: stable
       tags: true
-  - provider: pages:git
+  - provider: pages
     edge: true
     cleanup: false
     token: $GITHUB_TOKEN
