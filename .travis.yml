@@ -10,19 +10,19 @@
 #   Rust stable
 #   - upload tarpaulin coverage report 
 #   - publish to crates.io - only when tag is something nonempty that does not have "build" in it
-
-language: rust
 dist: bionic
+os:
+  - linux
+  - osx
+language: rust
+rust:
+  - stable
+  - 1.38.0
+  - beta
+  - nightly
 jobs:
   include:
     - os: linux
-      rust: stable
-    - os: linux
-      rust: 1.38.0
-    - os: linux
-      rust: beta
-    - os: linux
-      rust: nightly
     - os: osx
       rust: stable
   exclude:
@@ -44,8 +44,12 @@ install: |
   if [[ "$TRAVIS_RUST_VERSION" == stable && $TRAVIS_OS_NAME == "linux" ]]; then
     echo "Installing tarpaulin"
     cargo install cargo-tarpaulin
+    if [[ $TRAVIS_BRANCH == master ]]; then
+      echo "Installing mdbook"
+      cargo install mdbook
+    fi
   else
-    echo "Not installing tarpaulin"
+    echo "Not installing tarpaulin or mdbook"
   fi
   
   
@@ -125,71 +129,95 @@ after_success: |
 before_deploy: |
   # This is only executed when we are in Mac and are going to publish somethin
   echo "Operating system: ${TRAVIS_OS_NAME}"
-  if [[ "$TRAVIS_OS_NAME" != "osx" ]]; then
+  if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
     echo "Deploy phase restricted to osx"
     travis_terminate 0
-  fi
-  if [[ "$TRAVIS_TAG" != "$version" ]]; then
-    echo "Expected $TRAVIS_TAG from tag name."
-    echo "Found $version in Cargo.toml"
-    travis_terminate 1
-  fi
-
-  # Create the releases
-  echo "Current directory"
-  pwd
-
-  #
-  # Package everything
-  #
-
-  # Intel macs
-  echo "------------------------"
-  echo "- Build for intel Macs -"
-  echo "------------------------"
-  rustup target add x86_64-apple-darwin
-  cargo build --release --target x86_64-apple-darwin 
-  cd ${HOME}/build/${TRAVIS_REPO_SLUG}/target/x86_64-apple-darwin/release/
-  tar -czf dinero-mac-x86_64.tar.gz dinero
-  mv dinero-mac-x86_64.tar.gz ${HOME}/build/${TRAVIS_REPO_SLUG}
-
-  # New macs
-  echo "----------------------"
-  echo "- Build for ARM Macs -"
-  echo "----------------------"
-  rustup target add aarch64-apple-darwin 
-  cargo build --release --target aarch64-apple-darwin 
-  cd ${HOME}/build/${TRAVIS_REPO_SLUG}/target/aarch64-apple-darwin/release/
-  tar -czf dinero-mac-aarch64.tar.gz dinero
-  mv dinero-mac-aarch64.tar.gz ${HOME}/build/${TRAVIS_REPO_SLUG}
+      if [[ "$TRAVIS_TAG" != "$version" ]]; then
+        echo "Expected $TRAVIS_TAG from tag name."
+        echo "Found $version in Cargo.toml"
+        travis_terminate 1
+      fi
   
-  # Windows 
-  echo "---------------------"
-  echo "- Build for Windows -"
-  echo "---------------------"
-  rustup target add x86_64-pc-windows-gnu
-  cargo build --release --target x86_64-pc-windows-gnu
-  cd ${HOME}/build/${TRAVIS_REPO_SLUG}/target/x86_64-pc-windows-gnu/release/
-  tar -czf dinero-windows-x86_64.tar.gz dinero.exe
-  mv dinero-windows-x86_64.tar.gz ${HOME}/build/${TRAVIS_REPO_SLUG}/
+    # Create the releases
+    echo "Current directory"
+    pwd
 
-  # Raspberry
-  # rustup target add armv7-unknown-linux-gnueabihf
-  # rustup target add aarch64-unknown-linux-gnu
-  # rustup target add x86_64-unknown-linux-gnu
-  # cargo build --release --target armv7-unknown-linux-gnueabihf
-  # Linux ARM
-  # cargo build --release --target aarch64-unknown-linux-gnu
-  # Linux x86
-  # cargo build --release --target x86_64-unknown-linux-gnu
+    #
+    # Package everything
+    #
+
+    # Intel macs
+    echo "------------------------"
+    echo "- Build for intel Macs -"
+    echo "------------------------"
+    rustup target add x86_64-apple-darwin
+    cargo build --release --target x86_64-apple-darwin 
+    cd ${HOME}/build/${TRAVIS_REPO_SLUG}/target/x86_64-apple-darwin/release/
+    tar -czf dinero-mac-x86_64.tar.gz dinero
+    mv dinero-mac-x86_64.tar.gz ${HOME}/build/${TRAVIS_REPO_SLUG}
+
+    # New macs
+    echo "----------------------"
+    echo "- Build for ARM Macs -"
+    echo "----------------------"
+    rustup target add aarch64-apple-darwin 
+    cargo build --release --target aarch64-apple-darwin 
+    cd ${HOME}/build/${TRAVIS_REPO_SLUG}/target/aarch64-apple-darwin/release/
+    tar -czf dinero-mac-aarch64.tar.gz dinero
+    mv dinero-mac-aarch64.tar.gz ${HOME}/build/${TRAVIS_REPO_SLUG}
+    
+    # Windows 
+    echo "---------------------"
+    echo "- Build for Windows -"
+    echo "---------------------"
+    rustup target add x86_64-pc-windows-gnu
+    cargo build --release --target x86_64-pc-windows-gnu
+    cd ${HOME}/build/${TRAVIS_REPO_SLUG}/target/x86_64-pc-windows-gnu/release/
+    tar -czf dinero-windows-x86_64.tar.gz dinero.exe
+    mv dinero-windows-x86_64.tar.gz ${HOME}/build/${TRAVIS_REPO_SLUG}/
+
+    # Raspberry
+    # rustup target add armv7-unknown-linux-gnueabihf
+    # rustup target add aarch64-unknown-linux-gnu
+    # rustup target add x86_64-unknown-linux-gnu
+    # cargo build --release --target armv7-unknown-linux-gnueabihf
+    # Linux ARM
+    # cargo build --release --target aarch64-unknown-linux-gnu
+    # Linux x86
+    # cargo build --release --target x86_64-unknown-linux-gnu
+  
+  else
+    if [ $TRAVIS_PULL_REQUEST ]; then travis_terminate 0; fi
+    # Build the book
+    cd docs
+    mdbook build
+    mdbook test  
+  fi
+  
   
 deploy:
-  provider: releases
-  token: $GITHUB_TOKEN
-  file: "*.gz"
-  release_notes_file: CHANGELOG.md
-  edge: true # opt in to dpl v2
-  on:
-    tags: true
+  - provider: releases
+    token: $GITHUB_TOKEN
+    file: "*.gz"
+    release_notes_file: CHANGELOG.md
+    edge: true # opt in to dpl v2
+    on:
+      condition: $TRAVIS_OS_NAME = osx
+      rust: stable
+      tags: true
+  - provider: pages
+    strategy: git
+    edge: true
+    cleanup: false
+    github-token: $GITHUB_TOKEN
+    local-dir: docs/book
+    keep-history: false
+    on:
+      condition: $TRAVIS_OS_NAME = linux
+      rust: stable
+      branch: master
+    target_branch: gh-pages
 # after_deploy: Scripts to run after the deploy stage
 # after_script: Scripts to run as the last stage
+
+  
