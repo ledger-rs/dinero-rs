@@ -1,4 +1,4 @@
-name: Pass tests
+name: Publish documentation
 # - Check that the package passes the tests correctly in all Rust versions
 on:
   push:
