@@ -2,6 +2,7 @@ name: Pass tests
 # - Check that the package passes the tests correctly in all Rust versions
 on:
   push:
+  pull_request:
 
 env:
   CARGO_TERM_COLOR: always
