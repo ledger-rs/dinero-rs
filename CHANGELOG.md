@@ -6,6 +6,7 @@ Changelog file for dinero-rs project, a command line application for managing fi
 - Documentation is now available at github.
 ### Changed
 - Accounts no longer support ```isin``` property. They do support ```iban```, which is what should have always been.
+- Migrated the CI pipeline to Github Actions because I had trouble with Travis (build matrices)
 
 ## [0.22.0] - 2021-03-21
 ### Added
