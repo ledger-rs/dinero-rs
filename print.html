@@ -1,0 +1,305 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>dinero documentation</title>
+        
+        <meta name="robots" content="noindex" />
+        
+        
+
+
+        <!-- Custom HTML head -->
+        
+
+
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="Documentation for the command line tool dinero">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        
+        <link rel="icon" href="favicon.svg">
+        
+        
+        <link rel="shortcut icon" href="favicon.png">
+        
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        
+        <link rel="stylesheet" href="css/print.css" media="print">
+        
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        
+        <link rel="stylesheet" href="fonts/fonts.css">
+        
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        
+
+        
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="index.html"><strong aria-hidden="true">1.</strong> The readme file</a></li><li class="chapter-item expanded "><a href="differences_with_ledger.html"><strong aria-hidden="true">2.</strong> Differences with ledger</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                        
+                    </div>
+
+                    <h1 class="menu-title">dinero documentation</h1>
+
+                    <div class="right-buttons">
+                        
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        
+                        
+                    </div>
+                </div>
+
+                
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <p><a href="https://travis-ci.com/frosklis/dinero-rs"><img src="https://travis-ci.com/frosklis/dinero-rs.svg?branch=master" alt="Build Status" /></a>
+<a href="https://codecov.io/gh/frosklis/dinero-rs"><img src="https://codecov.io/gh/frosklis/dinero-rs/branch/master/graph/badge.svg?token=QC4LG2ZMZJ" alt="codecov" /></a>
+<a href="https://crates.io/crates/dinero-rs"><img src="https://img.shields.io/crates/v/dinero-rs" alt="crates.io" /></a>
+<img src="https://img.shields.io/crates/l/dinero-rs" alt="Crates.io" /></p>
+<p>Dinero (spanish for money) is a command line tool that can deal with ledger files, as defined by John Wiegley's wonderful <a href="https://www.ledger-cli.org/">ledger-cli</a>.</p>
+<h1 id="quickstart"><a class="header" href="#quickstart">Quickstart</a></h1>
+<h2 id="install"><a class="header" href="#install">Install</a></h2>
+<p>If Rust and cargo are available in your system, the easiest way to get dinero-rs is by installing the crate:</p>
+<pre><code class="language-sh">cargo install dinero-rs
+</code></pre>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Installation for Windows</li>
+<li><input disabled="" type="checkbox"/>
+Installation for Mac</li>
+<li><input disabled="" type="checkbox"/>
+Installation for Linux</li>
+</ul>
+<h2 id="first-steps"><a class="header" href="#first-steps">First steps</a></h2>
+<p>Dinero uses double entry accounting. Store your journal files in <code>ledger</code> files. The main item is a transaction, which in its basic form looks something like this:</p>
+<pre><code class="language-ledger">; This is a comment
+; A date followed by a description identifies the beginning of a transaction
+2021-02-01 Buy fruit
+     Expenses:Groceries          7.92 EUR
+     Assets:Checking account             ; you can leave this blank, dinero balances the transactions for you
+</code></pre>
+<p>After that, you can issue all the commands you want and combine them with options to have complete control over your finances!</p>
+<p>The most basic ones are:</p>
+<pre><code class="language-sh"># Get a balance report: How much is there in every account 
+dinero bal -f myledger.ledger
+
+# Get a list of transactions
+dinero reg -f myledger.ledger
+</code></pre>
+<h1 id="features"><a class="header" href="#features">Features</a></h1>
+<p>Currently supported are:</p>
+<ul>
+<li>Balance reports</li>
+<li>Register reports</li>
+<li>Account and payees reports</li>
+<li>Automated transactions</li>
+<li>Multicurrency transactions</li>
+<li>Currency conversion</li>
+</ul>
+<p>Report filtering by account name and by date.</p>
+<h1 id="motivation"><a class="header" href="#motivation">Motivation</a></h1>
+<p>I use ledger-cli extensively for my personal finances. My goal is to be able to run all the commands I use the most with my own tool while at the same time learning Rust.</p>
+<p>Run <code>dinero --help</code> for a list of available commands and options.</p>
+<p>If you use this software and want to say thanks, <a href="https://www.buymeacoffee.com/7CLlJGE">feel free to buy me a coffee</a>.</p>
+<h1 id="differences-with-ledger-cli"><a class="header" href="#differences-with-ledger-cli">Differences with ledger-cli</a></h1>
+<p>Although dinero is completely inspired by <a href="https://ledger-cli.org"><code>ledger-cli</code></a> and implements a subset of its features, it has been written form scratch, it is not a port. </p>
+<p>Some behaviors are intentionally different. Other things are just bugs: if you find one, feel free to add an issue in the <a href="https://github.com/frosklis/dinero-rs">development repository</a>.</p>
+<p><code>dinero</code> is developed in Rust, while <code>ledger</code> is developed in C. This is completely transparent to the end user, it does at least theoretically provide some advantages for developers, with Rust being a newer language with the same speed as C but more memory safety. Again, this at least theory</p>
+<p>The next table presents a summary of differences, with the most important ones being commented later.</p>
+<table><thead><tr><th>What</th><th>ledger</th><th>dinero</th></tr></thead><tbody>
+<tr><td>Programming language</td><td>C</td><td>Rust</td></tr>
+<tr><td>Feature set</td><td>a lot of options for each command</td><td>just some options for each command</td></tr>
+<tr><td>Transaction sorting for balance assertion</td><td>within file?</td><td>global</td></tr>
+<tr><td>Speed</td><td>extremely fast</td><td>not quite as fast (yet)</td></tr>
+<tr><td>End with newline</td><td>files must end with a blank line</td><td>no need to do that</td></tr>
+<tr><td>Regular expressions</td><td>assume ignore case</td><td>not always (it is well known when)</td></tr>
+<tr><td>Unicode</td><td>not everywhere</td><td>€ is a valid currency</td></tr>
+</tbody></table>
+<h2 id="balance-assertions"><a class="header" href="#balance-assertions">Balance assertions</a></h2>
+<p>Balance assertions have the same syntax in both languages, but the way they are handled is different.</p>
+<p>In <code>ledger</code> it is very difficult (for me) to add balance assertions to all the transactions, in particular when you have several ledger files linked together. The balance assertions are processed more or less as they appear in the files, which depends in the order you read the files with the <code>include</code> directive.</p>
+<p>In <code>dinero</code> every transaction is read, then they are sorted by date (without altering the original order in ties) and finally tha balance is checked.</p>
+<p>The practical consequence for me (Claudio) in particular is that rather than doing this:</p>
+<pre><code class="language-ledger">include past/201701.ledger
+include past/201702.ledger
+; ...
+include past/202103.ledger
+</code></pre>
+<p>I can do this instead:</p>
+<pre><code class="language-ledger">include past/*.ledger
+</code></pre>
+<p>This results in a much shorter file, easier on the eyes (I like my master.ledger file to be complete yet simple). <code>ledger</code> does not guarantee the order in which the files are read and that affects balance assertions. <code>dinero</code> doesn't guarantee it either, but the extra ordering step means it doesn't matter (though arguably it makes it somewhat slower)</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        
+
+                        
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                
+
+                
+            </nav>
+
+        </div>
+
+        
+
+        
+
+        
+
+        
+        <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
+        
+
+        
+
+        
+        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        
+
+        
+        
+        <script type="text/javascript">
+        window.addEventListener('load', function() {
+            window.setTimeout(window.print, 100);
+        });
+        </script>
+        
+        
+
+    </body>
+</html>
