@@ -1,5 +1,5 @@
-name: Test
-
+name: Pass tests
+# - Check that the package passes the tests correctly in all Rust versions
 on:
   push:
 
@@ -8,12 +8,19 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust: [stable, 1.38.0, beta, nightly]
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Build
-      run: cargo build
-    - name: Run tests
-      run: cargo test --verbose
+      - uses: actions/checkout@v2
+      - name: Install rust toolchain
+        uses: actions-rs/toolchain@v1    # https://github.com/marketplace/actions/rust-toolchain
+        with:
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - name: Build
+        run: cargo build
+      - name: Run tests
+        run: cargo test
