@@ -125,7 +125,7 @@ const LEDGER_PATHS: &str = ".ledgerrc";
 
 fn init_paths(args: Vec<String>) -> Vec<String> {
     let mut possible_paths: Vec<String> = Vec::new();
-    
+
     for i in 0..args.len() {
         if args[i] == INIT_FILE_FLAG {
             possible_paths.push(args[i + 1].clone());
@@ -135,7 +135,7 @@ fn init_paths(args: Vec<String>) -> Vec<String> {
 
     possible_paths.push(shellexpand::tilde(LEDGER_PATHS_UNDER_DIR).to_string());
     possible_paths.push(LEDGER_PATHS.to_string());
-    
+
     possible_paths
 }
 
