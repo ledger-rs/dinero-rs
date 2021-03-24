@@ -1,5 +1,6 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
+## [0.24.0] - xxx
 ## [0.23.0] - 2021-03-24
 ### Added
 - Accounts now have a ```country``` property
