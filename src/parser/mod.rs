@@ -10,11 +10,8 @@ use std::collections::HashSet;
 use std::fs::read_to_string;
 use std::path::PathBuf;
 
+use crate::models::{Account, Comment, Currency, Payee, Transaction};
 use crate::{models, List};
-use crate::{
-    models::{Account, Comment, Currency, Payee, Transaction},
-    CommonOpts,
-};
 use pest::Parser;
 
 mod include;

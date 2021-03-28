@@ -36,4 +36,4 @@ pest_derive = "2.0"
 
 # Two timer depends on pidgin, but with the upgrade to 0.4.1, iy breaks
 # So I force it.
-pidgin = "0.4.0"
+pidgin = "^0.4.0"
