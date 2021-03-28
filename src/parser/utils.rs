@@ -59,7 +59,16 @@ pub(crate) fn parse_string(string: Pair<Rule>) -> String {
             quoted[1..len - 1].to_string()
         }
         Rule::unquoted => string.as_str().to_string(),
-        Rule::currency => parse_string(string.into_inner().next().unwrap()),
-        _ => string.as_str().to_string(),
+        Rule::commodity_spec => {
+            let as_str = string.as_str();
+            match string.into_inner().next() {
+                Some(x) => parse_string(x),
+                None => as_str.trim().to_string(),
+            }
+        }
+        Rule::currency | Rule::commodity_in_directive => {
+            parse_string(string.into_inner().next().unwrap())
+        }
+        _ => string.as_str().trim().to_string(),
     }
 }

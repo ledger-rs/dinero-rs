@@ -1,0 +1,29 @@
+name: Publish and deploy
+# - Check that the package passes the tests correctly in all Rust versions
+on:
+  push:
+    tags:
+    - '*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  publish-crate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Publish to crates.io
+        run: cargo publish --token ${secrets.CARGO_TOKEN}
+      - name: Bump version for development
+        run: |
+          git checkout -b temporal_branch
+          git checkout master
+          git merge temporal_branch
+          message=$(source scripts/ci_bump_version.sh)
+          git commit -a -m "${message}"
+          git push https://${github.token}@github.com/${github.repository}.git

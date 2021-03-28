@@ -147,19 +147,32 @@ impl CommonOpts {
         }
     }
 }
+
 /// Entry point for the command line app
-pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
-    // println!("{:?}", args);
+const INIT_FILE_FLAG: &str = "--init-file";
+const LEDGER_PATHS_UNDER_DIR: &str = "~/.ledgerrc";
+const LEDGER_PATHS: &str = ".ledgerrc";
+
+fn init_paths(args: Vec<String>) -> Vec<String> {
     let mut possible_paths: Vec<String> = Vec::new();
+
     for i in 0..args.len() {
-        if args[i] == "--init-file" {
+        if args[i] == INIT_FILE_FLAG {
             possible_paths.push(args[i + 1].clone());
             break;
         }
     }
-    possible_paths.push(shellexpand::tilde("~/.ledgerrc").to_string());
-    possible_paths.push(".ledgerrc".to_string());
+
+    possible_paths.push(shellexpand::tilde(LEDGER_PATHS_UNDER_DIR).to_string());
+    possible_paths.push(LEDGER_PATHS.to_string());
+
+    possible_paths
+}
+
+/// Entry point for the command line app
+pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
     let mut config_file = None;
+    let possible_paths = init_paths(args.clone());
     for path in possible_paths.iter() {
         let file = Path::new(path);
         if file.exists() {
@@ -176,10 +189,8 @@ pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
             match option.chars().nth(0) {
                 Some(c) => match c {
                     '-' => {
-                        assert!(
-                            line.starts_with("--"),
-                            format!("Bad config file {:?}\n{}", file, line)
-                        );
+                        let message = format!("Bad config file {:?}\n{}", file, line);
+                        assert!(line.starts_with("--"), message,);
                         let mut iter = line.split_whitespace();
                         let option = iter.next().unwrap();
                         if !args.iter().any(|x| {

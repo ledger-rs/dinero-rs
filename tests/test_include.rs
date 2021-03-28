@@ -43,17 +43,6 @@ fn test_fail() {
 }
 
 #[test]
-/// Test whether glob expressions in include are working
-fn include_glob() {
-    let assert_1 = Command::cargo_bin("dinero")
-        .unwrap()
-        .args(&["prices", "-f", "tests/example_files/include.ledger"])
-        .assert();
-    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
-    assert!(output.lines().into_iter().count() > 100);
-}
-
-#[test]
 fn comment_no_spaces() {
     let mut tokenizer: Tokenizer = Tokenizer::from(
         "

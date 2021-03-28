@@ -55,3 +55,18 @@ fn test_account_names() {
         assert_eq!(num_accounts, 2, "There should be two accounts");
     }
 }
+
+#[test]
+fn test_account_directive() {
+    let mut tokenizer = Tokenizer::from(
+        "account Assets:Revolut
+    country GB
+    alias revolut
+    payee Revolut "
+            .to_string(),
+    );
+
+    let parsed = tokenizer.tokenize();
+    let num_accounts = parsed.accounts.len();
+    assert_eq!(num_accounts, 1, "Parse one account")
+}

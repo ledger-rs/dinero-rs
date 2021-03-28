@@ -1,9 +1,33 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
-
-## [0.21.0] - xxx
+## [0.24.0] - xxx
 ### Added
 - ```strict``` and ```pedantic``` options
+### Changed
+- Collaborators will be able to use codecov as well
+## [0.23.0] - 2021-03-24
+### Added
+- Accounts now have a ```country``` property
+- Documentation is now available at github.
+### Changed
+- Accounts no longer support ```isin``` property. They do support ```iban```, which is what should have always been.
+- Migrated the CI pipeline to Github Actions because I had trouble with Travis (build matrices)
+
+## [0.22.0] - 2021-03-21
+### Added
+- Slightly better handling of currency formats
+### Changed
+- Better CI pipeline
+
+## [0.21.0] - 2021-03-20
+### Added
+- Infer currency format from the journal file
+- ```isin``` is a valid property for commodities
+### Changed
+- Continuous integration pipeline is now better. No more problems like what happened between releases 0.18 and 0.20.
+### Fixed
+- Commodities get parsed properly, always removing quotes
+>>>>>>> master
 ## [0.20.0] - 2021-03-15
 ### Fixed
 - Version numbers back on track
