@@ -1,4 +1,5 @@
 use dinero::parser::Tokenizer;
+use dinero::CommonOpts;
 
 use assert_cmd::Command;
 use std::path::PathBuf;
@@ -18,7 +19,7 @@ fn test_build_ledger_from_demo() {
     let p1 = PathBuf::from("tests/example_files/demo.ledger".to_string());
     let mut tokenizer: Tokenizer = Tokenizer::from(&p1);
     let items = tokenizer.tokenize();
-    let ledger = items.to_ledger(false);
+    let ledger = items.to_ledger(&CommonOpts::new());
     assert!(ledger.is_ok());
 }
 
@@ -37,19 +38,8 @@ fn test_fail() {
     assert!(true);
 
     // But to a wrong ledger
-    let ledger = parsed.to_ledger(false);
+    let ledger = parsed.to_ledger(&CommonOpts::new());
     assert!(ledger.is_err());
-}
-
-#[test]
-/// Test whether glob expressions in include are working
-fn include_glob() {
-    let assert_1 = Command::cargo_bin("dinero")
-        .unwrap()
-        .args(&["prices", "-f", "tests/example_files/include.ledger"])
-        .assert();
-    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
-    assert!(output.lines().into_iter().count() > 100);
 }
 
 #[test]
@@ -63,7 +53,7 @@ fn comment_no_spaces() {
         .to_string(),
     );
     let items = tokenizer.tokenize();
-    let ledger = items.to_ledger(false);
+    let ledger = items.to_ledger(&CommonOpts::new());
     assert!(ledger.is_ok());
 }
 #[test]
@@ -77,6 +67,6 @@ fn comment_spaces() {
         .to_string(),
     );
     let items = tokenizer.tokenize();
-    let ledger = items.to_ledger(false);
+    let ledger = items.to_ledger(&CommonOpts::new());
     assert!(ledger.is_ok());
 }

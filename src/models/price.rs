@@ -304,6 +304,7 @@ fn cmp(this: &Option<Duration>, other: &Option<Duration>) -> Ordering {
 mod tests {
     use super::*;
     use crate::parser::Tokenizer;
+    use crate::CommonOpts;
     use chrono::Utc;
     use std::path::PathBuf;
 
@@ -313,7 +314,7 @@ mod tests {
         let path = PathBuf::from("tests/example_files/demo.ledger");
         let mut tokenizer = Tokenizer::from(&path);
         let items = tokenizer.tokenize();
-        let ledger = items.to_ledger(false).unwrap();
+        let ledger = items.to_ledger(&CommonOpts::new()).unwrap();
 
         let currency = ledger.commodities.get("EUR").unwrap();
         let multipliers = conversion(

@@ -1,0 +1,43 @@
+name: Pass tests
+# - Check that the package passes the tests correctly in all Rust versions
+on:
+  push:
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Run cargo-tarpaulin
+        uses: actions-rs/tarpaulin@v0.1
+        with:
+          args: '--ignore-tests --exclude-files examples/* src/main.rs --out Xml --run-types AllTargets'
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v1
+        # with:
+        #   token: ${{secrets.CODECOV_TOKEN}}
+  test-check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust: [1.38.0, beta, nightly]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install rust toolchain
+        uses: actions-rs/toolchain@v1    # https://github.com/marketplace/actions/rust-toolchain
+        with:
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - name: Build
+        run: cargo build
+      - name: Run tests
+        run: cargo test

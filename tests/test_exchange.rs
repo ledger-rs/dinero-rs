@@ -1,6 +1,6 @@
 use chrono::Utc;
-use dinero::models::conversion;
 use dinero::parser::Tokenizer;
+use dinero::{models::conversion, CommonOpts};
 use num::traits::Inv;
 use num::{BigInt, BigRational};
 
@@ -30,7 +30,7 @@ P 2020-07-01 EUR 1.5 USD
         .to_string(),
     );
     let items = tokenizer.tokenize();
-    let ledger = items.to_ledger(false).unwrap();
+    let ledger = items.to_ledger(&CommonOpts::new()).unwrap();
     let eur = ledger.get_commodities().get("eur").unwrap();
     let usd = ledger.get_commodities().get("usd").unwrap();
     let acme = ledger.get_commodities().get("acme").unwrap();

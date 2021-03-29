@@ -9,7 +9,7 @@ use two_timer;
 use lazy_static::lazy_static;
 use regex::Regex;
 
-use crate::commands::{accounts, balance, check, commodities, payees, prices, register};
+use crate::commands::{accounts, balance, commodities, payees, prices, register};
 use crate::Error;
 use chrono::NaiveDate;
 use colored::Colorize;
@@ -42,8 +42,6 @@ enum Command {
     /// List commodities
     #[structopt(alias = "currencies")]
     Commodities(CommonOpts),
-    /// Simply check the file is fine
-    Check(CommonOpts),
 }
 
 #[derive(Debug, StructOpt)]
@@ -57,11 +55,11 @@ struct Opt {
     cmd: Command,
 }
 /// Command line options
-#[derive(Debug, StructOpt)]
+#[derive(Debug, StructOpt, Clone)]
 pub struct CommonOpts {
     /// Input file
     #[structopt(name = "FILE", short = "f", long = "file", parse(from_os_str))]
-    pub(crate) input_file: PathBuf,
+    pub input_file: PathBuf,
 
     /// Init file
     #[structopt(long = "--init-file", parse(from_os_str))]
@@ -69,18 +67,18 @@ pub struct CommonOpts {
 
     /// Depth
     #[structopt(short = "d", long = "depth")]
-    pub(crate) depth: Option<usize>,
+    pub depth: Option<usize>,
 
     /// The pattern to look for
     #[structopt(multiple = true, takes_value = true)]
-    pub(crate) query: Vec<String>,
+    pub query: Vec<String>,
     /// Use only real postings rather than real and virtual
     #[structopt(long = "--real")]
-    pub(crate) real: bool,
+    pub real: bool,
     #[structopt(short = "b", long = "begin", parse(try_from_str = date_parser))]
-    pub(crate) begin: Option<NaiveDate>,
+    pub begin: Option<NaiveDate>,
     #[structopt(short = "e", long = "end", parse(try_from_str = date_parser))]
-    pub(crate) end: Option<NaiveDate>,
+    pub end: Option<NaiveDate>,
     #[structopt(short = "p", long = "period")]
     period: Option<String>,
     #[structopt(long = "now", parse(try_from_str = date_parser))]
@@ -88,11 +86,11 @@ pub struct CommonOpts {
 
     /// Ignore balance assertions
     #[structopt(long = "--no-balance-check")]
-    pub(crate) no_balance_check: bool,
+    pub no_balance_check: bool,
 
     /// Display the report in the selected currency
     #[structopt(short = "-X")]
-    pub(crate) exchange: Option<String>,
+    pub exchange: Option<String>,
 
     /// TODO Date format
     #[structopt(long = "--date-format")]
@@ -107,9 +105,14 @@ pub struct CommonOpts {
     /// TODO effective
     #[structopt(long = "--effective")]
     effective: bool,
-    /// TODO strict
+
+    /// Accounts, tags or commodities not previously declared will cause warnings.
     #[structopt(long = "--strict")]
-    strict: bool,
+    pub strict: bool,
+
+    /// Accounts, tags or commodities not previously declared will cause errors.
+    #[structopt(long = "--pedantic")]
+    pub pedantic: bool,
 
     /// TODO Unrealized gains
     #[structopt(long = "--unrealized-gains")]
@@ -119,19 +122,57 @@ pub struct CommonOpts {
     unrealized_losses: Option<String>,
 }
 
+impl CommonOpts {
+    pub fn new() -> Self {
+        CommonOpts {
+            input_file: PathBuf::new(),
+            init_file: None,
+            depth: None,
+            query: vec![],
+            real: false,
+            begin: None,
+            end: None,
+            period: None,
+            now: None,
+            no_balance_check: false,
+            exchange: None,
+            date_format: None,
+            force_color: false,
+            force_pager: false,
+            effective: false,
+            strict: false,
+            pedantic: false,
+            unrealized_gains: None,
+            unrealized_losses: None,
+        }
+    }
+}
+
 /// Entry point for the command line app
-pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
-    // println!("{:?}", args);
+const INIT_FILE_FLAG: &str = "--init-file";
+const LEDGER_PATHS_UNDER_DIR: &str = "~/.ledgerrc";
+const LEDGER_PATHS: &str = ".ledgerrc";
+
+fn init_paths(args: Vec<String>) -> Vec<String> {
     let mut possible_paths: Vec<String> = Vec::new();
+
     for i in 0..args.len() {
-        if args[i] == "--init-file" {
+        if args[i] == INIT_FILE_FLAG {
             possible_paths.push(args[i + 1].clone());
             break;
         }
     }
-    possible_paths.push(shellexpand::tilde("~/.ledgerrc").to_string());
-    possible_paths.push(".ledgerrc".to_string());
+
+    possible_paths.push(shellexpand::tilde(LEDGER_PATHS_UNDER_DIR).to_string());
+    possible_paths.push(LEDGER_PATHS.to_string());
+
+    possible_paths
+}
+
+/// Entry point for the command line app
+pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
     let mut config_file = None;
+    let possible_paths = init_paths(args.clone());
     for path in possible_paths.iter() {
         let file = Path::new(path);
         if file.exists() {
@@ -200,24 +241,23 @@ pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
                 env::set_var("CLICOLOR_FORCE", "1");
             }
 
-            commodities::execute(options.input_file, options.no_balance_check)
+            commodities::execute(options.input_file.clone(), &options)
         }
         Command::Payees(options) => {
             if options.force_color {
                 env::set_var("CLICOLOR_FORCE", "1");
             }
 
-            payees::execute(options.input_file, options.no_balance_check)
+            payees::execute(options.input_file.clone(), &options)
         }
-        Command::Prices(options) => prices::execute(options.input_file, options.no_balance_check),
+        Command::Prices(options) => prices::execute(options.input_file.clone(), &options),
         Command::Accounts(options) => {
             if options.force_color {
                 env::set_var("CLICOLOR_FORCE", "1");
             }
 
-            accounts::execute(options.input_file, options.no_balance_check)
+            accounts::execute(options.input_file.clone(), &options)
         }
-        Command::Check(options) => check::execute(options.input_file),
     } {
         let err_str = format!("{}", e);
         if err_str.len() > 0 {
