@@ -30,8 +30,8 @@ structopt = "0.3.21"
 shellexpand = "2.1.0"
 # Two timer depends on pidgin, but with the upgrade to 0.4.1, iy breaks
 # So I don't let it use two_timer 2.2.1
-# pidgin = "^0.4.0"
-two_timer = "^2.2.0"
+pidgin = "=0.4.0"
+two_timer = "2.2.0"
 assert_cmd = "1.0.3"
 terminal_size = "0.1.16"
 pest = "2.0"
