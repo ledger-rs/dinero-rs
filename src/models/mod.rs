@@ -14,11 +14,11 @@ pub use transaction::{
     Cleared, Posting, PostingOrigin, PostingType, Transaction, TransactionStatus, TransactionType,
 };
 
-use crate::filter::filter_expression;
 use crate::models::transaction::Cost;
 use crate::parser::value_expr::build_root_node_from_expression;
 use crate::parser::ParsedLedger;
 use crate::parser::{tokenizers, value_expr};
+use crate::{filter::filter_expression, CommonOpts};
 use crate::{Error, List};
 use num::BigInt;
 use std::cell::RefCell;
@@ -54,7 +54,7 @@ impl Ledger {
 
 impl ParsedLedger {
     /// Creates a proper ledger from a parsed ledger
-    pub fn to_ledger(mut self, no_checks: bool) -> Result<Ledger, Error> {
+    pub fn to_ledger(mut self, options: &CommonOpts) -> Result<Ledger, Error> {
         let mut commodity_strs = HashSet::<String>::new();
         let mut account_strs = HashSet::<String>::new();
         let mut payee_strs = HashSet::<String>::new();
@@ -80,7 +80,15 @@ impl ParsedLedger {
         for alias in commodity_strs {
             match self.commodities.get(&alias) {
                 Ok(_) => {} // do nothing
-                Err(_) => self.commodities.insert(Currency::from(alias.as_str())),
+                Err(_) => {
+                    if options.pedantic {
+                        panic!("Error: commodity {} not declared.", &alias);
+                    }
+                    if options.strict {
+                        eprintln!("Warning: commodity {} not declared.", &alias);
+                    }
+                    self.commodities.insert(Currency::from(alias.as_str()));
+                }
             }
         }
 
@@ -88,7 +96,15 @@ impl ParsedLedger {
         for alias in account_strs {
             match self.accounts.get(&alias) {
                 Ok(_) => {} // do nothing
-                Err(_) => self.accounts.insert(Account::from(alias.as_str())),
+                Err(_) => {
+                    if options.pedantic {
+                        panic!("Error: account {} not declared.", &alias);
+                    }
+                    if options.strict {
+                        eprintln!("Warning: account {} not declared.", &alias);
+                    }
+                    self.accounts.insert(Account::from(alias.as_str()))
+                }
             }
         }
 
@@ -167,7 +183,7 @@ impl ParsedLedger {
         for t in transactions.iter_mut() {
             let date = t.date.unwrap().clone();
             // output_balances(&balances);
-            let balance = match t.balance(&mut balances, no_checks) {
+            let balance = match t.balance(&mut balances, options.no_balance_check) {
                 Ok(balance) => balance,
                 Err(e) => {
                     eprintln!("{}", t);
@@ -302,7 +318,7 @@ impl ParsedLedger {
             for t in transactions.iter_mut() {
                 let date = t.date.unwrap().clone();
                 // output_balances(&balances);
-                let balance = match t.balance(&mut balances, no_checks) {
+                let balance = match t.balance(&mut balances, options.no_balance_check) {
                     Ok(balance) => balance,
                     Err(e) => {
                         eprintln!("{}", t);

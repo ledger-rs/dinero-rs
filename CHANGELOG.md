@@ -1,7 +1,8 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
-
 ## [0.24.0] - xxx
+### Added
+- ```strict``` and ```pedantic``` options
 ### Changed
 - Collaborators will be able to use codecov as well
 ## [0.23.0] - 2021-03-24
@@ -26,6 +27,7 @@ Changelog file for dinero-rs project, a command line application for managing fi
 - Continuous integration pipeline is now better. No more problems like what happened between releases 0.18 and 0.20.
 ### Fixed
 - Commodities get parsed properly, always removing quotes
+>>>>>>> master
 ## [0.20.0] - 2021-03-15
 ### Fixed
 - Version numbers back on track

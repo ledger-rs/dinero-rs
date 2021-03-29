@@ -1,13 +1,16 @@
-use crate::models::{Currency, HasName};
 use crate::parser::Tokenizer;
 use crate::Error;
+use crate::{
+    models::{Currency, HasName},
+    CommonOpts,
+};
 use std::ops::Deref;
 use std::path::PathBuf;
 
-pub fn execute(path: PathBuf, no_balance_check: bool) -> Result<(), Error> {
+pub fn execute(path: PathBuf, options: &CommonOpts) -> Result<(), Error> {
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
     let items = tokenizer.tokenize();
-    let ledger = items.to_ledger(no_balance_check)?;
+    let ledger = items.to_ledger(options)?;
     let mut commodities = ledger
         .commodities
         .iter()
