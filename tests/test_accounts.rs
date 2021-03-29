@@ -1,4 +1,4 @@
-use dinero::parser::Tokenizer;
+use dinero::{parser::Tokenizer, CommonOpts};
 
 #[test]
 fn test_account_names() {
@@ -49,7 +49,24 @@ fn test_account_names() {
         let parsed = tokenizer.tokenize();
         let mut num_accounts = parsed.accounts.len();
         assert_eq!(num_accounts, 0, "There should be no accounts when parsed");
-        num_accounts = parsed.to_ledger(true).unwrap().accounts.len();
+        let mut options = CommonOpts::new();
+        options.no_balance_check = true;
+        num_accounts = parsed.to_ledger(&options).unwrap().accounts.len();
         assert_eq!(num_accounts, 2, "There should be two accounts");
     }
+}
+
+#[test]
+fn test_account_directive() {
+    let mut tokenizer = Tokenizer::from(
+        "account Assets:Revolut
+    country GB
+    alias revolut
+    payee Revolut "
+            .to_string(),
+    );
+
+    let parsed = tokenizer.tokenize();
+    let num_accounts = parsed.accounts.len();
+    assert_eq!(num_accounts, 1, "Parse one account")
 }

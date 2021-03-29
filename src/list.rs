@@ -51,6 +51,27 @@ impl<'a, T: Eq + Hash + HasName + Clone + FromDirective + HasAliases + Debug> Li
             }
         }
     }
+    /// Removes an ```element``` in the list
+    pub fn remove(&mut self, element: &T) {
+        let found = self.list.get(&element.get_name().to_lowercase());
+        match found {
+            Some(x) => {
+                for alias in x.get_aliases() {
+                    self.aliases.remove(&alias.to_lowercase());
+                }
+                self.list.remove(&element.get_name().to_lowercase());
+            }
+            None => {
+                for alias in element.get_aliases() {
+                    let value = self.aliases.remove(&alias.to_lowercase());
+                    if let Some(x) = value {
+                        self.list.remove(&x);
+                    }
+                    self.list.remove(&alias.to_lowercase());
+                }
+            }
+        }
+    }
     /// Add an alias
     pub fn add_alias(&mut self, alias: String, for_element: &'a T) {
         let element = self.aliases.get(&alias.to_lowercase());
@@ -129,10 +150,20 @@ impl<'a, T: Eq + Hash + HasName + Clone + FromDirective + HasAliases + Debug> Li
     }
 }
 
-impl<T: Clone> List<T> {
+impl<T: Clone + FromDirective + HasAliases + Debug + Eq + Hash + HasName> List<T> {
     pub fn append(&mut self, other: &List<T>) {
-        self.list.extend(other.to_owned().list.into_iter());
-        self.aliases.extend(other.to_owned().aliases.into_iter());
+        for (key, value) in other.list.iter() {
+            if value.is_from_directive() {
+                self.list.insert(key.clone(), value.clone());
+                for alias in value.get_aliases().iter() {
+                    self.aliases.insert(alias.to_lowercase(), key.clone());
+                }
+            } else {
+                if self.get(key).is_err() {
+                    self.list.insert(key.clone(), value.clone());
+                }
+            }
+        }
     }
 }
 
