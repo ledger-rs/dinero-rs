@@ -18,7 +18,9 @@ jobs:
         with:
           toolchain: stable
       - name: Publish to crates.io
-        run: cargo publish --token ${secrets.CARGO_TOKEN}
+        env:
+          CARGO_TOKEN: ${{ secrets.CARGO_TOKEN }}
+        run: cargo publish --token ${CARGO_TOKEN}
       - name: Bump version for development
         run: |
           git checkout -b temporal_branch
