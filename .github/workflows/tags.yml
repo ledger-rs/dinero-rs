@@ -24,6 +24,7 @@ jobs:
       - name: Bump version for development
         run: |
           git checkout -b temporal_branch
+          git fetch origin master
           git checkout master
           git merge temporal_branch
           message=$(source scripts/ci_bump_version.sh)
