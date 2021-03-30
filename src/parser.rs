@@ -173,7 +173,12 @@ impl<'a> Tokenizer<'a> {
                     }
                 }
             }
-            Err(e) => eprintln!("{:?}: {:?}", &self.file, e),
+            Err(e) => {
+                if let Some(file) = &self.file {
+                    eprintln!("Can't parse {:?} {}", file, e);
+                }
+                eprintln!("Error found in line {}", e)
+            }
         }
         // dbg!(&ledger);
         ledger
