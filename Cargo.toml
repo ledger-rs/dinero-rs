@@ -9,7 +9,7 @@ keywords = ["ledger", "plaintext-accounting"]
 license = "MIT"
 homepage = "https://github.com/frosklis/dinero-rs"
 repository = "https://github.com/frosklis/dinero-rs"
-rust-version = "1.38"
+# rust-version = "1.38"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 name = "dinero"
