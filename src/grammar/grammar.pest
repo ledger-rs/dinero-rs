@@ -93,7 +93,7 @@ automated_transaction = {automated_transaction_head
     ~ (posting|automated_posting)* }
 transaction_date = {date ~ (ws ~ time)?}
 effective_date = {date ~ (ws ~ time)?}
-code = { "(" ~ string ~ ")" }
+code = { "(" ~ (!")" ~ ANY)* ~ ")" }
 status = { "*"| "!" }
 quote = _{"\"" | "'"}
 payee = { string | (!"|" ~ !";" ~!end ~ ANY)* }
@@ -134,7 +134,7 @@ month = {("1" ~ ("0" | "1" | "2")) | ("0"? ~ ASCII_NONZERO_DIGIT)}
 day = {("3" ~ ("0" | "1")) |
 	(("1" | "2") ~ ASCII_DIGIT ) |
     ("0"? ~ ASCII_NONZERO_DIGIT) }
-hour = { (("0"|"1") ~ ASCII_DIGIT) | ("2" ~ ("0" ~"1" ~"2" ~"3"))}
+hour = { (("0"|"1") ~ ASCII_DIGIT) | ("2" ~ ("0" | "1" | "2" | "3")) }
 minute = { ("0"|"1"|"2"|"3"|"4"|"5") ~ ASCII_DIGIT }
 second = { ("0"|"1"|"2"|"3"|"4"|"5") ~ ASCII_DIGIT ~ ("." ~ bigint)? }
 
@@ -170,7 +170,7 @@ reserved = _{ "\n" | "\t" | "+" | "*" | "/" | "\\" | "|" | "%" | "<" | ">" | ":"
 unquoted = { !reserved ~ !"=" ~ !"-" ~ !"&" ~
     (!reserved ~ !SEPARATOR ~ ANY)+ }
 currency_parts = _{ !reserved ~ !"=" ~ !"-" ~ !"&" ~
-    (!reserved ~ !SEPARATOR ~ !ASCII_DIGIT ~ !"-" ~ ANY)+ }
+    (!reserved ~ !SEPARATOR ~ !ASCII_DIGIT ~ !"-" ~ !"=" ~ ANY)+ }
 unquoted_no_number = {currency_parts ~ ("-" ~ currency_parts)*}
 variable = {
     "account" |
