@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>The readme file - dinero documentation</title>
+        <title>The journal file - dinero documentation</title>
         
         
 
@@ -95,7 +95,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="index.html" class="active"><strong aria-hidden="true">1.</strong> The readme file</a></li><li class="chapter-item expanded "><a href="journal-file.html"><strong aria-hidden="true">2.</strong> The journal file</a></li><li class="chapter-item expanded "><a href="differences_with_ledger.html"><strong aria-hidden="true">3.</strong> Differences with ledger</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="index.html"><strong aria-hidden="true">1.</strong> The readme file</a></li><li class="chapter-item expanded "><a href="journal-file.html" class="active"><strong aria-hidden="true">2.</strong> The journal file</a></li><li class="chapter-item expanded "><a href="differences_with_ledger.html"><strong aria-hidden="true">3.</strong> Differences with ledger</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -163,64 +163,26 @@
 
                 <div id="content" class="content">
                     <main>
-                        <p><a href="https://travis-ci.com/frosklis/dinero-rs"><img src="https://travis-ci.com/frosklis/dinero-rs.svg?branch=master" alt="Build Status" /></a>
-<a href="https://codecov.io/gh/frosklis/dinero-rs"><img src="https://codecov.io/gh/frosklis/dinero-rs/branch/master/graph/badge.svg?token=QC4LG2ZMZJ" alt="codecov" /></a>
-<a href="https://crates.io/crates/dinero-rs"><img src="https://img.shields.io/crates/v/dinero-rs" alt="crates.io" /></a>
-<img src="https://img.shields.io/crates/l/dinero-rs" alt="Crates.io" /></p>
-<p>Dinero (spanish for money) is a command line tool that can deal with ledger files, as defined by John Wiegley's wonderful <a href="https://www.ledger-cli.org/">ledger-cli</a>.</p>
-<h1 id="quickstart"><a class="header" href="#quickstart">Quickstart</a></h1>
-<h2 id="install"><a class="header" href="#install">Install</a></h2>
-<p>If Rust and cargo are available in your system, the easiest way to get dinero-rs is by installing the crate:</p>
-<pre><code class="language-sh">cargo install dinero-rs
-</code></pre>
-<ul>
-<li><input disabled="" type="checkbox"/>
-Installation for Windows</li>
-<li><input disabled="" type="checkbox"/>
-Installation for Mac</li>
-<li><input disabled="" type="checkbox"/>
-Installation for Linux</li>
-</ul>
-<h2 id="first-steps"><a class="header" href="#first-steps">First steps</a></h2>
-<p>Dinero uses double entry accounting. Store your journal files in <code>ledger</code> files. The main item is a transaction, which in its basic form looks something like this:</p>
-<pre><code class="language-ledger">; This is a comment
-; A date followed by a description identifies the beginning of a transaction
-2021-02-01 Buy fruit
-     Expenses:Groceries          7.92 EUR
-     Assets:Checking account             ; you can leave this blank, dinero balances the transactions for you
-</code></pre>
-<p>After that, you can issue all the commands you want and combine them with options to have complete control over your finances!</p>
-<p>The most basic ones are:</p>
-<pre><code class="language-sh"># Get a balance report: How much is there in every account 
-dinero bal -f myledger.ledger
-
-# Get a list of transactions
-dinero reg -f myledger.ledger
-</code></pre>
-<h1 id="features"><a class="header" href="#features">Features</a></h1>
-<p>Currently supported are:</p>
-<ul>
-<li>Balance reports</li>
-<li>Register reports</li>
-<li>Account and payees reports</li>
-<li>Automated transactions</li>
-<li>Multicurrency transactions</li>
-<li>Currency conversion</li>
-</ul>
-<p>Report filtering by account name and by date.</p>
-<h1 id="motivation"><a class="header" href="#motivation">Motivation</a></h1>
-<p>I use ledger-cli extensively for my personal finances. My goal is to be able to run all the commands I use the most with my own tool while at the same time learning Rust.</p>
-<p>Run <code>dinero --help</code> for a list of available commands and options.</p>
-<p>If you use this software and want to say thanks, <a href="https://www.buymeacoffee.com/7CLlJGE">feel free to buy me a coffee</a>.</p>
+                        <h1 id="the-journal-files"><a class="header" href="#the-journal-files">The journal file(s)</a></h1>
+<p><em>Work in progress</em></p>
+<p>Dinero derives its reports from a <em>journal</em> file (<a href="#include_directive">or files</a>). The most important feature of this file format is its readibility. Unlike other computer-friendly formats such as comma separated values or a binary database, journal files actually make sense to a human.</p>
+<p>Dinero follows the principles of <a href="https://en.wikipedia.org/wiki/Double-entry_bookkeeping">double entry accounting</a>, where the main information is the <em>transaction</em>.</p>
+<p>A transaction contains two or more <em>postings</em>, which are actual movements in an <em>account</em>, which is another important concept. In bookkeeping, money always comes from and goes to an account.</p>
+<h2 id="developers"><a class="header" href="#developers">Developers</a></h2>
+<p>The full syntax accepted by <code>dinero</code>can be found in the <a href="https://github.com/frosklis/dinero-rs/blob/master/src/grammar/grammar.pest">grammar specification</a>. It is a formal grammar.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
+                            <a rel="prev" href="index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                        
 
                         
-                            <a rel="next" href="journal-file.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="differences_with_ledger.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         
@@ -232,9 +194,13 @@ dinero reg -f myledger.ledger
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
+                    <a rel="prev" href="index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
 
                 
-                    <a rel="next" href="journal-file.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next" href="differences_with_ledger.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                 
