@@ -3,6 +3,7 @@ Changelog file for dinero-rs project, a command line application for managing fi
 ## [0.25.0] - xxx
 ### Added
 - nicer error reporting
+- slightly better documentation
 ### Fixed
 - No need to [add a space before ```=``` in balance assertions](https://github.com/frosklis/dinero-rs/issues/40)
 - Correct parsing of transaction codes
