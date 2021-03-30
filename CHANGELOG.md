@@ -2,7 +2,9 @@
 Changelog file for dinero-rs project, a command line application for managing finances.
 ## [0.25.0] - xxx
 ### Added
-- nicer 
+- nicer error reporting
+### Fixed
+- No need to [add a space before ```=``` in balance assertions](https://github.com/frosklis/dinero-rs/issues/40)
 ## [0.24.0] - 2021-03-29
 ### Added
 - ```strict``` and ```pedantic``` options
@@ -30,7 +32,6 @@ Changelog file for dinero-rs project, a command line application for managing fi
 - Continuous integration pipeline is now better. No more problems like what happened between releases 0.18 and 0.20.
 ### Fixed
 - Commodities get parsed properly, always removing quotes
->>>>>>> master
 ## [0.20.0] - 2021-03-15
 ### Fixed
 - Version numbers back on track
