@@ -93,7 +93,7 @@ automated_transaction = {automated_transaction_head
     ~ (posting|automated_posting)* }
 transaction_date = {date ~ (ws ~ time)?}
 effective_date = {date ~ (ws ~ time)?}
-code = { "(" ~ string ~ ")" }
+code = { "(" ~ (!")" ~ ANY)* ~ ")" }
 status = { "*"| "!" }
 quote = _{"\"" | "'"}
 payee = { string | (!"|" ~ !";" ~!end ~ ANY)* }
