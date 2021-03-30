@@ -134,7 +134,7 @@ month = {("1" ~ ("0" | "1" | "2")) | ("0"? ~ ASCII_NONZERO_DIGIT)}
 day = {("3" ~ ("0" | "1")) |
 	(("1" | "2") ~ ASCII_DIGIT ) |
     ("0"? ~ ASCII_NONZERO_DIGIT) }
-hour = { (("0"|"1") ~ ASCII_DIGIT) | ("2" ~ ("0" ~"1" ~"2" ~"3"))}
+hour = { (("0"|"1") ~ ASCII_DIGIT) | ("2" ~ ("0" | "1" | "2" | "3")) }
 minute = { ("0"|"1"|"2"|"3"|"4"|"5") ~ ASCII_DIGIT }
 second = { ("0"|"1"|"2"|"3"|"4"|"5") ~ ASCII_DIGIT ~ ("." ~ bigint)? }
 
