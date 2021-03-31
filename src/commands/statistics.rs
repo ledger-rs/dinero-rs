@@ -17,11 +17,11 @@ pub fn execute(path: PathBuf, options: &CommonOpts) -> Result<(), Error> {
         num_postings += t.postings.borrow().iter().count();
     }
 
-    let num_files= ledger.files.len();
+    let num_files = ledger.files.len();
     if num_files > 0 {
         println!("Number of files processed: {}", num_files);
-        for  file in ledger.files.iter() {
-            let path_str= file.clone().into_os_string().into_string().unwrap();
+        for file in ledger.files.iter() {
+            let path_str = file.clone().into_os_string().into_string().unwrap();
 
             println!("\t{}", &path_str);
         }
