@@ -4,3 +4,4 @@ pub mod commodities;
 pub mod payees;
 pub mod prices;
 pub mod register;
+pub mod statistics;

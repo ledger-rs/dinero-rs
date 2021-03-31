@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/frosklis/dinero-rs.svg?branch=master)](https://travis-ci.com/frosklis/dinero-rs)
+[![Build status](https://github.com/frosklis/dinero-rs/actions/workflows/main.yml/badge.svg)](https://github.com/frosklis/dinero-rs/actions/workflows/main.yml)
 [![codecov](https://codecov.io/gh/frosklis/dinero-rs/branch/master/graph/badge.svg?token=QC4LG2ZMZJ)](https://codecov.io/gh/frosklis/dinero-rs)
 [![crates.io](https://img.shields.io/crates/v/dinero-rs)](https://crates.io/crates/dinero-rs)
 ![Crates.io](https://img.shields.io/crates/l/dinero-rs)

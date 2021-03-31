@@ -1,6 +1,6 @@
 [package]
 name = "dinero-rs"
-version = "0.25.0"
+version = "0.26.0"
 authors = ["Claudio Noguera <claudio.noguera@gmail.com>"]
 edition = "2018"
 readme = "README.md"
@@ -9,7 +9,7 @@ keywords = ["ledger", "plaintext-accounting"]
 license = "MIT"
 homepage = "https://github.com/frosklis/dinero-rs"
 repository = "https://github.com/frosklis/dinero-rs"
-rust-version = "1.38"
+# rust-version = "1.38"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 name = "dinero"
@@ -31,7 +31,8 @@ structopt = "0.3.21"
 shellexpand = "2.1.0"
 # Two timer depends on pidgin, but with the upgrade to 0.4.1, it breaks
 # So I don't let it use pidgin 0.4.1, it has to be 0.4.0
-pidgin = "=0.4.0"
+# Corrected in 0.4.2
+# pidgin = "=0.4.0"
 two_timer = "2.2.0"
 assert_cmd = "1.0.3"
 terminal_size = "0.1.16"
