@@ -1,5 +1,8 @@
 use num::rational::BigRational;
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    path::PathBuf,
+};
 
 pub use account::Account;
 pub use balance::Balance;
@@ -41,6 +44,7 @@ pub struct Ledger {
     pub(crate) transactions: Vec<Transaction<Posting>>,
     pub(crate) prices: Vec<Price>,
     pub(crate) payees: List<Payee>,
+    pub(crate) files: Vec<PathBuf>,
 }
 
 impl Ledger {
@@ -344,6 +348,7 @@ impl ParsedLedger {
             transactions,
             prices,
             payees: self.payees,
+            files: self.files,
         })
     }
 

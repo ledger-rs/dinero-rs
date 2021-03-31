@@ -17,6 +17,16 @@ pub fn execute(path: PathBuf, options: &CommonOpts) -> Result<(), Error> {
         num_postings += t.postings.borrow().iter().count();
     }
 
+    let num_files= ledger.files.len();
+    if num_files > 0 {
+        println!("Number of files processed: {}", num_files);
+        for  file in ledger.files.iter() {
+            let path_str= file.clone().into_os_string().into_string().unwrap();
+
+            println!("\t{}", &path_str);
+        }
+    }
+
     let first_transaction_date = &ledger.transactions.iter().nth(0).unwrap().date.unwrap();
     let last_transaction_date = &ledger
         .transactions
@@ -41,7 +51,7 @@ pub fn execute(path: PathBuf, options: &CommonOpts) -> Result<(), Error> {
         (*&ledger.transactions.len() as f64) / (num_days as f64)
     );
     println!(
-        "{:.2} transactions per day (average)",
+        "{:.2} postings per day (average)",
         (num_postings as f64) / (num_days as f64)
     );
 
