@@ -23,10 +23,8 @@ jobs:
         run: cargo publish --token ${CARGO_TOKEN}
       - name: Bump version for development
         run: |
-          git checkout -b temporal_branch
           git fetch origin master
           git checkout master
-          git merge temporal_branch
           message=$(source scripts/ci_bump_version.sh)
           git commit -a -m "${message}"
           git push https://${github.token}@github.com/${github.repository}.git
