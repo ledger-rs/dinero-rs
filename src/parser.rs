@@ -35,6 +35,7 @@ pub struct ParsedLedger {
     pub prices: Vec<models::ParsedPrice>,
     pub comments: Vec<Comment>,
     pub tags: Vec<models::Tag>,
+    pub files: Vec<PathBuf>,
 }
 
 impl ParsedLedger {
@@ -47,6 +48,7 @@ impl ParsedLedger {
             prices: vec![],
             comments: vec![],
             tags: vec![],
+            files: vec![],
         }
     }
     pub fn append(&mut self, other: &mut ParsedLedger) {
@@ -57,6 +59,7 @@ impl ParsedLedger {
         self.comments.append(&mut other.comments);
         self.transactions.append(&mut other.transactions);
         self.prices.append(&mut other.prices);
+        self.files.append(&mut other.files);
     }
 
     pub fn len(&self) -> usize {
@@ -112,6 +115,9 @@ impl<'a> Tokenizer<'a> {
     /// i.e. the include keyword is properly handled
     pub fn tokenize(&'a mut self) -> ParsedLedger {
         let mut ledger: ParsedLedger = ParsedLedger::new();
+        if let Some(file) = self.file {
+            ledger.files.push(file.clone());
+        }
         match GrammarParser::parse(Rule::journal, self.content.as_str()) {
             Ok(mut parsed) => {
                 let mut elements = parsed.next().unwrap().into_inner();
