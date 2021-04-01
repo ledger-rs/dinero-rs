@@ -142,20 +142,23 @@ second = { ("0"|"1"|"2"|"3"|"4"|"5") ~ ASCII_DIGIT ~ ("." ~ bigint)? }
 // Grammar specification for value expressions
 
 // A value expression is an expression between parenthesis
-value_expr = {"(" ~ ws* ~ expr ~ ws* ~ ")"}
-
+value_expr = {"(" ~ sep_line  ~ expr ~ sep_line  ~ ")"}
+if_expr = { expr ~ sep_line  ~ "if" ~ sep_line  ~ expr }
+ternary_if = { expr ~ sep_line ~ "?" ~ sep_line  ~ expr ~ ":" ~ sep_line ~ expr }
 // Then the expression builds up in terms of increasing preference
 expr = { or_expr }
-or_expr = { and_expr ~ ws* ~ ( or ~ ws* ~ and_expr ) * }
-and_expr = { comparison_expr ~ ws* ~ ( and ~ ws* ~ comparison_expr ) * }
-comparison_expr = { additive_expr ~ ws* ~ ( comparison ~ ws* ~ additive_expr ) * }
-additive_expr = { multiplicative_expr ~ ws* ~ ( add ~ ws* ~ multiplicative_expr ) * }
-multiplicative_expr = { primary ~ ws* ~ ( mult ~ ws* ~ primary )* }
+or_expr = { and_expr ~ sep_line  ~ ( or ~ sep_line  ~ and_expr ) * }
+and_expr = { comparison_expr ~ sep_line  ~ ( and ~ sep_line  ~ comparison_expr ) * }
+comparison_expr = { additive_expr ~ sep_line  ~ ( comparison ~ sep_line  ~ additive_expr ) * }
+additive_expr = { multiplicative_expr ~ sep_line  ~ ( add ~ sep_line  ~ multiplicative_expr ) * }
+multiplicative_expr = { primary ~ sep_line  ~ ( mult ~ sep_line  ~ primary )* }
 primary = {
-    ("(" ~ ws* ~ expr ~ ws* ~ ")") |
-    (unary ~ ws* ~ expr) |
+    sep_line  ~ (
+    ("(" ~ sep_line  ~ (ternary_if | if_expr | expr) ~ sep_line  ~ ")") |
+    (unary ~ sep_line  ~ (ternary_if | if_expr | expr)) |
     term |
-    (function ~ ws* ~ "(" ~ ws* ~ expr ~ ws* ~ ("," ~ ws* ~ expr ~ ws*)* ~ ")")
+    (function ~ sep_line  ~ "(" ~ sep_line  ~ (ternary_if | if_expr | expr) ~ sep_line  ~ ("," ~ sep_line  ~ (ternary_if | if_expr | expr)  ~ sep_line )* ~ ")")
+    )
     }
 
 term = _{ variable | money | number | regex | string }
@@ -173,12 +176,18 @@ currency_parts = _{ !reserved ~ !"=" ~ !"-" ~ !"&" ~
     (!reserved ~ !SEPARATOR ~ !ASCII_DIGIT ~ !"-" ~ !"=" ~ ANY)+ }
 unquoted_no_number = {currency_parts ~ ("-" ~ currency_parts)*}
 variable = {
+    "abbrev_len" |
+    "account_width" |
     "account" |
+    "payee_width" |
     "payee" |
+    "date_width" |
     "date" |
     "note" |
+    "amount_width" |
     "amount" |
     "total_amount" |
+    "total_width" |
     "cost" |
     "value" |
     "gain" |
@@ -190,17 +199,30 @@ variable = {
     "not_automated" |
     "running_total" |
     "note" |
+    "today" |
+    "bold" |
+    "should_bold" |
+    "actual" |
+    "color" |
+    "display_account" |
+    "display_amount" |
+    "display_total" |
+    "meta_width" |
+    "prepend_width" |
+    "true" |
+    color_literal |
     // Abbreviations go later
     "T" | "N" | "O" | "Z" | "R" | "X" |
     "n" | "l" | "g" | "v" | "b"
 }
-
+color_literal = { "green" | "blue" }
 
 // helpers
 number = { "-"? ~ bigint ~ ("." ~ bigint)? }
 bigint = _{ ASCII_DIGIT+ }
 ws = _{ " " | "\t" }
-sep = _{("\t" | " \t" | "  ") ~ SEPARATOR* }
+sep = _{("\t" | " \t" | "  ") ~ sep_line  }
+sep_line = _{ (SEPARATOR | NEWLINE)* }
 end = _{ EOI | NEWLINE | blank_line}
 
 
@@ -209,7 +231,19 @@ mult = { "*" | "/" }
 and = {"&" | "and"}
 or = {"|" | "or" }
 unary = { "-" | "!" | "not" }
-function = { "abs" | "has_tag" | "to_date" | "any" | "tag" }
+function = { 
+    "abs" |
+    "has_tag" |
+    "to_date" |
+    "any" |
+    "tag" |
+    "ansify_if" |
+    "format_date" |
+    "justify" |
+    "int" |
+    "truncated" |
+    "scrub"
+    }
 comparison = { eq | ne | ge | gt | le | lt }
 eq = { "=~" | "=="}
 ne = { "!=" }
@@ -241,7 +275,11 @@ currency_string = { ( string | (!ASCII_DIGIT ~ !space ~ ANY)*) }
 //
 // Format strings
 //
-substitution = { "%" ~ left_aligned? ~ min_width? ~ max_width? ~ (value_expr | datefmt | single_letter_variable )  }
+format_expression = { format_expression_part ~ ("%/" ~ format_expression_part)? ~ EOI }
+format_expression_part = { (( substitution | string | unquoted_format) ~ sep_line )+ }
+unquoted_format = { (!"%" ~ ANY)+ }
+substitution = { "%" ~ left_aligned? ~ min_width? ~ max_width? ~ (value_expr | if_expr | datefmt | single_letter_variable | part_substitution)  }
+part_substitution = { "$" ~ bigint }
 left_aligned = {"-"}
 min_width = { bigint }
 max_width = { "." ~ bigint }
