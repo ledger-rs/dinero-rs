@@ -18,9 +18,9 @@ pub use transaction::{
 };
 
 use crate::models::transaction::Cost;
-use crate::parser::value_expr::build_root_node_from_expression;
+use crate::parser::expressions::build_root_node_from_expression;
 use crate::parser::ParsedLedger;
-use crate::parser::{tokenizers, value_expr};
+use crate::parser::{expressions, tokenizers};
 use crate::{filter::filter_expression, CommonOpts};
 use crate::{Error, List};
 use num::BigInt;
@@ -233,6 +233,7 @@ impl ParsedLedger {
                             t,
                             &mut self.commodities,
                             &mut regexes,
+                            options,
                         )? {
                             for comment in automated.comments.iter() {
                                 p.tags.borrow_mut().append(&mut comment.get_tags());
@@ -259,12 +260,13 @@ impl ParsedLedger {
                                 };
                                 let account = self.accounts.get(&account_alias).unwrap();
                                 let money = match &auto_posting.money_currency {
-                                    None => Some(value_expr::eval_value_expression(
+                                    None => Some(expressions::eval_value_expression(
                                         auto_posting.amount_expr.clone().unwrap().as_str(),
                                         p,
                                         t,
                                         &mut self.commodities,
                                         &mut regexes,
+                                        options,
                                     )),
                                     Some(alias) => {
                                         if alias == "" {

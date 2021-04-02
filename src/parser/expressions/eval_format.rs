@@ -5,6 +5,7 @@ use crate::models::{Account, Currency, Money, Payee, Posting, Transaction};
 use crate::List;
 use chrono::NaiveDate;
 
+use colored::ColoredString;
 use num::{abs, BigRational};
 use pest::Parser;
 use regex::Regex;
@@ -15,7 +16,7 @@ use std::rc::Rc;
 
 /// Builds the abstract syntax tree, to be able to evaluate expressions
 ///
-/// This all comes from the defined grammar.pest
+/// All this comes from the grammar defined in grammar.pest
 pub fn build_root_node_from_expression(
     expression: &str,
     regexes: &mut HashMap<String, Regex>,
@@ -52,13 +53,13 @@ pub fn eval_expression(
     eval(&root, posting, transaction, commodities, regexes)
 }
 
-pub fn eval_value_expression(
+pub fn eval_format_expression(
     expression: &str,
     posting: &Posting,
     transaction: &Transaction<Posting>,
     commodities: &mut List<Currency>,
     regexes: &mut HashMap<String, Regex>,
-) -> Money {
+) -> ColoredString {
     match eval_expression(expression, posting, transaction, commodities, regexes) {
         EvalResult::Number(n) => posting.amount.clone().unwrap() * n,
         EvalResult::Money(m) => m,

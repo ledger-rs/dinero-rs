@@ -51,12 +51,13 @@ extern crate pest_derive;
 
 mod app;
 pub mod commands;
+pub mod default_formats;
 mod error;
 pub mod filter;
 mod list;
 pub mod models;
 pub mod parser;
 
-pub use app::{run_app, CommonOpts};
+pub use app::{run_application, CommonOpts};
 pub(crate) use error::{Error, LedgerError};
 pub use list::List;

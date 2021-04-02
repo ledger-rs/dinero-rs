@@ -1,6 +1,6 @@
 use crate::models::PostingType;
 use crate::models::{Balance, Money};
-use crate::parser::value_expr::build_root_node_from_expression;
+use crate::parser::expressions::build_root_node_from_expression;
 use crate::parser::Tokenizer;
 use crate::Error;
 use crate::{filter, CommonOpts};
@@ -12,7 +12,6 @@ use terminal_size::{terminal_size, Width};
 pub fn execute(options: &CommonOpts) -> Result<(), Error> {
     // Get options from options
     let path = options.input_file.clone();
-    let no_balance_check: bool = options.no_balance_check;
     // Now work
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
     let items = tokenizer.tokenize();

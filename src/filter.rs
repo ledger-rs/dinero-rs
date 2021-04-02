@@ -1,5 +1,5 @@
 use crate::models::{Currency, Posting, PostingType, Transaction};
-use crate::parser::value_expr::{eval, EvalResult, Node};
+use crate::parser::expressions::{eval, EvalResult, Node};
 use crate::{CommonOpts, Error, List};
 use colored::Colorize;
 use regex::Regex;
@@ -36,7 +36,14 @@ pub fn filter(
         }
     }
     match node {
-        Some(x) => filter_expression(x, posting, transaction, commodities, &mut HashMap::new()),
+        Some(x) => filter_expression(
+            x,
+            posting,
+            transaction,
+            commodities,
+            &mut HashMap::new(),
+            options,
+        ),
         None => Ok(true),
     }
 }
@@ -47,8 +54,16 @@ pub fn filter_expression(
     transaction: &Transaction<Posting>,
     commodities: &mut List<Currency>,
     regexes: &mut HashMap<String, Regex>,
+    options: &CommonOpts,
 ) -> Result<bool, Error> {
-    let result = eval(predicate, posting, transaction, commodities, regexes);
+    let result = eval(
+        predicate,
+        posting,
+        transaction,
+        commodities,
+        regexes,
+        options,
+    );
     match result {
         EvalResult::Boolean(b) => Ok(b),
         _ => Err(Error {

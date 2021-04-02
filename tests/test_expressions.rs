@@ -131,8 +131,8 @@ fn bad_comparison() {
         "expr",
         "(2 * (5 eur)) < ((3 usd) / 5))",
     ];
+    test_err(args_1);
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args_1).assert();
     let output_1 = String::from_utf8(assert_1.get_output().to_owned().stderr).unwrap();
     assert!(output_1.lines().into_iter().count() >= 1);
-    test_err(args_1);
 }

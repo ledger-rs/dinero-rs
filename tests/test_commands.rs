@@ -1,6 +1,6 @@
 use assert_cmd::Command;
-use common::{test_args, test_err};
 mod common;
+use common::{test_args, test_err};
 #[test]
 fn date_filters() {
     let args1 = &[

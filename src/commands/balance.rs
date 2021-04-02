@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use colored::Colorize;
 
 use crate::models::{conversion, Account, Balance, Currency, HasName, Money};
-use crate::parser::value_expr::build_root_node_from_expression;
+use crate::parser::expressions::build_root_node_from_expression;
 use crate::parser::Tokenizer;
 use crate::Error;
 use crate::{filter, CommonOpts};

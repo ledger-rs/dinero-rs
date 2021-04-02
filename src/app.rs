@@ -1,13 +1,13 @@
 //! Document the command line interface
+use crate::default_formats::REGISTER_FORMAT;
+use lazy_static::lazy_static;
+use regex::Regex;
 use std::collections::HashMap;
 use std::env;
 use std::fs::read_to_string;
 use std::path::{Path, PathBuf};
 use structopt::StructOpt;
 use two_timer;
-
-use lazy_static::lazy_static;
-use regex::Regex;
 
 use crate::commands::{accounts, balance, commodities, payees, prices, register, statistics};
 use crate::Error;
@@ -123,9 +123,14 @@ pub struct CommonOpts {
     /// TODO Unrealized losses
     #[structopt(long = "--unrealized-losses")]
     unrealized_losses: Option<String>,
+
+    /// Format string for the register format
+    #[structopt(long = "--register-format", default_value=REGISTER_FORMAT)]
+    register_format: String,
 }
 
 impl CommonOpts {
+    // TODO think if this makes sense, as it only gets called from test methods, not in the real program
     pub fn new() -> Self {
         CommonOpts {
             input_file: PathBuf::new(),
@@ -147,6 +152,7 @@ impl CommonOpts {
             pedantic: false,
             unrealized_gains: None,
             unrealized_losses: None,
+            register_format: REGISTER_FORMAT.to_string(),
         }
     }
 }
@@ -173,7 +179,11 @@ fn init_paths(args: Vec<String>) -> Vec<String> {
 }
 
 /// Entry point for the command line app
-pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
+///
+/// Load the options from one of the files, add the to the supplied command line options
+/// and call the command accordingly.
+pub fn run_application(mut args: Vec<String>) -> Result<(), ()> {
+    // Look for any file with configuration options
     let mut config_file = None;
     let possible_paths = init_paths(args.clone());
     for path in possible_paths.iter() {
@@ -183,6 +193,7 @@ pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
             break;
         }
     }
+    // Add the options from the fil to the argument vector
     if let Some(file) = config_file {
         let mut aliases = HashMap::new();
         aliases.insert("-f".to_string(), "--file".to_string());
@@ -218,10 +229,11 @@ pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
             }
         }
     }
+
+    // Build options from the argument vector
     let opt: Opt = Opt::from_iter(args.iter());
 
     // Print options
-    // println!("{:?}", opt.cmd);
     if let Err(e) = match opt.cmd {
         Command::Balance {
             options,
@@ -366,7 +378,7 @@ mod tests {
         .iter()
         .map(|x| x.to_string())
         .collect();
-        let res = run_app(args);
+        let res = run_application(args);
         assert!(res.is_ok());
     }
 
@@ -384,7 +396,7 @@ mod tests {
         .iter()
         .map(|x| x.to_string())
         .collect();
-        let _res = run_app(args);
+        let _res = run_application(args);
     }
     #[test]
     #[should_panic(
@@ -400,7 +412,7 @@ mod tests {
         .iter()
         .map(|x| x.to_string())
         .collect();
-        let _res = run_app(args);
+        let _res = run_application(args);
     }
     #[test]
     #[should_panic]
@@ -409,6 +421,6 @@ mod tests {
             .iter()
             .map(|x| x.to_string())
             .collect();
-        let _res = run_app(args);
+        let _res = run_application(args);
     }
 }
