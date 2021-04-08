@@ -29,3 +29,14 @@ pub(crate) const REGISTER_FORMAT: &str = "%(ansify_if(
                            int(payee_width)), int(payee_width)),
                    bold if should_bold))
        %$3 %$4 %$5\n";
+pub(crate) const BALANCE_FORMAT: &str = "%(ansify_if(
+  justify(scrub(display_total), 20,
+          20 + int(prepend_width), true, color),
+            bold if should_bold))
+  %(!options.flat ? depth_spacer : \"\")
+%-(ansify_if(
+   ansify_if(partial_account(options.flat), blue if color),
+             bold if should_bold))\n%/
+%$1\n%/
+%(prepend_width ? \" \" * int(prepend_width) : \"\")
+--------------------\n";

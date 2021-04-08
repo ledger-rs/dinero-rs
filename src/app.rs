@@ -12,6 +12,7 @@ use two_timer;
 use crate::commands::{accounts, balance, commodities, payees, prices, register, statistics};
 use crate::Error;
 use chrono::NaiveDate;
+use chrono::Utc;
 use colored::Colorize;
 
 #[derive(Debug, StructOpt)]
@@ -84,8 +85,8 @@ pub struct CommonOpts {
     pub end: Option<NaiveDate>,
     #[structopt(short = "p", long = "period")]
     period: Option<String>,
-    #[structopt(long = "now", parse(try_from_str = date_parser))]
-    now: Option<NaiveDate>,
+    #[structopt(long = "now",parse(try_from_str = date_parser))]
+    _now: Option<NaiveDate>,
 
     /// Ignore balance assertions
     #[structopt(long = "--no-balance-check")]
@@ -100,7 +101,7 @@ pub struct CommonOpts {
     date_format: Option<String>,
 
     #[structopt(long = "--force-color")]
-    force_color: bool,
+    pub force_color: bool,
     /// TODO force pager
     #[structopt(long = "--force-pager")]
     force_pager: bool,
@@ -126,7 +127,21 @@ pub struct CommonOpts {
 
     /// Format string for the register format
     #[structopt(long = "--register-format", default_value=REGISTER_FORMAT)]
-    register_format: String,
+    pub register_format: String,
+
+    /// Display width for date
+    #[structopt(long = "--date_width", default_value = "10")]
+    pub date_width: usize,
+    /// Display width for payee
+    #[structopt(long = "--payee_width", default_value = "30")]
+    pub payee_width: usize,
+    /// Display width for account
+    #[structopt(long = "--account_width", default_value = "30")]
+    pub account_width: usize,
+
+    /// Bold if
+    #[structopt(long = "--bold-if")]
+    pub bold_if: Option<String>,
 }
 
 impl CommonOpts {
@@ -141,7 +156,7 @@ impl CommonOpts {
             begin: None,
             end: None,
             period: None,
-            now: None,
+            _now: None,
             no_balance_check: false,
             exchange: None,
             date_format: None,
@@ -153,6 +168,16 @@ impl CommonOpts {
             unrealized_gains: None,
             unrealized_losses: None,
             register_format: REGISTER_FORMAT.to_string(),
+            date_width: 10,
+            payee_width: 30,
+            account_width: 30,
+            bold_if: None,
+        }
+    }
+    pub fn now(&self) -> NaiveDate {
+        match self._now {
+            Some(x) => x,
+            None => Utc::now().naive_utc().date(),
         }
     }
 }
