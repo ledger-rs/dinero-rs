@@ -1,6 +1,9 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
 ## [0.26.0] - xxx
+### Changed
+- Check whether dependencies are updated or not with deps.rs service
+
 ## [0.25.0] - 2021-03-31
 ### Added
 - nicer error reporting
