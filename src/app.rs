@@ -65,6 +65,10 @@ pub struct CommonOpts {
     #[structopt(name = "FILE", short = "f", long = "file", parse(from_os_str))]
     pub input_file: PathBuf,
 
+    /// Ignore init file if it exists
+    #[structopt(long = "--args-only")]
+    args_only: bool,
+
     /// Init file
     #[structopt(long = "--init-file", parse(from_os_str))]
     init_file: Option<PathBuf>,
@@ -158,6 +162,7 @@ impl CommonOpts {
     pub fn new() -> Self {
         CommonOpts {
             input_file: PathBuf::new(),
+            args_only: false,
             init_file: None,
             depth: None,
             query: vec![],
@@ -196,23 +201,31 @@ impl CommonOpts {
 
 /// Entry point for the command line app
 const INIT_FILE_FLAG: &str = "--init-file";
+const NO_INIT_FILE_FLAG: &str = "--args-only";
 const LEDGER_PATHS_UNDER_DIR: &str = "~/.ledgerrc";
 const LEDGER_PATHS: &str = ".ledgerrc";
 
 fn init_paths(args: Vec<String>) -> Vec<String> {
     let mut possible_paths: Vec<String> = Vec::new();
-
+    let mut ignore_init = false;
     for i in 0..args.len() {
-        if args[i] == INIT_FILE_FLAG {
-            possible_paths.push(args[i + 1].clone());
+        if args[i] == NO_INIT_FILE_FLAG {
+            ignore_init = true;
             break;
+        } else if args[i] == INIT_FILE_FLAG {
+            possible_paths.push(args[i + 1].clone());
+            continue;
         }
     }
 
-    possible_paths.push(shellexpand::tilde(LEDGER_PATHS_UNDER_DIR).to_string());
-    possible_paths.push(LEDGER_PATHS.to_string());
+    if !ignore_init {
+        possible_paths.push(shellexpand::tilde(LEDGER_PATHS_UNDER_DIR).to_string());
+        possible_paths.push(LEDGER_PATHS.to_string());
 
-    possible_paths
+        possible_paths
+    } else {
+        vec![]
+    }
 }
 
 /// Entry point for the command line app

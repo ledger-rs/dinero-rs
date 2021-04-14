@@ -5,6 +5,9 @@ Changelog file for dinero-rs project, a command line application for managing fi
 - Support for custom format strings
 ### Changed
 - Now the reports are parsed using a format string, which makes them more flexible
+- ```--args-only``` flag to ignore init files
+- Check whether dependencies are updated or not with deps.rs service
+
 ## [0.25.0] - 2021-03-31
 ### Added
 - nicer error reporting
