@@ -160,37 +160,13 @@ pub struct CommonOpts {
 impl CommonOpts {
     // TODO think if this makes sense, as it only gets called from test methods, not in the real program
     pub fn new() -> Self {
-        CommonOpts {
-            input_file: PathBuf::new(),
-            args_only: false,
-            init_file: None,
-            depth: None,
-            query: vec![],
-            real: false,
-            begin: None,
-            end: None,
-            period: None,
-            _now: None,
-            no_balance_check: false,
-            exchange: None,
-            date_format: None,
-            force_color: false,
-            force_pager: false,
-            effective: false,
-            strict: false,
-            pedantic: false,
-            unrealized_gains: None,
-            unrealized_losses: None,
-            register_format: REGISTER_FORMAT.to_string(),
-            date_width: 10,
-            payee_width: 30,
-            account_width: 30,
-            amount_width: 30,
-            meta_width: 30,
-            bold_if: None,
-            abbrev_len: 30,
+        let opt: Opt = Opt::from_iter(vec!["stats"].iter());
+        match opt.cmd {
+            Command::Statistics(options) => options,
+            _ => panic!("Something's very wrong"),
         }
     }
+
     pub fn now(&self) -> NaiveDate {
         match self._now {
             Some(x) => x,
