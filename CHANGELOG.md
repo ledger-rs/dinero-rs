@@ -1,6 +1,8 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
 ## [0.26.0] - xxx
+### Added
+- ```--args-only``` flag to ignore init files
 ### Changed
 - Check whether dependencies are updated or not with deps.rs service
 
