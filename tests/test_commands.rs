@@ -312,7 +312,13 @@ fn payee_from_comments() {
 #[test]
 /// Check that strict works
 fn strict() {
-    let args_1 = &["bal", "-f", "tests/example_files/demo.ledger", "--strict", "--args-only"];
+    let args_1 = &[
+        "bal",
+        "-f",
+        "tests/example_files/demo.ledger",
+        "--strict",
+        "--args-only",
+    ];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args_1).assert();
     let output_1 = String::from_utf8(assert_1.get_output().to_owned().stderr).unwrap();
     assert!(output_1.lines().into_iter().count() > 3);
