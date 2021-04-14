@@ -333,7 +333,7 @@ pub fn eval(
                 "format_date" => functions::format_date(partial_results, options),
                 "int" => functions::int(&partial_results[0]),
                 "justify" => functions::justify(partial_results, options),
-                "scrub" => functions::scrub(partial_results, options),
+                "scrub" => functions::scrub(&partial_results[0], options),
                 "if_expression" => functions::if_expression(
                     partial_results[0].to_owned(),
                     partial_results[1].to_owned(),
@@ -348,10 +348,14 @@ pub fn eval(
             "date_width" => EvalResult::Usize(options.date_width),
             "payee_width" => EvalResult::Usize(options.payee_width),
             "account_width" => EvalResult::Usize(options.account_width),
+            "amount_width" => EvalResult::Usize(options.amount_width),
+            "meta_width" => EvalResult::Usize(options.meta_width),
+            "abbrev_len" => EvalResult::Usize(options.abbrev_len),
             // todo deal with color better
             "color" => EvalResult::Boolean(options.force_color),
             "today" => EvalResult::Date(options.now()),
             "green" => EvalResult::Color(Color::Green),
+            "blue" => EvalResult::Color(Color::Blue),
             "bold" => EvalResult::Style(Styles::Bold),
             "should_bold" => match &options.bold_if {
                 Some(expression) => eval_expression(
@@ -373,6 +377,7 @@ pub fn eval(
             }
             "actual" => EvalResult::Boolean(posting.kind == PostingType::Real),
             "display_account" => EvalResult::String(posting.account.to_string()),
+            "display_amount" => EvalResult::Money(posting.amount.as_ref().unwrap().clone()),
             x => unimplemented!("Variable {}", x),
         },
         Node::Substitution {

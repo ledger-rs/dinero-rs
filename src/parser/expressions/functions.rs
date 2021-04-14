@@ -86,8 +86,8 @@ pub(super) fn justify(args: Vec<EvalResult>, options: &CommonOpts) -> EvalResult
 }
 
 /// scrub
-pub(super) fn scrub(args: Vec<EvalResult>, options: &CommonOpts) -> EvalResult {
-    unimplemented!("scrub")
+pub(super) fn scrub(value: &EvalResult, options: &CommonOpts) -> EvalResult {
+    EvalResult::String(value.to_string())
 }
 
 /// if expression

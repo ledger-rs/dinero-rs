@@ -130,14 +130,23 @@ pub struct CommonOpts {
     pub register_format: String,
 
     /// Display width for date
-    #[structopt(long = "--date_width", default_value = "10")]
+    #[structopt(long = "--date-width", default_value = "10")]
     pub date_width: usize,
     /// Display width for payee
-    #[structopt(long = "--payee_width", default_value = "30")]
+    #[structopt(long = "--payee-width", default_value = "30")]
     pub payee_width: usize,
     /// Display width for account
-    #[structopt(long = "--account_width", default_value = "30")]
+    #[structopt(long = "--account-width", default_value = "30")]
     pub account_width: usize,
+    /// Display width for amount
+    #[structopt(long = "--amount-width", default_value = "30")]
+    pub amount_width: usize,
+    /// Display width for meta
+    #[structopt(long = "--meta-width", default_value = "30")]
+    pub meta_width: usize,
+    /// todo Minimum length for subaccount
+    #[structopt(long = "--abbrev-len", default_value = "30")]
+    pub abbrev_len: usize,
 
     /// Bold if
     #[structopt(long = "--bold-if")]
@@ -171,7 +180,10 @@ impl CommonOpts {
             date_width: 10,
             payee_width: 30,
             account_width: 30,
+            amount_width: 30,
+            meta_width: 30,
             bold_if: None,
+            abbrev_len: 30,
         }
     }
     pub fn now(&self) -> NaiveDate {
