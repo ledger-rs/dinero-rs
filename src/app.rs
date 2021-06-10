@@ -170,6 +170,11 @@ fn init_paths(args: Vec<String>) -> Vec<String> {
             ignore_init = true;
             break;
         } else if args[i] == INIT_FILE_FLAG {
+            let file = Path::new(&args[i + 1]);
+            if !file.exists() {
+                eprintln!("Config file {} does not exist", args[i+1]);
+                std::process::exit(1);
+            }
             possible_paths.push(args[i + 1].clone());
             continue;
         }
