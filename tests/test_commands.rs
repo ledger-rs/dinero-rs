@@ -326,6 +326,16 @@ fn strict() {
 }
 
 #[test]
+/// It should fail with no config file
+fn no_config_file() {
+    let args_1 = &["bal", "--init-file", "a file that does not exist"];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args_1).assert();
+    let output_1 = String::from_utf8(assert_1.get_output().to_owned().stderr).unwrap();
+    assert_eq!(output_1.lines().into_iter().count(), 1);
+    test_err(args_1);
+}
+
+#[test]
 #[should_panic()]
 /// Check that pedantic works
 fn pedantic() {

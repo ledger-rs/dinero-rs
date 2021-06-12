@@ -162,7 +162,7 @@ const NO_INIT_FILE_FLAG: &str = "--args-only";
 const LEDGER_PATHS_UNDER_DIR: &str = "~/.ledgerrc";
 const LEDGER_PATHS: &str = ".ledgerrc";
 
-fn init_paths(args: Vec<String>) -> Vec<String> {
+fn init_paths(args: Vec<String>) -> Result<Vec<String>, ()> {
     let mut possible_paths: Vec<String> = Vec::new();
     let mut ignore_init = false;
     for i in 0..args.len() {
@@ -170,6 +170,11 @@ fn init_paths(args: Vec<String>) -> Vec<String> {
             ignore_init = true;
             break;
         } else if args[i] == INIT_FILE_FLAG {
+            let file = Path::new(&args[i + 1]);
+            if !file.exists() {
+                eprintln!("Config file '{}' does not exist", args[i + 1]);
+                return Err(());
+            }
             possible_paths.push(args[i + 1].clone());
             continue;
         }
@@ -179,16 +184,16 @@ fn init_paths(args: Vec<String>) -> Vec<String> {
         possible_paths.push(shellexpand::tilde(LEDGER_PATHS_UNDER_DIR).to_string());
         possible_paths.push(LEDGER_PATHS.to_string());
 
-        possible_paths
+        Ok(possible_paths)
     } else {
-        vec![]
+        Ok(vec![])
     }
 }
 
 /// Entry point for the command line app
 pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
     let mut config_file = None;
-    let possible_paths = init_paths(args.clone());
+    let possible_paths = init_paths(args.clone())?;
     for path in possible_paths.iter() {
         let file = Path::new(path);
         if file.exists() {

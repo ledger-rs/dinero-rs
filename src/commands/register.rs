@@ -12,7 +12,7 @@ use terminal_size::{terminal_size, Width};
 pub fn execute(options: &CommonOpts) -> Result<(), Error> {
     // Get options from options
     let path = options.input_file.clone();
-    let no_balance_check: bool = options.no_balance_check;
+    let _no_balance_check: bool = options.no_balance_check;
     // Now work
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
     let items = tokenizer.tokenize();
