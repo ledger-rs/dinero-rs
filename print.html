@@ -4,40 +4,28 @@
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
         <title>dinero documentation</title>
-        
-        <meta name="robots" content="noindex" />
-        
-        
-
+                <meta name="robots" content="noindex" />
+                
 
         <!-- Custom HTML head -->
         
-
 
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="Documentation for the command line tool dinero">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff" />
 
-        
-        <link rel="icon" href="favicon.svg">
-        
-        
-        <link rel="shortcut icon" href="favicon.png">
-        
-        <link rel="stylesheet" href="css/variables.css">
+                <link rel="icon" href="favicon.svg">
+                        <link rel="shortcut icon" href="favicon.png">
+                <link rel="stylesheet" href="css/variables.css">
         <link rel="stylesheet" href="css/general.css">
         <link rel="stylesheet" href="css/chrome.css">
+                <link rel="stylesheet" href="css/print.css" media="print">
         
-        <link rel="stylesheet" href="css/print.css" media="print">
-        
-
         <!-- Fonts -->
         <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+                <link rel="stylesheet" href="fonts/fonts.css">
         
-        <link rel="stylesheet" href="fonts/fonts.css">
-        
-
         <!-- Highlight.js Stylesheets -->
         <link rel="stylesheet" href="highlight.css">
         <link rel="stylesheet" href="tomorrow-night.css">
@@ -45,9 +33,7 @@
 
         <!-- Custom theme stylesheets -->
         
-
-        
-    </head>
+            </head>
     <body>
         <!-- Provide site root to javascript -->
         <script type="text/javascript">
@@ -97,8 +83,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="index.html"><strong aria-hidden="true">1.</strong> The readme file</a></li><li class="chapter-item expanded "><a href="journal-file.html"><strong aria-hidden="true">2.</strong> The journal file</a></li><li class="chapter-item expanded "><a href="differences_with_ledger.html"><strong aria-hidden="true">3.</strong> Differences with ledger</a></li></ol>
-            </div>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="index.html"><strong aria-hidden="true">1.</strong> The readme file</a></li><li class="chapter-item expanded "><a href="journal-file.html"><strong aria-hidden="true">2.</strong> The journal file</a></li><li class="chapter-item expanded "><a href="differences_with_ledger.html"><strong aria-hidden="true">3.</strong> Differences with ledger</a></li></ol>            </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
@@ -122,29 +107,24 @@
                             <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
                         </ul>
-                        
-                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                                                <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
                             <i class="fa fa-search"></i>
                         </button>
-                        
-                    </div>
+                                            </div>
 
                     <h1 class="menu-title">dinero documentation</h1>
 
                     <div class="right-buttons">
-                        
-                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                                                <a href="print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
-                        
-                        
+                                                                        
                     </div>
                 </div>
 
-                
-                <div id="search-wrapper" class="hidden">
+                                <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
                     </form>
                     <div id="searchresults-outer" class="searchresults-outer hidden">
                         <div id="searchresults-header" class="searchresults-header"></div>
@@ -153,7 +133,6 @@
                     </div>
                 </div>
                 
-
                 <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
                 <script type="text/javascript">
                     document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
@@ -215,14 +194,14 @@ dinero reg -f myledger.ledger
 <p>I use ledger-cli extensively for my personal finances. My goal is to be able to run all the commands I use the most with my own tool while at the same time learning Rust.</p>
 <p>Run <code>dinero --help</code> for a list of available commands and options.</p>
 <p>If you use this software and want to say thanks, <a href="https://www.buymeacoffee.com/7CLlJGE">feel free to buy me a coffee</a>.</p>
-<h1 id="the-journal-files"><a class="header" href="#the-journal-files">The journal file(s)</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="the-journal-files"><a class="header" href="#the-journal-files">The journal file(s)</a></h1>
 <p><em>Work in progress</em></p>
 <p>Dinero derives its reports from a <em>journal</em> file (<a href="journal-file.html#include_directive">or files</a>). The most important feature of this file format is its readibility. Unlike other computer-friendly formats such as comma separated values or a binary database, journal files actually make sense to a human.</p>
 <p>Dinero follows the principles of <a href="https://en.wikipedia.org/wiki/Double-entry_bookkeeping">double entry accounting</a>, where the main information is the <em>transaction</em>.</p>
 <p>A transaction contains two or more <em>postings</em>, which are actual movements in an <em>account</em>, which is another important concept. In bookkeeping, money always comes from and goes to an account.</p>
 <h2 id="developers"><a class="header" href="#developers">Developers</a></h2>
 <p>The full syntax accepted by <code>dinero</code>can be found in the <a href="https://github.com/frosklis/dinero-rs/blob/master/src/grammar/grammar.pest">grammar specification</a>. It is a formal grammar.</p>
-<h1 id="differences-with-ledger-cli"><a class="header" href="#differences-with-ledger-cli">Differences with ledger-cli</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="differences-with-ledger-cli"><a class="header" href="#differences-with-ledger-cli">Differences with ledger-cli</a></h1>
 <p>Although dinero is completely inspired by <a href="https://ledger-cli.org"><code>ledger-cli</code></a> and implements a subset of its features, it has been written form scratch, it is not a port. </p>
 <p>Some behaviors are intentionally different. Other things are just bugs: if you find one, feel free to add an issue in the <a href="https://github.com/frosklis/dinero-rs">development repository</a>.</p>
 <p><code>dinero</code> is developed in Rust, while <code>ledger</code> is developed in C. This is completely transparent to the end user, it does at least theoretically provide some advantages for developers, with Rust being a newer language with the same speed as C but more memory safety. Again, this at least theory</p>
@@ -256,9 +235,7 @@ include past/202103.ledger
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
-
                         
-
                         <div style="clear: both"></div>
                     </nav>
                 </div>
@@ -266,48 +243,33 @@ include past/202103.ledger
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
-
-                
-            </nav>
+                            </nav>
 
         </div>
 
         
-
         
-
         
-
-        
-        <script type="text/javascript">
+                <script type="text/javascript">
             window.playground_copyable = true;
         </script>
         
-
         
-
-        
-        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+                <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
         
-
         <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
         <script src="book.js" type="text/javascript" charset="utf-8"></script>
 
         <!-- Custom JS scripts -->
         
-
-        
-        
-        <script type="text/javascript">
+                        <script type="text/javascript">
         window.addEventListener('load', function() {
             window.setTimeout(window.print, 100);
         });
         </script>
-        
-        
-
+                
     </body>
 </html>
