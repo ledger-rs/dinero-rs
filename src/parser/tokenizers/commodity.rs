@@ -1,8 +1,9 @@
 use super::super::Rule;
 use std::collections::HashSet;
+use std::usize;
 
 use crate::models::{Comment, Currency};
-use crate::parser::utils::parse_string;
+use crate::parser::utils::{parse_string, parse_usize};
 use crate::parser::Tokenizer;
 
 use pest::iterators::Pair;
@@ -14,6 +15,7 @@ impl<'a> Tokenizer<'a> {
         let mut note: Option<String> = None;
         let mut format: Option<String> = None;
         let mut comments: Vec<Comment> = vec![];
+        let mut precision: Option<usize> = None;
         let mut default = false;
         let mut aliases = HashSet::new();
 
@@ -30,9 +32,10 @@ impl<'a> Tokenizer<'a> {
                         }
                         Rule::note => note = Some(parse_string(property.next().unwrap())),
                         Rule::format => format = Some(parse_string(property.next().unwrap())),
+                        Rule::precision => precision = Some(parse_usize(property.next().unwrap())),
                         _ => {}
                     }
-                }
+                },
                 Rule::flag => default = true,
                 Rule::EOI => {}
                 x => panic!("{:?} not expected", x),
@@ -49,6 +52,9 @@ impl<'a> Tokenizer<'a> {
         }
         if format.is_some() {
             currency.set_format(format.unwrap());
+        }
+        if precision.is_some() {
+            currency.set_precision(precision.unwrap())
         }
         currency
     }

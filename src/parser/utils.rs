@@ -7,6 +7,7 @@ use pest::iterators::Pair;
 
 use pest::Parser;
 use std::str::FromStr;
+use std::usize;
 
 pub(crate) fn parse_str_as_date(date: &str) -> NaiveDate {
     parse_date(
@@ -49,6 +50,10 @@ pub(crate) fn parse_rational(number: Pair<Rule>) -> BigRational {
         BigInt::from_str(num.as_str()).unwrap(),
         BigInt::from_str(den.as_str()).unwrap(),
     )
+}
+
+pub(crate) fn parse_usize(number: Pair<Rule>) -> usize {
+    usize::from_str(number.as_str()).unwrap()
 }
 
 pub(crate) fn parse_string(string: Pair<Rule>) -> String {

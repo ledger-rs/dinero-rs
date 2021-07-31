@@ -112,7 +112,7 @@ impl<'a> From<String> for Tokenizer<'a> {
 
 impl<'a> Tokenizer<'a> {
     /// Parses a string into a parsed ledger. It allows for recursion,
-    /// i.e. the include keyword is properly handled
+    /// i.e. the ```include``` keyword is properly handled
     pub fn tokenize(&'a mut self) -> ParsedLedger {
         let mut ledger: ParsedLedger = ParsedLedger::new();
         if let Some(file) = self.file {

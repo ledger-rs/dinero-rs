@@ -60,6 +60,7 @@ pub struct Currency {
     decimal_separator: Separator,
     digit_grouping: DigitGrouping,
     thousands_separator: Separator,
+    has_explicit_format: bool,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -106,6 +107,7 @@ impl Currency {
             decimal_separator: Separator::Comma,
             digit_grouping: DigitGrouping::Thousands,
             thousands_separator: Separator::Space,
+            has_explicit_format: false,
         }
     }
     pub fn get_precision(&self) -> Option<usize> {
@@ -167,6 +169,9 @@ impl Currency {
             .next()
             .unwrap()
             .into_inner();
+
+        // The format has been set explicitly
+        self.has_explicit_format = true;
 
         let mut first = parsed.next().unwrap();
         let integer_format;

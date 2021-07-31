@@ -1,10 +1,14 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
+
 ## [0.26.0] - xxx
 ### Added
 - ```--args-only``` flag to ignore init files
+- ```precision``` property in the ```commodity``` directive
 ### Changed
 - Check whether dependencies are updated or not with deps.rs service
+### Fixed
+- [Currencies are shown consistently in a report](https://github.com/frosklis/dinero-rs/issues/103)
 
 ## [0.25.0] - 2021-03-31
 ### Added
