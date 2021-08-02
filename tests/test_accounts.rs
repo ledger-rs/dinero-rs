@@ -44,13 +44,14 @@ fn test_account_names() {
             .to_string(),
         ),
     ];
+
     for (i, mut tokenizer) in tokenizers.into_iter().enumerate() {
         println!("Test case #{}", i);
-        let mut options = CommonOpts::new();
-        options.no_balance_check = true;
-        let parsed = tokenizer.tokenize(&options);
+        let parsed = tokenizer.tokenize(&CommonOpts::new());
         let mut num_accounts = parsed.accounts.len();
         assert_eq!(num_accounts, 0, "There should be no accounts when parsed");
+        let mut options = CommonOpts::new();
+        options.no_balance_check = true;
         num_accounts = parsed.to_ledger(&options).unwrap().accounts.len();
         assert_eq!(num_accounts, 2, "There should be two accounts");
     }

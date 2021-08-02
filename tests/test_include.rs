@@ -18,8 +18,9 @@ fn test_include() {
 fn test_build_ledger_from_demo() {
     let p1 = PathBuf::from("tests/example_files/demo.ledger".to_string());
     let mut tokenizer: Tokenizer = Tokenizer::from(&p1);
-    let items = tokenizer.tokenize(&CommonOpts::new());
-    let ledger = items.to_ledger(&CommonOpts::new());
+    let options = CommonOpts::new();
+    let items = tokenizer.tokenize(&options);
+    let ledger = items.to_ledger(&options);
     assert!(ledger.is_ok());
 }
 
@@ -52,8 +53,9 @@ fn comment_no_spaces() {
         "
         .to_string(),
     );
-    let items = tokenizer.tokenize(&CommonOpts::new());
-    let ledger = items.to_ledger(&CommonOpts::new());
+    let options = CommonOpts::new();
+    let items = tokenizer.tokenize(&options);
+    let ledger = items.to_ledger(&options);
     assert!(ledger.is_ok());
 }
 #[test]
@@ -66,7 +68,8 @@ fn comment_spaces() {
         "
         .to_string(),
     );
-    let items = tokenizer.tokenize(&CommonOpts::new());
-    let ledger = items.to_ledger(&CommonOpts::new());
+    let options = CommonOpts::new();
+    let items = tokenizer.tokenize(&options);
+    let ledger = items.to_ledger(&options);
     assert!(ledger.is_ok());
 }
