@@ -35,7 +35,7 @@ impl<'a> Tokenizer<'a> {
                         Rule::precision => precision = Some(parse_usize(property.next().unwrap())),
                         _ => {}
                     }
-                },
+                }
                 Rule::flag => default = true,
                 Rule::EOI => {}
                 x => panic!("{:?} not expected", x),

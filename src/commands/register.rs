@@ -15,7 +15,7 @@ pub fn execute(options: &CommonOpts) -> Result<(), Error> {
     let _no_balance_check: bool = options.no_balance_check;
     // Now work
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
-    let items = tokenizer.tokenize();
+    let items = tokenizer.tokenize(options);
     let mut ledger = items.to_ledger(options)?;
 
     let mut balance = Balance::new();

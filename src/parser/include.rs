@@ -1,4 +1,7 @@
-use crate::parser::{ParsedLedger, Rule, Tokenizer};
+use crate::{
+    parser::{ParsedLedger, Rule, Tokenizer},
+    CommonOpts,
+};
 use glob::glob;
 use pest::iterators::Pair;
 
@@ -9,7 +12,7 @@ impl<'a> Tokenizer<'a> {
     ///
     /// Add the found file of files it it has wildcards in the pattern to the queue of files to process and process them.
     /// TODO this is a good place to include parallelism
-    pub fn include(&self, element: Pair<Rule>) -> ParsedLedger {
+    pub fn include(&self, element: Pair<Rule>, options: &CommonOpts) -> ParsedLedger {
         let mut pattern = String::new();
         let mut files: Vec<PathBuf> = Vec::new();
         if let Some(current_path) = self.file {
@@ -42,7 +45,7 @@ impl<'a> Tokenizer<'a> {
             for p in self.seen_files.iter() {
                 inner_tokenizer.seen_files.insert(*p);
             }
-            let mut new_items: ParsedLedger = inner_tokenizer.tokenize();
+            let mut new_items: ParsedLedger = inner_tokenizer.tokenize(options);
             items.append(&mut new_items);
         }
         items

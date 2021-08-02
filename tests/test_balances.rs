@@ -17,7 +17,7 @@ fn test_balances() {
 "
         .to_string(),
     );
-    let parsed = tokenizer.tokenize();
+    let parsed = tokenizer.tokenize(&CommonOpts::new());
     let ledger = parsed.to_ledger(&CommonOpts::new());
     assert!(ledger.is_ok(), "This should balance");
 }

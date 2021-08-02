@@ -6,7 +6,7 @@ use crate::{parser::Tokenizer, CommonOpts};
 
 pub fn execute(path: PathBuf, options: &CommonOpts) -> Result<(), Error> {
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
-    let items = tokenizer.tokenize();
+    let items = tokenizer.tokenize(options);
 
     let ledger = items.to_ledger(options)?;
     for price in ledger.prices.deref() {

@@ -11,7 +11,7 @@ use std::fs::read_to_string;
 use std::path::PathBuf;
 
 use crate::models::{Account, Comment, Currency, Payee, Transaction};
-use crate::{models, List};
+use crate::{models, CommonOpts, List};
 use pest::Parser;
 
 mod include;
@@ -113,7 +113,7 @@ impl<'a> From<String> for Tokenizer<'a> {
 impl<'a> Tokenizer<'a> {
     /// Parses a string into a parsed ledger. It allows for recursion,
     /// i.e. the ```include``` keyword is properly handled
-    pub fn tokenize(&'a mut self) -> ParsedLedger {
+    pub fn tokenize(&'a mut self, options: &CommonOpts) -> ParsedLedger {
         let mut ledger: ParsedLedger = ParsedLedger::new();
         if let Some(file) = self.file {
             ledger.files.push(file.clone());
@@ -128,7 +128,7 @@ impl<'a> Tokenizer<'a> {
                             match inner.as_rule() {
                                 Rule::include => {
                                     // This is the special case
-                                    let mut new_ledger = self.include(inner);
+                                    let mut new_ledger = self.include(inner, options);
                                     ledger.append(&mut new_ledger);
                                 }
                                 Rule::price => {
@@ -186,7 +186,7 @@ impl<'a> Tokenizer<'a> {
                 eprintln!("Error found in line {}", e)
             }
         }
-        // dbg!(&ledger);
+
         ledger
     }
 }
@@ -198,7 +198,7 @@ mod tests {
     fn test_empty_string() {
         let content = "".to_string();
         let mut tokenizer = Tokenizer::from(content);
-        let items = tokenizer.tokenize();
+        let items = tokenizer.tokenize(&CommonOpts::new());
         assert_eq!(items.len(), 0, "Should be empty");
     }
 
@@ -206,7 +206,7 @@ mod tests {
     fn test_only_spaces() {
         let content = "\n\n\n\n\n".to_string();
         let mut tokenizer = Tokenizer::from(content);
-        let items = tokenizer.tokenize();
+        let items = tokenizer.tokenize(&CommonOpts::new());
         assert_eq!(items.len(), 0, "Should be empty")
     }
 }

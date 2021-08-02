@@ -19,7 +19,7 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
     let path: PathBuf = options.input_file.clone();
     let depth = options.depth;
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
-    let items = tokenizer.tokenize();
+    let items = tokenizer.tokenize(options);
     let mut ledger = items.to_ledger(options)?;
 
     let mut balances: HashMap<Rc<Account>, Balance> = HashMap::new();

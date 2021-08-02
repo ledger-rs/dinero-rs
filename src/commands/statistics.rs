@@ -8,7 +8,7 @@ use crate::{error::Error, CommonOpts};
 /// Prints summary statistics from the ledger
 pub fn execute(path: PathBuf, options: &CommonOpts) -> Result<(), Error> {
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
-    let items = tokenizer.tokenize();
+    let items = tokenizer.tokenize(options);
     let ledger = items.to_ledger(options)?;
 
     // Number of transactions

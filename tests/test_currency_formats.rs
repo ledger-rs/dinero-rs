@@ -36,7 +36,7 @@ commodity ACME
         "
         .to_string(),
     );
-    let items = tokenizer.tokenize();
+    let items = tokenizer.tokenize(&CommonOpts::new());
     let ledger = items.to_ledger(&CommonOpts::new()).unwrap();
     let eur = ledger.get_commodities().get("eur").unwrap();
     let usd = ledger.get_commodities().get("usd").unwrap();
