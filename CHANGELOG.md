@@ -5,7 +5,8 @@ Changelog file for dinero-rs project, a command line application for managing fi
 - ```--args-only``` flag to ignore init files
 ### Changed
 - Check whether dependencies are updated or not with deps.rs service
-
+### Fixed
+- [```--strict``` and ```--pedantic``` working properly](https://github.com/frosklis/dinero-rs/issues/104)
 ## [0.25.0] - 2021-03-31
 ### Added
 - nicer error reporting

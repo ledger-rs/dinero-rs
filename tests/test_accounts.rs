@@ -46,7 +46,7 @@ fn test_account_names() {
     ];
     for (i, mut tokenizer) in tokenizers.into_iter().enumerate() {
         println!("Test case #{}", i);
-        let parsed = tokenizer.tokenize();
+        let parsed = tokenizer.tokenize(&CommonOpts::new());
         let mut num_accounts = parsed.accounts.len();
         assert_eq!(num_accounts, 0, "There should be no accounts when parsed");
         let mut options = CommonOpts::new();
@@ -66,7 +66,7 @@ fn test_account_directive() {
             .to_string(),
     );
 
-    let parsed = tokenizer.tokenize();
+    let parsed = tokenizer.tokenize(&CommonOpts::new());
     let num_accounts = parsed.accounts.len();
     assert_eq!(num_accounts, 1, "Parse one account")
 }

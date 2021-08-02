@@ -7,7 +7,7 @@ use std::ops::Deref;
 
 pub fn execute(path: PathBuf, options: &CommonOpts) -> Result<(), Error> {
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
-    let items = tokenizer.tokenize();
+    let items = tokenizer.tokenize(options);
     let ledger = items.to_ledger(options)?;
     let mut accounts = ledger
         .accounts
