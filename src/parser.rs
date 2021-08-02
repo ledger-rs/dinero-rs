@@ -11,7 +11,7 @@ use std::fs::read_to_string;
 use std::path::PathBuf;
 
 use crate::models::{Account, Comment, Currency, Payee, Transaction};
-use crate::{models, List};
+use crate::{models, CommonOpts, List};
 use pest::Parser;
 
 mod include;
@@ -111,10 +111,21 @@ impl<'a> From<String> for Tokenizer<'a> {
 }
 
 impl<'a> Tokenizer<'a> {
+    pub fn tokenize(&'a mut self, options: &CommonOpts) -> ParsedLedger {
+        self.tokenize_with_currencies(options, None)
+    }
     /// Parses a string into a parsed ledger. It allows for recursion,
     /// i.e. the include keyword is properly handled
-    pub fn tokenize(&'a mut self) -> ParsedLedger {
+    pub fn tokenize_with_currencies(
+        &'a mut self,
+        options: &CommonOpts,
+        defined_currencies: Option<&List<Currency>>,
+    ) -> ParsedLedger {
         let mut ledger: ParsedLedger = ParsedLedger::new();
+        match defined_currencies {
+            Some(x) => ledger.commodities.append(x),
+            None => (),
+        }
         if let Some(file) = self.file {
             ledger.files.push(file.clone());
         }
@@ -128,7 +139,8 @@ impl<'a> Tokenizer<'a> {
                             match inner.as_rule() {
                                 Rule::include => {
                                     // This is the special case
-                                    let mut new_ledger = self.include(inner);
+                                    let mut new_ledger =
+                                        self.include(inner, &options, &ledger.commodities);
                                     ledger.append(&mut new_ledger);
                                 }
                                 Rule::price => {
@@ -163,6 +175,13 @@ impl<'a> Tokenizer<'a> {
                                     if let Some(c) = currency {
                                         let found = ledger.commodities.get(c);
                                         if found.is_err() {
+                                            if options.pedantic {
+                                                panic!("Error: commodity {} not declared.", c);
+                                            }
+                                            if options.strict {
+                                                eprintln!("Warning: commodity {} not declared.", c);
+                                            }
+
                                             let mut commodity = Currency::from(c.as_str());
                                             commodity
                                                 .set_format(format.as_ref().unwrap().to_owned());
@@ -198,7 +217,7 @@ mod tests {
     fn test_empty_string() {
         let content = "".to_string();
         let mut tokenizer = Tokenizer::from(content);
-        let items = tokenizer.tokenize();
+        let items = tokenizer.tokenize(&CommonOpts::new());
         assert_eq!(items.len(), 0, "Should be empty");
     }
 
@@ -206,7 +225,7 @@ mod tests {
     fn test_only_spaces() {
         let content = "\n\n\n\n\n".to_string();
         let mut tokenizer = Tokenizer::from(content);
-        let items = tokenizer.tokenize();
+        let items = tokenizer.tokenize(&CommonOpts::new());
         assert_eq!(items.len(), 0, "Should be empty")
     }
 }

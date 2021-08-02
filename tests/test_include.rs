@@ -8,7 +8,7 @@ use std::path::PathBuf;
 fn test_include() {
     let p1 = PathBuf::from("tests/example_files/include.ledger".to_string());
     let mut tokenizer: Tokenizer = Tokenizer::from(&p1);
-    let _res = tokenizer.tokenize();
+    let _res = tokenizer.tokenize(&CommonOpts::new());
     // simply that it does not panic
     // todo change for something meaningful
     assert!(true);
@@ -18,7 +18,7 @@ fn test_include() {
 fn test_build_ledger_from_demo() {
     let p1 = PathBuf::from("tests/example_files/demo.ledger".to_string());
     let mut tokenizer: Tokenizer = Tokenizer::from(&p1);
-    let items = tokenizer.tokenize();
+    let items = tokenizer.tokenize(CommonOpts::new());
     let ledger = items.to_ledger(&CommonOpts::new());
     assert!(ledger.is_ok());
 }
@@ -33,7 +33,7 @@ fn test_fail() {
 "
         .to_string(),
     );
-    let parsed = tokenizer.tokenize();
+    let parsed = tokenizer.tokenize(&CommonOpts::new());
     // It parses
     assert!(true);
 
@@ -52,8 +52,9 @@ fn comment_no_spaces() {
         "
         .to_string(),
     );
-    let items = tokenizer.tokenize();
-    let ledger = items.to_ledger(&CommonOpts::new());
+    let options = CommonOpts::new();
+    let items = tokenizer.tokenize(&options);
+    let ledger = items.to_ledger(&options);
     assert!(ledger.is_ok());
 }
 #[test]
@@ -66,7 +67,8 @@ fn comment_spaces() {
         "
         .to_string(),
     );
-    let items = tokenizer.tokenize();
-    let ledger = items.to_ledger(&CommonOpts::new());
+    let options = CommonOpts::new();
+    let items = tokenizer.tokenize(&options);
+    let ledger = items.to_ledger(&options);
     assert!(ledger.is_ok());
 }

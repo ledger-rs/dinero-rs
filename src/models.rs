@@ -378,6 +378,7 @@ impl ParsedLedger {
                 for comment in parsed.comments.iter() {
                     transaction.tags.append(&mut comment.get_tags());
                 }
+
                 // Go posting by posting
                 for p in parsed.postings.borrow().iter() {
                     let payee = match &p.payee {

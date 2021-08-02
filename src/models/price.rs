@@ -313,7 +313,7 @@ mod tests {
         // Copy from balance command
         let path = PathBuf::from("tests/example_files/demo.ledger");
         let mut tokenizer = Tokenizer::from(&path);
-        let items = tokenizer.tokenize();
+        let items = tokenizer.tokenize(options);
         let ledger = items.to_ledger(&CommonOpts::new()).unwrap();
 
         let currency = ledger.commodities.get("EUR").unwrap();

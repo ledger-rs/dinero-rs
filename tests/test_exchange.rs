@@ -29,8 +29,9 @@ P 2020-07-01 EUR 1.5 USD
         "
         .to_string(),
     );
-    let items = tokenizer.tokenize();
-    let ledger = items.to_ledger(&CommonOpts::new()).unwrap();
+    let options = CommonOpts::new();
+    let items = tokenizer.tokenize(&options);
+    let ledger = items.to_ledger(&options).unwrap();
     let eur = ledger.get_commodities().get("eur").unwrap();
     let usd = ledger.get_commodities().get("usd").unwrap();
     let acme = ledger.get_commodities().get("acme").unwrap();
