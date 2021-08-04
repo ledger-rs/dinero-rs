@@ -307,7 +307,7 @@ impl Display for Money {
                 let amount_str = format!("{}{}", integer_str, decimal_str);
                 match currency.symbol_placement {
                     CurrencySymbolPlacement::BeforeAmount => {
-                        if integer_part.is_negative() {
+                        if amount.is_negative() {
                             match currency.negative_amount_display {
                                 NegativeAmountDisplay::BeforeSymbolAndNumber => {
                                     write!(f, "-{}{}", currency.get_name(), amount_str)
@@ -327,7 +327,7 @@ impl Display for Money {
                         }
                     }
                     CurrencySymbolPlacement::AfterAmount => {
-                        if integer_part.is_negative() {
+                        if amount.is_negative() {
                             match currency.negative_amount_display {
                                 NegativeAmountDisplay::BeforeSymbolAndNumber
                                 | NegativeAmountDisplay::BeforeNumberBehindCurrency => {

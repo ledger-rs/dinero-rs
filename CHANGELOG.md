@@ -1,6 +1,8 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
-## [0.27.0] - xxx
+## [0.27.0] - 2021-08-04
+### Fixed
+- Negative quantities starting with zero now show the negative sign.
 ## [0.26.0] - 2021-08-02
 ### Added
 - ```--args-only``` flag to ignore init files
