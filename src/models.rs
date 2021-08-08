@@ -390,7 +390,7 @@ impl ParsedLedger {
                 // Go posting by posting
                 for p in parsed.postings.borrow().iter() {
                     let payee = match &p.payee {
-                        None => transaction.get_payee_inmutable(&self.payees),
+                        None => transaction.get_payee(&self.payees).unwrap(),
                         Some(x) => self.payees.get(x).unwrap().clone(),
                     };
                     let account = if p.account.to_lowercase().ends_with("unknown") {
