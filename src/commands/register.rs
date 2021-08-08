@@ -55,7 +55,7 @@ pub fn execute(options: &CommonOpts) -> Result<(), Error> {
         let postings_iter = postings.iter().filter(|p| {
             filter::filter(&options, &node, t, p.to_owned(), &ledger.commodities).unwrap()
         });
-        
+
         for p in postings_iter {
             counter += 1;
             if counter == 1 {
