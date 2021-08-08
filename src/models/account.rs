@@ -7,6 +7,7 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 
+/// An account
 #[derive(Debug, Clone)]
 pub struct Account {
     name: String,

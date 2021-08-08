@@ -51,22 +51,30 @@ pub fn execute(options: &CommonOpts) -> Result<(), Error> {
 
     for t in ledger.transactions.iter() {
         let mut counter = 0;
-        for p in t.postings.borrow().iter() {
-            if !filter::filter(&options, &node, t, p, &mut ledger.commodities)? {
-                continue;
-            }
+        let postings = t.postings.borrow();
+        let postings_iter = postings.iter().filter(|p| {
+            filter::filter(&options, &node, t, p.to_owned(), &ledger.commodities).unwrap()
+        });
+
+        for p in postings_iter {
             counter += 1;
             if counter == 1 {
-                print!(
-                    "{:w1$}{:width$}",
-                    format!("{}", t.date.unwrap()),
-                    clip(
-                        &format!("{} ", t.get_payee(&mut ledger.payees)),
-                        w_description
+                match t.get_payee(&ledger.payees) {
+                    Some(payee) => print!(
+                        "{:w1$}{:width$}",
+                        format!("{}", t.date.unwrap()),
+                        clip(&format!("{} ", payee), w_description),
+                        width = w_description,
+                        w1 = w_date
                     ),
-                    width = w_description,
-                    w1 = w_date
-                );
+                    None => print!(
+                        "{:w1$}{:width$}",
+                        format!("{}", t.date.unwrap()),
+                        clip(&format!("{} ", ""), w_description),
+                        width = w_description,
+                        w1 = w_date
+                    ),
+                }
             }
             if counter > 1 {
                 print!("{:width$}", "", width = w_description + 11);

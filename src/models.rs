@@ -58,6 +58,14 @@ impl Ledger {
 
 impl ParsedLedger {
     /// Creates a proper ledger from a parsed ledger
+    ///
+    /// 1. Create the lists of accounts, commodities and payees
+    /// 2. Load the commodity prices
+    /// 3. Balance the transactions by filling in missing amounts (this previously sorts the transactions by date)
+    /// 4. Create automated transactions
+    /// 5. Checks whether transactions are balanced again
+    ///
+    /// There my be room for optimisation here
     pub fn to_ledger(mut self, options: &CommonOpts) -> Result<Ledger, Error> {
         let mut commodity_strs = HashSet::<String>::new();
         let mut account_strs = HashSet::<String>::new();
@@ -382,7 +390,7 @@ impl ParsedLedger {
                 // Go posting by posting
                 for p in parsed.postings.borrow().iter() {
                     let payee = match &p.payee {
-                        None => transaction.get_payee_inmutable(&self.payees),
+                        None => transaction.get_payee(&self.payees).unwrap(),
                         Some(x) => self.payees.get(x).unwrap().clone(),
                     };
                     let account = if p.account.to_lowercase().ends_with("unknown") {

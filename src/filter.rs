@@ -11,7 +11,7 @@ pub fn filter(
     node: &Option<Node>,
     transaction: &Transaction<Posting>,
     posting: &Posting,
-    commodities: &mut List<Currency>,
+    commodities: &List<Currency>,
 ) -> Result<bool, Error> {
     // Get what's needed
     let real = options.real;
@@ -45,7 +45,7 @@ pub fn filter_expression(
     predicate: &Node,
     posting: &Posting,
     transaction: &Transaction<Posting>,
-    commodities: &mut List<Currency>,
+    commodities: &List<Currency>,
     regexes: &mut HashMap<String, Regex>,
 ) -> Result<bool, Error> {
     let result = eval(predicate, posting, transaction, commodities, regexes);
