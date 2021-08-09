@@ -127,6 +127,10 @@ pub struct CommonOpts {
     /// TODO Unrealized losses
     #[structopt(long = "--unrealized-losses")]
     unrealized_losses: Option<String>,
+
+    /// Whether to collapse postings from the same account in the same transaction
+    #[structopt(long = "--collapse")]
+    pub collapse: bool,
 }
 
 impl CommonOpts {
@@ -152,6 +156,7 @@ impl CommonOpts {
             pedantic: false,
             unrealized_gains: None,
             unrealized_losses: None,
+            collapse: false,
         }
     }
 }

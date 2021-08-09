@@ -169,7 +169,7 @@ pub fn eval(
     node: &Node,
     posting: &Posting,
     transaction: &Transaction<Posting>,
-    commodities: &mut List<Currency>,
+    commodities: &List<Currency>,
     regexes: &mut HashMap<String, Regex>,
 ) -> EvalResult {
     let res = match node {
@@ -185,9 +185,7 @@ pub fn eval(
             let cur = match commodities.get(&currency) {
                 Ok(c) => c.clone(),
                 Err(_) => {
-                    let c = Currency::from(currency.as_str());
-                    commodities.insert(c.clone());
-                    Rc::new(c)
+                    panic!("Can't find commodity {:?}", currency);
                 }
             };
             EvalResult::Money(Money::from((cur.clone(), amount.clone())))

@@ -1,6 +1,8 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
-## [0.28.0] - xxx
+## [0.28.0] - 2021-08-09
+### Added
+- ```--collapse``` flag to collapse postings with the same currency and account
 ## [0.27.0] - 2021-08-04
 ### Fixed
 - Negative quantities starting with zero now show the negative sign.

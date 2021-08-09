@@ -7,7 +7,7 @@ use chrono::NaiveDate;
 use num::rational::BigRational;
 
 use crate::models::balance::Balance;
-use crate::models::{Account, Comment, HasName, Money, Origin, Payee};
+use crate::models::{Account, Comment, HasName, Money, Payee};
 use crate::{LedgerError, List};
 use num::BigInt;
 use std::fmt;
@@ -86,26 +86,10 @@ impl<T> Transaction<T> {
             Some(x) => x,
         }
     }
-    pub fn get_payee(&self, payees: &mut List<Payee>) -> Rc<Payee> {
+    pub fn get_payee(&self, payees: &List<Payee>) -> Option<Rc<Payee>> {
         match payees.get(&self.description) {
-            Ok(x) => x.clone(),
-            Err(_) => {
-                let payee = Payee::new(
-                    self.description.clone(),
-                    None,
-                    Default::default(),
-                    vec![],
-                    Origin::FromTransaction,
-                );
-                payees.insert(payee);
-                self.get_payee(payees)
-            }
-        }
-    }
-    pub fn get_payee_inmutable(&self, payees: &List<Payee>) -> Rc<Payee> {
-        match payees.get(&self.description) {
-            Ok(x) => x.clone(),
-            Err(_) => panic!("Payee not found"),
+            Ok(x) => Some(x.clone()),
+            Err(_) => None,
         }
     }
 }

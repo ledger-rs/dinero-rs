@@ -1,6 +1,6 @@
 //! Dinero (spanish for money) is a command line tool that can deal with ledger files. It is inspired but not a port of John Wiegley's wonderful [ledger-cli](https://www.ledger-cli.org/).
 //!
-//! Note that the crate name is ```dinero-rs```but the executable is ```dinero```
+//! Note that the crate name is ```dinero-rs``` but the executable is ```dinero```
 //!
 //! # Getting started
 //!
