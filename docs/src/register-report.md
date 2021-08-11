@@ -5,7 +5,6 @@
 The register report shows a list of postings. It can be invoked with ```dinero register``` or the shorter ```dinero reg```
 
 # Options
-
 ## --collapse
 
 The collapse only shows one posting per account and transaction. For example: 

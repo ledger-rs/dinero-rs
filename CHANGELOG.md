@@ -1,6 +1,9 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
 ## [0.29.0] - xxx
+### Changed
+- Some internal tests now use the ```--init-file``` flag to make sure the environment is properly replicated.
+- Updated dependency from ```assert_cmd to 2.0```
 
 ## [0.28.1] - 2021-08-10
 ### Fixed
