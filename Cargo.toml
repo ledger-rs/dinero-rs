@@ -34,7 +34,7 @@ shellexpand = "2.1.0"
 # Corrected in 0.4.2
 # pidgin = "=0.4.0"
 two_timer = "2.2.0"
-assert_cmd = "1.0.3"
+assert_cmd = "2.0.0"
 terminal_size = "0.1.16"
 pest = "2.0"
 pest_derive = "2.0"

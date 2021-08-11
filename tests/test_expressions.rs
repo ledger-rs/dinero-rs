@@ -7,6 +7,8 @@ mod common;
 fn compare_dates() {
     let args_1 = &[
         "reg",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
         "-f",
         "tests/example_files/demo.ledger",
         "expr",
@@ -19,6 +21,8 @@ fn compare_dates() {
 
     let args_2 = &[
         "reg",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
         "-f",
         "tests/example_files/demo.ledger",
         "expr",
@@ -98,6 +102,8 @@ fn function_any() {
 fn test_equality() {
     let args_1 = &[
         "reg",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
         "-f",
         "tests/example_files/demo.ledger",
         "expr",
@@ -109,6 +115,8 @@ fn test_equality() {
     test_args(args_1);
     let args_2 = &[
         "reg",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
         "-f",
         "tests/example_files/demo.ledger",
         "expr",
