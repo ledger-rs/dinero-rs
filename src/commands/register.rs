@@ -1,5 +1,5 @@
-use crate::models::PostingType;
 use crate::models::{Balance, Money};
+use crate::models::{HasName, Posting, PostingType};
 use crate::parser::value_expr::build_root_node_from_expression;
 use crate::parser::Tokenizer;
 use crate::Error;
@@ -16,7 +16,7 @@ pub fn execute(options: &CommonOpts) -> Result<(), Error> {
     // Now work
     let mut tokenizer: Tokenizer = Tokenizer::from(&path);
     let items = tokenizer.tokenize(options);
-    let mut ledger = items.to_ledger(options)?;
+    let ledger = items.to_ledger(options)?;
 
     let mut balance = Balance::new();
 
@@ -51,12 +51,65 @@ pub fn execute(options: &CommonOpts) -> Result<(), Error> {
 
     for t in ledger.transactions.iter() {
         let mut counter = 0;
-        let postings = t.postings.borrow();
-        let postings_iter = postings.iter().filter(|p| {
-            filter::filter(&options, &node, t, p.to_owned(), &ledger.commodities).unwrap()
-        });
+        let mut postings_vec = t
+            .postings
+            .borrow()
+            .iter()
+            .filter(|p| {
+                filter::filter(&options, &node, t, p.to_owned(), &ledger.commodities).unwrap()
+            })
+            .map(|p| p.clone())
+            .collect::<Vec<Posting>>();
+        if options.collapse && (postings_vec.len() > 0) {
+            // Sort ...
+            postings_vec.sort_by(|a, b| {
+                (&format!(
+                    "{}{}",
+                    a.account.get_name(),
+                    a.amount
+                        .as_ref()
+                        .unwrap()
+                        .get_commodity()
+                        .unwrap()
+                        .get_name()
+                ))
+                    .partial_cmp(&format!(
+                        "{}{}",
+                        b.account.get_name(),
+                        b.amount
+                            .as_ref()
+                            .unwrap()
+                            .get_commodity()
+                            .unwrap()
+                            .get_name()
+                    ))
+                    .unwrap()
+            });
 
-        for p in postings_iter {
+            // ... and collapse
+            let mut collapsed = vec![postings_vec[0].clone()];
+            let mut ind = 0;
+            for i in 1..postings_vec.len() {
+                if (postings_vec[i].account == collapsed[ind].account)
+                    & (postings_vec[i].amount.as_ref().unwrap().get_commodity()
+                        == collapsed[ind].amount.as_ref().unwrap().get_commodity())
+                {
+                    let mut new_posting = postings_vec[i].clone();
+                    new_posting.set_amount(
+                        (new_posting.amount.clone().unwrap()
+                            + collapsed[ind].amount.clone().unwrap())
+                        .to_money()
+                        .unwrap(),
+                    );
+                    collapsed[ind] = new_posting;
+                } else {
+                    ind += 1;
+                    collapsed.push(postings_vec[i].clone())
+                }
+            }
+            postings_vec = collapsed;
+        }
+        for p in postings_vec.iter() {
             counter += 1;
             if counter == 1 {
                 match t.get_payee(&ledger.payees) {

@@ -8,9 +8,6 @@ Dinero follows the principles of [double entry accounting](https://en.wikipedia.
 
 A transaction contains two or more *postings*, which are actual movements in an *account*, which is another important concept. In bookkeeping, money always comes from and goes to an account.
 
-
-
-
 ## Developers
 
 The full syntax accepted by ```dinero```can be found in the [grammar specification](https://github.com/frosklis/dinero-rs/blob/master/src/grammar/grammar.pest). It is a formal grammar.

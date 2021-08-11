@@ -7,7 +7,7 @@ use chrono::NaiveDate;
 use num::rational::BigRational;
 
 use crate::models::balance::Balance;
-use crate::models::{Account, Comment, HasName, Money, Origin, Payee};
+use crate::models::{Account, Comment, HasName, Money, Payee};
 use crate::{LedgerError, List};
 use num::BigInt;
 use std::fmt;
