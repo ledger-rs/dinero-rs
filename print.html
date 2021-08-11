@@ -83,7 +83,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="index.html"><strong aria-hidden="true">1.</strong> The readme file</a></li><li class="chapter-item expanded "><a href="journal-file.html"><strong aria-hidden="true">2.</strong> The journal file</a></li><li class="chapter-item expanded "><a href="differences_with_ledger.html"><strong aria-hidden="true">3.</strong> Differences with ledger</a></li></ol>            </div>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="index.html"><strong aria-hidden="true">1.</strong> The readme file</a></li><li class="chapter-item expanded "><a href="journal-file.html"><strong aria-hidden="true">2.</strong> The journal file</a></li><li class="chapter-item expanded "><a href="differences_with_ledger.html"><strong aria-hidden="true">3.</strong> Differences with ledger</a></li><li class="chapter-item expanded "><a href="register-report.html"><strong aria-hidden="true">4.</strong> The register report</a></li></ol>            </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
@@ -229,6 +229,23 @@ include past/202103.ledger
 <pre><code class="language-ledger">include past/*.ledger
 </code></pre>
 <p>This results in a much shorter file, easier on the eyes (I like my master.ledger file to be complete yet simple). <code>ledger</code> does not guarantee the order in which the files are read and that affects balance assertions. <code>dinero</code> doesn't guarantee it either, but the extra ordering step means it doesn't matter (though arguably it makes it somewhat slower)</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="the-register-report"><a class="header" href="#the-register-report">The register report</a></h1>
+<p><em>Work in progress</em></p>
+<p>The register report shows a list of postings. It can be invoked with <code>dinero register</code> or the shorter <code>dinero reg</code></p>
+<h1 id="options"><a class="header" href="#options">Options</a></h1>
+<h2 id="--collapse"><a class="header" href="#--collapse">--collapse</a></h2>
+<p>The collapse only shows one posting per account and transaction. For example: </p>
+<pre><code>2021-09-01 * A lot of fees
+    Expenses:Travel    200 EUR
+    Expenses:Fees        1 EUR
+    Expenses:Fees        3 EUR
+    Assets:Checking Account
+</code></pre>
+<p><code>dinero reg --collapse</code> will print out:</p>
+<pre><code>2021-09-01  A lot of fees    Expenses:Travel              200 EUR      200 EUR
+                             Expenses:Fees                  4 EUR      204 EUR
+                             Assets:Checking Account     -204 EUR        0 EUR
+</code></pre>
 
                     </main>
 
