@@ -1,11 +1,12 @@
+use crate::models::{conversion, HasName, Posting, PostingType};
 use crate::models::{Balance, Money};
-use crate::models::{HasName, Posting, PostingType};
 use crate::parser::value_expr::build_root_node_from_expression;
 use crate::parser::Tokenizer;
 use crate::Error;
 use crate::{filter, CommonOpts};
 use colored::Colorize;
 use std::collections::HashMap;
+use std::rc::Rc;
 use terminal_size::{terminal_size, Width};
 
 /// Register report
@@ -60,6 +61,26 @@ pub fn execute(options: &CommonOpts) -> Result<(), Error> {
             })
             .map(|p| p.clone())
             .collect::<Vec<Posting>>();
+
+        // If the exchange option is active, change the amount of every posting to the desired currency. The balance will follow.
+        if let Some(currency_string) = &options.exchange {
+            if let Ok(currency) = ledger.commodities.get(currency_string) {
+                for index in 0..postings_vec.len() {
+                    let p = &postings_vec[index];
+                    let multipliers = conversion(currency.clone(), p.date, &ledger.prices);
+                    if let Some(mult) = multipliers.get(p.amount.as_ref().unwrap().get_commodity().unwrap().as_ref()) {
+                        let new_amount = Money::Money {
+                            amount: p.amount.as_ref().unwrap().get_amount() * mult.clone(),
+                            currency: Rc::new(currency.as_ref().clone()),
+                        };
+                        let mut new_posting = p.clone();
+                        new_posting.set_amount(new_amount);
+                        postings_vec[index] = new_posting;
+                    }
+                }
+            }
+        }
+
         if options.collapse && (postings_vec.len() > 0) {
             // Sort ...
             postings_vec.sort_by(|a, b| {
