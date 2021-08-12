@@ -373,7 +373,7 @@ fn collapse() {
 }
 
 #[test]
-/// Check the reg_exchange option
+/// Check the exchange option in the register report
 fn reg_exchange() {
     let args = &[
         "reg",
@@ -387,10 +387,14 @@ fn reg_exchange() {
     ];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
     let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
-    let line_0 = String::from(output.lines().into_iter().nth(0).unwrap());
-    let line_1 = String::from(output.lines().into_iter().nth(1).unwrap());
-    assert!(line_0.contains("100"));
-    assert!(line_1.contains("133"));
+
+    for (i, line) in output.lines().into_iter().enumerate() {
+        match i {
+            0 => assert!(String::from(line).contains("100")),
+            1 => assert!(String::from(line).contains("133")),
+            _ => assert!(false),
+        }
+    }
 
     test_args(args);
 }
