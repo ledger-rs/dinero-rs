@@ -371,3 +371,26 @@ fn collapse() {
 
     test_args(args);
 }
+
+#[test]
+/// Check the reg_exchange option
+fn reg_exchange() {
+    let args = &[
+        "reg",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
+        "-f",
+        "tests/example_files/reg_exchange.ledger",
+        "--exchange",
+        "EUR",
+        "travel",
+    ];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    let line_0 = String::from(output.lines().into_iter().nth(0).unwrap());
+    let line_1 = String::from(output.lines().into_iter().nth(1).unwrap());
+    assert!(line_0.contains("100"));
+    assert!(line_1.contains("133"));
+
+    test_args(args);
+}

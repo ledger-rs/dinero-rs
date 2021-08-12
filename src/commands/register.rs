@@ -68,7 +68,9 @@ pub fn execute(options: &CommonOpts) -> Result<(), Error> {
                 for index in 0..postings_vec.len() {
                     let p = &postings_vec[index];
                     let multipliers = conversion(currency.clone(), p.date, &ledger.prices);
-                    if let Some(mult) = multipliers.get(p.amount.as_ref().unwrap().get_commodity().unwrap().as_ref()) {
+                    if let Some(mult) = multipliers
+                        .get(p.amount.as_ref().unwrap().get_commodity().unwrap().as_ref())
+                    {
                         let new_amount = Money::Money {
                             amount: p.amount.as_ref().unwrap().get_amount() * mult.clone(),
                             currency: Rc::new(currency.as_ref().clone()),
