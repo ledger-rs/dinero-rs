@@ -16,8 +16,6 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - name: Install dinero
-        run: cargo install --path .
       - name: Run cargo-tarpaulin
         uses: actions-rs/tarpaulin@v0.1
         with:
@@ -41,7 +39,5 @@ jobs:
           override: true
       - name: Build
         run: cargo build
-      - name: Install
-        run: cargo install --path .
       - name: Run tests
         run: cargo test
