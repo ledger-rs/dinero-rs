@@ -14,11 +14,13 @@ repository = "https://github.com/frosklis/dinero-rs"
 [lib]
 name = "dinero"
 path = "src/mod.rs"
+
+
 [[bin]]
 name = "dinero"
 test = false 
 bench = false
-path = "src/main.rs"
+path = "src/dinero.rs"
 
 [dependencies]
 num = "0.4.0"
@@ -38,4 +40,4 @@ assert_cmd = "2.0.0"
 terminal_size = "0.1.16"
 pest = "2.0"
 pest_derive = "2.0"
-
+rustyline = "8.2.0"
