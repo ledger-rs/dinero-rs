@@ -1,23 +1,23 @@
-use crate::models::{conversion, HasName, Posting, PostingType};
+use crate::models::{conversion, HasName, Ledger, Posting, PostingType};
 use crate::models::{Balance, Money};
 use crate::parser::value_expr::build_root_node_from_expression;
-use crate::parser::Tokenizer;
 use crate::Error;
 use crate::{filter, CommonOpts};
 use colored::Colorize;
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use std::rc::Rc;
 use terminal_size::{terminal_size, Width};
 
 /// Register report
-pub fn execute(options: &CommonOpts) -> Result<(), Error> {
+pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(), Error> {
     // Get options from options
-    let path = options.input_file.clone();
     let _no_balance_check: bool = options.no_balance_check;
     // Now work
-    let mut tokenizer: Tokenizer = Tokenizer::from(&path);
-    let items = tokenizer.tokenize(options);
-    let ledger = items.to_ledger(options)?;
+    let ledger = match maybe_ledger {
+        Some(ledger) => ledger,
+        None => Ledger::try_from(options)?,
+    };
 
     let mut balance = Balance::new();
 

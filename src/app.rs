@@ -1,5 +1,7 @@
 //! Document the command line interface
+use shlex::Shlex;
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use std::env;
 use std::fs::read_to_string;
 use std::path::{Path, PathBuf};
@@ -10,6 +12,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 
 use crate::commands::{accounts, balance, commodities, payees, prices, register, statistics};
+use crate::models::Ledger;
 use crate::Error;
 use chrono::NaiveDate;
 use colored::Colorize;
@@ -56,6 +59,12 @@ name = "dinero"
 struct Opt {
     #[structopt(subcommand)]
     cmd: Command,
+}
+
+#[derive(Debug, StructOpt)]
+struct Repl {
+    #[structopt(flatten)]
+    options: CommonOpts,
 }
 /// Command line options
 #[derive(Debug, StructOpt, Clone)]
@@ -196,9 +205,9 @@ fn init_paths(args: Vec<String>) -> Result<Vec<String>, ()> {
 }
 
 /// Entry point for the command line app
-pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
+pub fn run_app(input_args: Vec<String>) -> Result<(), ()> {
     let mut config_file = None;
-    let possible_paths = init_paths(args.clone())?;
+    let possible_paths = init_paths(input_args.clone())?;
     for path in possible_paths.iter() {
         let file = Path::new(path);
         if file.exists() {
@@ -206,45 +215,98 @@ pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
             break;
         }
     }
-    if let Some(file) = config_file {
-        let mut aliases = HashMap::new();
-        aliases.insert("-f".to_string(), "--file".to_string());
-        let contents = read_to_string(file).unwrap();
-        for line in contents.lines() {
-            let option = line.trim_start();
-            match option.chars().nth(0) {
-                Some(c) => match c {
-                    '-' => {
-                        let message = format!("Bad config file {:?}\n{}", file, line);
-                        assert!(line.starts_with("--"), "{}", message);
-                        let mut iter = line.split_whitespace();
-                        let option = iter.next().unwrap();
-                        if !args.iter().any(|x| {
-                            (x == option) | (aliases.get(x).unwrap_or(&String::new()) == option)
-                        }) {
-                            args.push(option.to_string());
-                            let mut rest = String::new();
-                            for arg in iter {
-                                rest.push_str(" ");
-                                rest.push_str(arg);
-                            }
-                            if rest.len() > 0 {
-                                args.push(rest.trim().to_string());
-                            }
+    let args = if let Some(file) = config_file {
+        parse_config_file(file, &input_args)
+    } else {
+        input_args
+    };
+
+    match Opt::from_iter_safe(args.iter()) {
+        Err(error) => match Repl::from_iter_safe(args.iter()) {
+            Ok(opt) => {
+                if opt.options.query.len() > 0 {
+                    error.exit()
+                } else {
+                    let mut rl = rustyline::Editor::<()>::new();
+                    let ledger = Ledger::try_from(&opt.options).unwrap();
+                    loop {
+                        let readline = rl.readline(">> ");
+                        match readline {
+                            Ok(line) => match line.as_str() {
+                                "exit" | "quit" => break,
+                                line => match line.trim().is_empty() {
+                                    true => (),
+                                    false => {
+                                        let mut arguments: Vec<String> = Shlex::new(line).collect();
+                                        arguments.insert(0, String::from(""));
+                                        let args = if let Some(file) = config_file {
+                                            parse_config_file(file, &arguments)
+                                        } else {
+                                            arguments
+                                        };
+                                        match Opt::from_iter_safe(args) {
+                                            Ok(opt) => {
+                                                execute_command(opt, Some(ledger.clone()));
+                                            }
+                                            Err(error) => {
+                                                eprintln!("{}", error);
+                                            }
+                                        }
+                                    }
+                                },
+                            },
+                            Err(_) => break,
                         }
                     }
-                    ';' | '#' | '!' | '%' => (), // a comment
-
-                    _ => panic!("Bad config file {:?}\n{}", file, line),
-                },
-                None => (),
+                }
+                Ok(())
             }
+            Err(_) => error.exit(),
+        },
+        Ok(opt) => execute_command(opt, None),
+    }
+}
+
+fn parse_config_file(file: &Path, input_args: &Vec<String>) -> Vec<String> {
+    let mut args = input_args.clone();
+
+    let mut aliases = HashMap::new();
+    aliases.insert("-f".to_string(), "--file".to_string());
+    let contents = read_to_string(file).unwrap();
+    for line in contents.lines() {
+        let option = line.trim_start();
+        match option.chars().nth(0) {
+            Some(c) => match c {
+                '-' => {
+                    let message = format!("Bad config file {:?}\n{}", file, line);
+                    assert!(line.starts_with("--"), "{}", message);
+                    let mut iter = line.split_whitespace();
+                    let option = iter.next().unwrap();
+                    if !args.iter().any(|x| {
+                        (x == option) | (aliases.get(x).unwrap_or(&String::new()) == option)
+                    }) {
+                        args.push(option.to_string());
+                        let mut rest = String::new();
+                        for arg in iter {
+                            rest.push_str(" ");
+                            rest.push_str(arg);
+                        }
+                        if rest.len() > 0 {
+                            args.push(rest.trim().to_string());
+                        }
+                    }
+                }
+                ';' | '#' | '!' | '%' => (), // a comment
+
+                _ => panic!("Bad config file {:?}\n{}", file, line),
+            },
+            None => (),
         }
     }
-    let opt: Opt = Opt::from_iter(args.iter());
-
+    args
+}
+fn execute_command(opt: Opt, maybe_ledger: Option<Ledger>) -> Result<(), ()> {
     // Print options
-    // println!("{:?}", opt.cmd);
     if let Err(e) = match opt.cmd {
         Command::Balance {
             options,
@@ -254,13 +316,13 @@ pub fn run_app(mut args: Vec<String>) -> Result<(), ()> {
             if options.force_color {
                 env::set_var("CLICOLOR_FORCE", "1");
             }
-            balance::execute(&options, flat, !no_total)
+            balance::execute(&options, maybe_ledger, flat, !no_total)
         }
         Command::Register(options) => {
             if options.force_color {
                 env::set_var("CLICOLOR_FORCE", "1");
             }
-            register::execute(&options)
+            register::execute(&options, maybe_ledger)
         }
         Command::Commodities(options) => {
             if options.force_color {

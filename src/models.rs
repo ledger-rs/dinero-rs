@@ -1,6 +1,7 @@
 use num::rational::BigRational;
 use std::{
     collections::{HashMap, HashSet},
+    convert::TryFrom,
     path::PathBuf,
 };
 
@@ -17,11 +18,11 @@ pub use transaction::{
     Cleared, Posting, PostingOrigin, PostingType, Transaction, TransactionStatus, TransactionType,
 };
 
-use crate::models::transaction::Cost;
 use crate::parser::value_expr::build_root_node_from_expression;
 use crate::parser::ParsedLedger;
 use crate::parser::{tokenizers, value_expr};
 use crate::{filter::filter_expression, CommonOpts};
+use crate::{models::transaction::Cost, parser::Tokenizer};
 use crate::{Error, List};
 use num::BigInt;
 use std::cell::RefCell;
@@ -45,6 +46,18 @@ pub struct Ledger {
     pub(crate) prices: Vec<Price>,
     pub(crate) payees: List<Payee>,
     pub(crate) files: Vec<PathBuf>,
+}
+
+impl TryFrom<&CommonOpts> for Ledger {
+    type Error = Error;
+    fn try_from(options: &CommonOpts) -> Result<Self, Self::Error> {
+        // Get the options
+        let path: PathBuf = options.input_file.clone();
+        let mut tokenizer: Tokenizer = Tokenizer::from(&path);
+        let items = tokenizer.tokenize(options);
+        let ledger = items.to_ledger(options)?;
+        Ok(ledger)
+    }
 }
 
 impl Ledger {
