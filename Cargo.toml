@@ -38,4 +38,4 @@ assert_cmd = "2.0.0"
 terminal_size = "0.1.16"
 pest = "2.0"
 pest_derive = "2.0"
-
+prettytable-rs = "^0.8"
