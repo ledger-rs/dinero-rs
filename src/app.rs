@@ -329,28 +329,28 @@ fn execute_command(opt: Opt, maybe_ledger: Option<Ledger>) -> Result<(), ()> {
                 env::set_var("CLICOLOR_FORCE", "1");
             }
 
-            commodities::execute(options.input_file.clone(), &options)
+            commodities::execute(&options, maybe_ledger)
         }
         Command::Payees(options) => {
             if options.force_color {
                 env::set_var("CLICOLOR_FORCE", "1");
             }
 
-            payees::execute(options.input_file.clone(), &options)
+            payees::execute(&options, maybe_ledger)
         }
-        Command::Prices(options) => prices::execute(options.input_file.clone(), &options),
+        Command::Prices(options) => prices::execute(&options, maybe_ledger),
         Command::Accounts(options) => {
             if options.force_color {
                 env::set_var("CLICOLOR_FORCE", "1");
             }
 
-            accounts::execute(options.input_file.clone(), &options)
+            accounts::execute(&options, maybe_ledger)
         }
         Command::Statistics(options) => {
             if options.force_color {
                 env::set_var("CLICOLOR_FORCE", "1");
             }
-            statistics::execute(options.input_file.clone(), &options)
+            statistics::execute(&options, maybe_ledger)
         }
     } {
         let err_str = format!("{}", e);
