@@ -17,6 +17,8 @@ use crate::Error;
 use chrono::NaiveDate;
 use colored::Colorize;
 
+const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+
 #[derive(Debug, StructOpt)]
 enum Command {
     // Print,
@@ -227,6 +229,7 @@ pub fn run_app(input_args: Vec<String>) -> Result<(), ()> {
                 if opt.options.query.len() > 0 {
                     error.exit()
                 } else {
+                    println!("dinero-rs v{}", VERSION);
                     let mut rl = rustyline::Editor::<()>::new();
                     let ledger = Ledger::try_from(&opt.options).unwrap();
                     loop {
@@ -238,7 +241,9 @@ pub fn run_app(input_args: Vec<String>) -> Result<(), ()> {
                                     true => (),
                                     false => {
                                         let mut arguments: Vec<String> = Shlex::new(line).collect();
-                                        arguments.insert(0, String::from(""));
+                                        if !line.starts_with("dinero ") {
+                                            arguments.insert(0, String::from(""))
+                                        }
                                         let args = if let Some(file) = config_file {
                                             parse_config_file(file, &arguments)
                                         } else {

@@ -4,6 +4,7 @@ Changelog file for dinero-rs project, a command line application for managing fi
 ## [0.29.1] - 
 ## Changed
 - small improvements on REPL interface
+- improved test coverage
 ## [0.29.0] - 2021-08-10
 ### Added
 - ```exchange``` option (```-X```) for register reports
