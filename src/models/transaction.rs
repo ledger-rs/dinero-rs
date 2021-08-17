@@ -94,21 +94,21 @@ impl<T> Transaction<T> {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum TransactionStatus {
     NotChecked,
     InternallyBalanced,
     Correct,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum TransactionType {
     Real,
     Automated,
     Periodic,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Cleared {
     Unknown,
     NotCleared,
@@ -173,7 +173,7 @@ impl Posting {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Cost {
     Total { amount: Money },
     PerUnit { amount: Money },
