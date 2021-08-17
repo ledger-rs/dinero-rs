@@ -5,7 +5,7 @@ use std::convert::TryFrom;
 use std::env;
 use std::fs::read_to_string;
 use std::path::{Path, PathBuf};
-use std::time::{Duration, Instant};
+use std::time::{ Instant};
 use structopt::StructOpt;
 use two_timer;
 
@@ -231,9 +231,9 @@ pub fn run_app(input_args: Vec<String>) -> Result<(), ()> {
                     error.exit()
                 } else {
                     println!("dinero-rs v{}", VERSION);
-                    
+
                     let start = Instant::now();
-                    let ledger = Ledger::try_from(&opt.options).unwrap();
+                    let mut ledger = Ledger::try_from(&opt.options).unwrap();
                     let duration = start.elapsed();
                     println!(
                         "Loaded ledger from {:?} in {:?}",
@@ -247,6 +247,15 @@ pub fn run_app(input_args: Vec<String>) -> Result<(), ()> {
                         match readline {
                             Ok(line) => match line.as_str() {
                                 "exit" | "quit" => break,
+                                "reload" => {
+                                    let start = Instant::now();
+                                    let mut ledger = Ledger::try_from(&opt.options).unwrap();
+                                    let duration = start.elapsed();
+                                    println!(
+                                        "Loaded ledger from {:?} in {:?}",
+                                        &opt.options.input_file, duration
+                                    );
+                                },
                                 line => match line.trim().is_empty() {
                                     true => (),
                                     false => {
