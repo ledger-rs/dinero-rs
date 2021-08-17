@@ -1,11 +1,11 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
 
-## [0.29.1] - 2021-08-11
+## [0.29.1] - 2021-08-17
 ## Changed
 - small improvements on REPL interface
 - improved test coverage
-## [0.29.0] - 2021-08-10
+## [0.29.0] - 2021-08-16
 ### Added
 - ```exchange``` option (```-X```) for register reports
 - REPL interface, which is faster than the CLI once everything's loaded
