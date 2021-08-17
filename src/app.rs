@@ -279,7 +279,10 @@ pub fn run_app(input_args: Vec<String>) -> Result<(), ()> {
                                         };
                                         match Opt::from_iter_safe(args) {
                                             Ok(opt) => {
-                                                execute_command(opt, Some(ledger.clone()));
+                                                match execute_command(opt, Some(ledger.clone())) {
+                                                    Ok(_) => (),
+                                                    Err(x) => eprintln!("{}\nThe above command resulted in an error. {:?}", line,x)
+                                                }
                                             }
                                             Err(error) => {
                                                 eprintln!("{}", error);
