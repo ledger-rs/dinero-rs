@@ -1,7 +1,9 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
 ## [0.30.0] - xxx
-
+## Added
+- Show more info when loading the repl
+- Ability to [reload the journal](https://github.com/frosklis/dinero-rs/issues/116) 
 ## [0.29.1] - 2021-08-17
 ## Changed
 - small improvements on REPL interface

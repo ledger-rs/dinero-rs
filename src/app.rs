@@ -5,6 +5,7 @@ use std::convert::TryFrom;
 use std::env;
 use std::fs::read_to_string;
 use std::path::{Path, PathBuf};
+use std::time::Instant;
 use structopt::StructOpt;
 use two_timer;
 
@@ -230,13 +231,40 @@ pub fn run_app(input_args: Vec<String>) -> Result<(), ()> {
                     error.exit()
                 } else {
                     println!("dinero-rs v{}", VERSION);
+
+                    let start = Instant::now();
+                    let mut ledger = Ledger::try_from(&opt.options).unwrap();
+                    let duration = start.elapsed();
+                    println!(
+                        "Loaded ledger from {:?} in {:?}",
+                        &opt.options.input_file, duration
+                    );
+
+                    // Start the REPL
                     let mut rl = rustyline::Editor::<()>::new();
-                    let ledger = Ledger::try_from(&opt.options).unwrap();
                     loop {
                         let readline = rl.readline(">> ");
                         match readline {
                             Ok(line) => match line.as_str() {
                                 "exit" | "quit" => break,
+                                "reload" => {
+                                    let start = Instant::now();
+                                    let journal = Ledger::try_from(&opt.options);
+                                    let duration = start.elapsed();
+                                    match journal {
+                                        Ok(j) => {
+                                            println!(
+                                                "Loaded journal from {:?} in {:?}",
+                                                &opt.options.input_file, duration
+                                            );
+                                            ledger = j;
+                                        }
+                                        Err(x) => {
+                                            eprintln!("Journal could not be reloaded. Please check the errors and try again.");
+                                            eprintln!("{}", x);
+                                        }
+                                    }
+                                }
                                 line => match line.trim().is_empty() {
                                     true => (),
                                     false => {
@@ -251,7 +279,10 @@ pub fn run_app(input_args: Vec<String>) -> Result<(), ()> {
                                         };
                                         match Opt::from_iter_safe(args) {
                                             Ok(opt) => {
-                                                execute_command(opt, Some(ledger.clone()));
+                                                match execute_command(opt, Some(ledger.clone())) {
+                                                    Ok(_) => (),
+                                                    Err(x) => eprintln!("{}\nThe above command resulted in an error. {:?}", line,x)
+                                                }
                                             }
                                             Err(error) => {
                                                 eprintln!("{}", error);
