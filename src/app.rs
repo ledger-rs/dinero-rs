@@ -249,12 +249,13 @@ pub fn run_app(input_args: Vec<String>) -> Result<(), ()> {
                                 "exit" | "quit" => break,
                                 "reload" => {
                                     let start = Instant::now();
-                                    let mut ledger = Ledger::try_from(&opt.options).unwrap();
+                                    let journal = Ledger::try_from(&opt.options).unwrap();
                                     let duration = start.elapsed();
                                     println!(
                                         "Loaded ledger from {:?} in {:?}",
                                         &opt.options.input_file, duration
                                     );
+                                    ledger = journal;
                                 }
                                 line => match line.trim().is_empty() {
                                     true => (),
