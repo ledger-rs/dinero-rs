@@ -5,7 +5,7 @@ mod common;
 fn date_filters() {
     let args1 = &[
         "bal",
-        "--only-args",
+        "--args-only",
         "-f",
         "tests/example_files/demo.ledger",
     ];
