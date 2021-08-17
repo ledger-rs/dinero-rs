@@ -219,3 +219,33 @@ fn parse_posting(
     }
     posting
 }
+
+mod tests {
+
+    use crate::models::{TransactionStatus, Cleared};
+
+    use super::*;
+    use crate::{parser::Tokenizer, CommonOpts};
+
+    #[test]
+    fn difficult_transaction_head() {
+        let mut tokenizer = Tokenizer::from(
+            "2022-05-13 ! (8760) Intereses | EstateGuru
+                EstateGuru               1.06 EUR
+                Ingresos:Rendimientos
+                "
+            .to_string(),
+        );
+
+        let parsed = tokenizer.tokenize(&CommonOpts::new());
+        let transaction = &parsed.transactions[0];
+        assert_eq!(transaction.cleared, Cleared::NotCleared);
+        assert_eq!(transaction.status, TransactionStatus::NotChecked);
+        assert_eq!(transaction.code, Some(String::from("8760")));
+        assert_eq!(transaction.payee, Some(String::from("EstateGuru")));
+        assert_eq!(transaction.description, String::from("Intereses"));
+        for p in transaction.postings.borrow().iter() {
+            assert_eq!(p.kind, PostingType::Real);
+        }
+    }
+}
