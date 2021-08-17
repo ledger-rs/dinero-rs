@@ -5,6 +5,7 @@ use std::convert::TryFrom;
 use std::env;
 use std::fs::read_to_string;
 use std::path::{Path, PathBuf};
+use std::time::{Duration, Instant};
 use structopt::StructOpt;
 use two_timer;
 
@@ -230,8 +231,17 @@ pub fn run_app(input_args: Vec<String>) -> Result<(), ()> {
                     error.exit()
                 } else {
                     println!("dinero-rs v{}", VERSION);
-                    let mut rl = rustyline::Editor::<()>::new();
+                    
+                    let start = Instant::now();
                     let ledger = Ledger::try_from(&opt.options).unwrap();
+                    let duration = start.elapsed();
+                    println!(
+                        "Loaded ledger from {:?} in {:?}",
+                        &opt.options.input_file, duration
+                    );
+
+                    // Start the REPL
+                    let mut rl = rustyline::Editor::<()>::new();
                     loop {
                         let readline = rl.readline(">> ");
                         match readline {
