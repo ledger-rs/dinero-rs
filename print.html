@@ -83,7 +83,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="index.html"><strong aria-hidden="true">1.</strong> The readme file</a></li><li class="chapter-item expanded "><a href="journal-file.html"><strong aria-hidden="true">2.</strong> The journal file</a></li><li class="chapter-item expanded "><a href="differences_with_ledger.html"><strong aria-hidden="true">3.</strong> Differences with ledger</a></li><li class="chapter-item expanded "><a href="register-report.html"><strong aria-hidden="true">4.</strong> The register report</a></li></ol>            </div>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="index.html"><strong aria-hidden="true">1.</strong> The readme file</a></li><li class="chapter-item expanded "><a href="journal-file.html"><strong aria-hidden="true">2.</strong> The journal file</a></li><li class="chapter-item expanded "><a href="differences_with_ledger.html"><strong aria-hidden="true">3.</strong> Differences with ledger</a></li><li class="chapter-item expanded "><a href="register-report.html"><strong aria-hidden="true">4.</strong> The register report</a></li><li class="chapter-item expanded "><a href="repl-mode.html"><strong aria-hidden="true">5.</strong> Interactive mode</a></li></ol>            </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
@@ -246,6 +246,19 @@ include past/202103.ledger
                              Expenses:Fees                  4 EUR      204 EUR
                              Assets:Checking Account     -204 EUR        0 EUR
 </code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="repl-mode"><a class="header" href="#repl-mode">REPL mode</a></h1>
+<p>Since <code>0.29.0</code> <code>dinero-rs</code> comes with a REPL mode (read-eval-print-loop) or interactive mode:</p>
+<p>```dinero -f myjournal.ledger````</p>
+<p>Once inside the REPL mode, the ledger is parsed and cached so that any subsequent operations are faster than their regular CLI counterparts.</p>
+<h2 id="working-inside-the-interactive-mode"><a class="header" href="#working-inside-the-interactive-mode">Working inside the interactive mode</a></h2>
+<p>The commands behave just like in the normal mode but:</p>
+<ul>
+<li>they are faster</li>
+<li>the <code>dinero</code> executable is elided, you can write either <code>dinero reg</code> or <code>reg</code></li>
+</ul>
+<h2 id="special-commands"><a class="header" href="#special-commands">Special commands</a></h2>
+<p>To exit the REPL type <code>exit</code> or <code>quit</code>.</p>
+<p><code>reload</code> loads the journal again, which is useful if it has been changed externally.</p>
 
                     </main>
 
