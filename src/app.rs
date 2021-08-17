@@ -5,7 +5,7 @@ use std::convert::TryFrom;
 use std::env;
 use std::fs::read_to_string;
 use std::path::{Path, PathBuf};
-use std::time::{ Instant};
+use std::time::Instant;
 use structopt::StructOpt;
 use two_timer;
 
@@ -255,7 +255,7 @@ pub fn run_app(input_args: Vec<String>) -> Result<(), ()> {
                                         "Loaded ledger from {:?} in {:?}",
                                         &opt.options.input_file, duration
                                     );
-                                },
+                                }
                                 line => match line.trim().is_empty() {
                                     true => (),
                                     false => {
