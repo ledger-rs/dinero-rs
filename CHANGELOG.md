@@ -1,7 +1,7 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
 
-## [0.29.1] - 
+## [0.29.1] - 2021-08-11
 ## Changed
 - small improvements on REPL interface
 - improved test coverage
