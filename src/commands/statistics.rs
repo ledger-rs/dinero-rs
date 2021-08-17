@@ -1,15 +1,16 @@
-use std::path::PathBuf;
+use std::convert::TryFrom;
 
-use crate::parser::Tokenizer;
+use crate::models::Ledger;
 use crate::{error::Error, CommonOpts};
 
 /// Statistics command
 ///
 /// Prints summary statistics from the ledger
-pub fn execute(path: PathBuf, options: &CommonOpts) -> Result<(), Error> {
-    let mut tokenizer: Tokenizer = Tokenizer::from(&path);
-    let items = tokenizer.tokenize(options);
-    let ledger = items.to_ledger(options)?;
+pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(), Error> {
+    let ledger = match maybe_ledger {
+        Some(ledger) => ledger,
+        None => Ledger::try_from(options)?,
+    };
 
     // Number of transactions
     let mut num_postings = 0;
