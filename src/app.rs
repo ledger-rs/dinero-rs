@@ -249,13 +249,21 @@ pub fn run_app(input_args: Vec<String>) -> Result<(), ()> {
                                 "exit" | "quit" => break,
                                 "reload" => {
                                     let start = Instant::now();
-                                    let journal = Ledger::try_from(&opt.options).unwrap();
+                                    let journal = Ledger::try_from(&opt.options);
                                     let duration = start.elapsed();
-                                    println!(
-                                        "Loaded ledger from {:?} in {:?}",
-                                        &opt.options.input_file, duration
-                                    );
-                                    ledger = journal;
+                                    match journal {
+                                        Ok(j) => {
+                                            println!(
+                                                "Loaded journal from {:?} in {:?}",
+                                                &opt.options.input_file, duration
+                                            );
+                                            ledger = j;
+                                        }
+                                        Err(x) => {
+                                            eprintln!("Journal could not be reloaded. Please check the errors and try again.");
+                                            eprintln!("{}", x);
+                                        }
+                                    }
                                 }
                                 line => match line.trim().is_empty() {
                                     true => (),
