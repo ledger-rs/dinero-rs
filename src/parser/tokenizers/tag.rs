@@ -40,17 +40,16 @@ impl<'a> Tokenizer<'a> {
     }
 }
 
-/*
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::HasName;
+    use crate::{models::HasName, CommonOpts};
 
     #[test]
     fn test_spaces_in_tag_names() {
         let mut tokenizer = Tokenizer::from("tag   A tag name with spaces   ".to_string());
-        let tag = parse(&mut tokenizer).unwrap();
+        let items = tokenizer.tokenize(&CommonOpts::new());
+        let tag = &items.tags[0];
         assert_eq!(tag.get_name(), "A tag name with spaces");
     }
 }
-*/
