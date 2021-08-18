@@ -40,11 +40,10 @@ impl<'a> Tokenizer<'a> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{CommonOpts, models::HasName};
+    use crate::{models::HasName, CommonOpts};
 
     #[test]
     fn test_spaces_in_tag_names() {
@@ -54,4 +53,3 @@ mod tests {
         assert_eq!(tag.get_name(), "A tag name with spaces");
     }
 }
-
