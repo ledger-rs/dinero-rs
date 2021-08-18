@@ -87,9 +87,15 @@ impl<T> Transaction<T> {
         }
     }
     pub fn get_payee(&self, payees: &List<Payee>) -> Option<Rc<Payee>> {
-        match payees.get(&self.description) {
-            Ok(x) => Some(x.clone()),
-            Err(_) => None,
+        match &self.payee {
+            Some(payee) => match payees.get(payee) {
+                Ok(x) => Some(x.clone()),
+                Err(_) => panic!("Couldn't find payee {}", payee),
+            },
+            None => match payees.get(&self.description) {
+                Ok(x) => Some(x.clone()),
+                Err(_) => None,
+            },
         }
     }
 }

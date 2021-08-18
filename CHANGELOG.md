@@ -5,7 +5,7 @@ Changelog file for dinero-rs project, a command line application for managing fi
 - Show more info when loading the repl
 - Ability to [reload the journal](https://github.com/frosklis/dinero-rs/issues/116) 
 ## Fixed
-- Some payees were ```""``` (empty string) - not anymore :)
+- [```Some payees were None```](https://github.com/frosklis/dinero-rs/issues/121)
 
 ## [0.29.1] - 2021-08-17
 ## Changed
