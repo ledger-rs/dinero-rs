@@ -237,12 +237,13 @@ mod tests {
     use crate::{parser::Tokenizer, CommonOpts};
 
     #[test]
+
     fn difficult_transaction_head() {
         let mut tokenizer = Tokenizer::from(
             "2022-05-13 ! (8760) Intereses | EstateGuru
-                EstateGuru               1.06 EUR
-                Ingresos:Rendimientos
-                "
+            EstateGuru               1.06 EUR
+            Ingresos:Rendimientos
+            "
             .to_string(),
         );
 
