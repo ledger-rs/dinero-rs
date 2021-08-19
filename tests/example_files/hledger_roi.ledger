@@ -1,0 +1,29 @@
+; This file was copied from https://hledger.org/return-on-investment.html
+
+2019-01-01 Investing in Snake Oil
+  assets:cash  -$100
+  investment:snake oil
+
+2019-01-02 Buyers remorse
+  assets:cash  $90
+  investment:snake oil
+
+2019-02-28 Recording the growth of Snake Oil
+  investment:snake oil  
+  equity:unrealized gains  -$0.25
+
+2019-06-30 Recording the growth of Snake Oil
+  investment:snake oil  
+  equity:unrealized gains  -$0.25
+
+2019-09-30 Recording the growth of Snake Oil
+  investment:snake oil  
+  equity:unrealized gains  -$0.25
+
+2019-12-30 Fear of missing out
+  assets:cash  -$90
+  investment:snake oil
+
+2019-12-31 Recording the growth of Snake Oil
+  investment:snake oil
+  equity:unrealized gains  -$0.25
