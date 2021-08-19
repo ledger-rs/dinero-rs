@@ -1,5 +1,6 @@
 ; This file was copied from https://hledger.org/return-on-investment.html
-
+; will test with a command similar to:
+; roi --init-file tests/example_files/empty_ledgerrc -f tests/example_files/hledger_roi.ledger --cash-flows cash --assets-value snake -X $
 2019-01-01 Investing in Snake Oil
   assets:cash  -$100
   investment:snake oil

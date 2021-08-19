@@ -172,8 +172,6 @@ fn parse_posting(
                             currency = Some(parse_string(money.next().unwrap()));
                         }
                         Rule::currency => {
-                            
-                            dbg!(&money);
                             currency = Some(parse_string(money_part));
                             if negative {
                                 amount = -parse_rational(money.next().unwrap());
