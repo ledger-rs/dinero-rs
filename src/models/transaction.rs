@@ -7,7 +7,7 @@ use chrono::NaiveDate;
 use num::rational::BigRational;
 
 use crate::models::balance::Balance;
-use crate::models::{Account, Comment, HasName, Money, Origin, Payee};
+use crate::models::{Account, Comment, HasName, Money, Payee};
 use crate::{LedgerError, List};
 use num::BigInt;
 use std::fmt;
@@ -86,45 +86,35 @@ impl<T> Transaction<T> {
             Some(x) => x,
         }
     }
-    pub fn get_payee(&self, payees: &mut List<Payee>) -> Rc<Payee> {
-        match payees.get(&self.description) {
-            Ok(x) => x.clone(),
-            Err(_) => {
-                let payee = Payee::new(
-                    self.description.clone(),
-                    None,
-                    Default::default(),
-                    vec![],
-                    Origin::FromTransaction,
-                );
-                payees.insert(payee);
-                self.get_payee(payees)
-            }
-        }
-    }
-    pub fn get_payee_inmutable(&self, payees: &List<Payee>) -> Rc<Payee> {
-        match payees.get(&self.description) {
-            Ok(x) => x.clone(),
-            Err(_) => panic!("Payee not found"),
+    pub fn get_payee(&self, payees: &List<Payee>) -> Option<Rc<Payee>> {
+        match &self.payee {
+            Some(payee) => match payees.get(payee) {
+                Ok(x) => Some(x.clone()),
+                Err(_) => panic!("Couldn't find payee {}", payee),
+            },
+            None => match payees.get(&self.description) {
+                Ok(x) => Some(x.clone()),
+                Err(_) => None,
+            },
         }
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum TransactionStatus {
     NotChecked,
     InternallyBalanced,
     Correct,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum TransactionType {
     Real,
     Automated,
     Periodic,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Cleared {
     Unknown,
     NotCleared,
@@ -189,7 +179,7 @@ impl Posting {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Cost {
     Total { amount: Money },
     PerUnit { amount: Money },

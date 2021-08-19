@@ -1,14 +1,14 @@
-use std::path::PathBuf;
+use std::convert::TryFrom;
 
-use crate::models::{Account, HasName};
-use crate::parser::Tokenizer;
+use crate::models::{Account, HasName, Ledger};
 use crate::{error::Error, CommonOpts};
 use std::ops::Deref;
 
-pub fn execute(path: PathBuf, options: &CommonOpts) -> Result<(), Error> {
-    let mut tokenizer: Tokenizer = Tokenizer::from(&path);
-    let items = tokenizer.tokenize(options);
-    let ledger = items.to_ledger(options)?;
+pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(), Error> {
+    let ledger = match maybe_ledger {
+        Some(ledger) => ledger,
+        None => Ledger::try_from(options)?,
+    };
     let mut accounts = ledger
         .accounts
         .iter()

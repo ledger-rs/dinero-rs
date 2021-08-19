@@ -1,6 +1,7 @@
 use num::rational::BigRational;
 use std::{
     collections::{HashMap, HashSet},
+    convert::TryFrom,
     path::PathBuf,
 };
 
@@ -17,11 +18,11 @@ pub use transaction::{
     Cleared, Posting, PostingOrigin, PostingType, Transaction, TransactionStatus, TransactionType,
 };
 
-use crate::models::transaction::Cost;
 use crate::parser::value_expr::build_root_node_from_expression;
 use crate::parser::ParsedLedger;
 use crate::parser::{tokenizers, value_expr};
 use crate::{filter::filter_expression, CommonOpts};
+use crate::{models::transaction::Cost, parser::Tokenizer};
 use crate::{Error, List};
 use num::BigInt;
 use std::cell::RefCell;
@@ -47,6 +48,18 @@ pub struct Ledger {
     pub(crate) files: Vec<PathBuf>,
 }
 
+impl TryFrom<&CommonOpts> for Ledger {
+    type Error = Error;
+    fn try_from(options: &CommonOpts) -> Result<Self, Self::Error> {
+        // Get the options
+        let path: PathBuf = options.input_file.clone();
+        let mut tokenizer: Tokenizer = Tokenizer::from(&path);
+        let items = tokenizer.tokenize(options);
+        let ledger = items.to_ledger(options)?;
+        Ok(ledger)
+    }
+}
+
 impl Ledger {
     pub fn get_commodities(&self) -> &List<Currency> {
         &self.commodities
@@ -58,6 +71,14 @@ impl Ledger {
 
 impl ParsedLedger {
     /// Creates a proper ledger from a parsed ledger
+    ///
+    /// 1. Create the lists of accounts, commodities and payees
+    /// 2. Load the commodity prices
+    /// 3. Balance the transactions by filling in missing amounts (this previously sorts the transactions by date)
+    /// 4. Create automated transactions
+    /// 5. Checks whether transactions are balanced again
+    ///
+    /// There my be room for optimisation here
     pub fn to_ledger(mut self, options: &CommonOpts) -> Result<Ledger, Error> {
         let mut commodity_strs = HashSet::<String>::new();
         let mut account_strs = HashSet::<String>::new();
@@ -374,6 +395,7 @@ impl ParsedLedger {
                 transaction.comments = parsed.comments.clone();
                 transaction.date = parsed.date;
                 transaction.effective_date = parsed.effective_date;
+                transaction.payee = parsed.payee.clone();
 
                 for comment in parsed.comments.iter() {
                     transaction.tags.append(&mut comment.get_tags());
@@ -382,7 +404,7 @@ impl ParsedLedger {
                 // Go posting by posting
                 for p in parsed.postings.borrow().iter() {
                     let payee = match &p.payee {
-                        None => transaction.get_payee_inmutable(&self.payees),
+                        None => transaction.get_payee(&self.payees).unwrap(),
                         Some(x) => self.payees.get(x).unwrap().clone(),
                     };
                     let account = if p.account.to_lowercase().ends_with("unknown") {
@@ -499,4 +521,33 @@ pub trait HasAliases {
 
 pub trait FromDirective {
     fn is_from_directive(&self) -> bool;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{parser::Tokenizer, CommonOpts};
+
+    #[test]
+    fn payee_with_pipe_issue_121() {
+        let mut tokenizer = Tokenizer::from(
+            "2022-05-13 ! (8760) Intereses | EstateGuru
+            EstateGuru               1.06 EUR
+            Ingresos:Rendimientos
+            "
+            .to_string(),
+        );
+        let options = CommonOpts::new();
+
+        let items = tokenizer.tokenize(&options);
+        dbg!(&items.transactions[0].payee);
+        let ledger = items.to_ledger(&options).unwrap();
+        let t = &ledger.transactions[0];
+        let payee = t.get_payee(&ledger.payees);
+        assert!(&ledger.payees.get("EstateGuru").is_ok());
+        dbg!(&payee);
+        dbg!(&t.payee);
+        dbg!(&ledger.payees);
+        assert!(payee.is_some());
+    }
 }

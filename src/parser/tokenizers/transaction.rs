@@ -1,5 +1,5 @@
 use super::super::Rule;
-use crate::models::{Comment, PostingType, PriceType, Transaction, TransactionType};
+use crate::models::{Cleared, Comment, PostingType, PriceType, Transaction, TransactionType};
 use crate::parser::utils::{parse_date, parse_rational, parse_string};
 use crate::parser::Tokenizer;
 use chrono::NaiveDate;
@@ -31,8 +31,19 @@ impl<'a> Tokenizer<'a> {
                     transaction.effective_date =
                         Some(parse_date(part.into_inner().next().unwrap()));
                 }
-                Rule::status => {}
-                Rule::code => {}
+                Rule::status => {
+                    transaction.cleared = match part.as_str() {
+                        "!" => Cleared::NotCleared,
+                        "*" => Cleared::Cleared,
+                        x => panic!("Found '{}', expected '!' or '*'", x),
+                    }
+                }
+                Rule::code => {
+                    let mut code = part.as_str().chars();
+                    code.next();
+                    code.next_back();
+                    transaction.code = Some(code.as_str().trim().to_string())
+                }
                 Rule::description | Rule::automated_description => {
                     transaction.description = parse_string(part).trim().to_string();
                 }
@@ -218,4 +229,33 @@ fn parse_posting(
         posting.date = default_date.clone();
     }
     posting
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::{Cleared, TransactionStatus};
+    use crate::{parser::Tokenizer, CommonOpts};
+
+    #[test]
+
+    fn difficult_transaction_head() {
+        let mut tokenizer = Tokenizer::from(
+            "2022-05-13 ! (8760) Intereses | EstateGuru
+            EstateGuru               1.06 EUR
+            Ingresos:Rendimientos
+            "
+            .to_string(),
+        );
+
+        let parsed = tokenizer.tokenize(&CommonOpts::new());
+        let transaction = &parsed.transactions[0];
+        assert_eq!(transaction.cleared, Cleared::NotCleared);
+        assert_eq!(transaction.status, TransactionStatus::NotChecked);
+        assert_eq!(transaction.code, Some(String::from("8760")));
+        assert_eq!(transaction.payee, Some(String::from("EstateGuru")));
+        assert_eq!(transaction.description, String::from("Intereses"));
+        for p in transaction.postings.borrow().iter() {
+            assert_eq!(p.kind, PostingType::Real);
+        }
+    }
 }

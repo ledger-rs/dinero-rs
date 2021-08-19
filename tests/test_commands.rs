@@ -353,3 +353,48 @@ fn stats() {
     assert!(output_1.lines().into_iter().count() > 3);
     test_args(args_1);
 }
+
+#[test]
+/// Check the collapse option
+fn collapse() {
+    let args = &[
+        "reg",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
+        "-f",
+        "tests/example_files/collapse_demo.ledger",
+        "--collapse",
+    ];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    assert_eq!(output.lines().into_iter().count(), 2);
+
+    test_args(args);
+}
+
+#[test]
+/// Check the exchange option in the register report
+fn reg_exchange() {
+    let args = &[
+        "reg",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
+        "-f",
+        "tests/example_files/reg_exchange.ledger",
+        "--exchange",
+        "EUR",
+        "travel",
+    ];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+
+    for (i, line) in output.lines().into_iter().enumerate() {
+        match i {
+            0 => assert!(String::from(line).contains("100")),
+            1 => assert!(String::from(line).contains("133")),
+            _ => assert!(false),
+        }
+    }
+
+    test_args(args);
+}
