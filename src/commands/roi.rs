@@ -1,5 +1,5 @@
 use prettytable::format;
-use prettytable::{ Table};
+use prettytable::Table;
 
 use crate::commands::balance::convert_balance;
 use crate::models::{conversion, Balance, HasName, Ledger, Money};
