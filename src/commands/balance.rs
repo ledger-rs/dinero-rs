@@ -138,12 +138,13 @@ pub fn execute(
     // Print the balances by account
     let mut multipliers = HashMap::new();
     if let Some(currency_string) = &options.exchange {
+        let date = if let Some(date) = &options.end {
+            *date
+        } else {
+            Utc::now().naive_local().date()
+        };
         if let Ok(currency) = ledger.commodities.get(currency_string) {
-            multipliers = conversion(
-                currency.clone(),
-                Utc::now().naive_local().date(),
-                &ledger.prices,
-            );
+            multipliers = conversion(currency.clone(), date, &ledger.prices);
             let mut updated_balances = Vec::new();
             for (acc, balance) in vec_balances.iter() {
                 updated_balances.push((
