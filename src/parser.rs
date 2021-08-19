@@ -183,8 +183,6 @@ impl<'a> Tokenizer<'a> {
                                             }
 
                                             let mut commodity = Currency::from(c.as_str());
-                                            commodity
-                                                .set_format(format.as_ref().unwrap().to_owned());
                                             ledger.commodities.insert(commodity);
                                         }
                                     }

@@ -15,7 +15,6 @@ impl<'a> Tokenizer<'a> {
         let mut note: Option<String> = None;
         let mut format: Option<String> = None;
         let mut comments: Vec<Comment> = vec![];
-        let mut precision: Option<usize> = None;
         let mut default = false;
         let mut aliases = HashSet::new();
 
@@ -32,7 +31,6 @@ impl<'a> Tokenizer<'a> {
                         }
                         Rule::note => note = Some(parse_string(property.next().unwrap())),
                         Rule::format => format = Some(parse_string(property.next().unwrap())),
-                        Rule::precision => precision = Some(parse_usize(property.next().unwrap())),
                         _ => {}
                     }
                 }
@@ -49,12 +47,6 @@ impl<'a> Tokenizer<'a> {
         }
         if note.is_some() {
             currency.set_note(note.unwrap());
-        }
-        if format.is_some() {
-            currency.set_format(format.unwrap());
-        }
-        if precision.is_some() {
-            currency.set_precision(precision.unwrap())
         }
         currency
     }

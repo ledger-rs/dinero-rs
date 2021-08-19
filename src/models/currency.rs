@@ -54,13 +54,19 @@ pub struct Currency {
     aliases: HashSet<String>,
     format: Option<String>,
     default: bool,
-    precision: Option<usize>,
+    pub (crate) display_format: CurrencyDisplayFormat,
+}
+
+/// Definition of how to display a currency
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct CurrencyDisplayFormat {
     pub symbol_placement: CurrencySymbolPlacement,
     pub negative_amount_display: NegativeAmountDisplay,
-    decimal_separator: Separator,
-    digit_grouping: DigitGrouping,
-    thousands_separator: Separator,
-    has_explicit_format: bool,
+    pub decimal_separator: Separator,
+    pub digit_grouping: DigitGrouping,
+    pub thousands_separator: Separator,
+    pub max_decimals: Option<usize>,
+    pub min_decimals: Option<usize>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -84,7 +90,7 @@ pub enum DigitGrouping {
     None,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Separator {
     Dot,
     Comma,
@@ -101,18 +107,21 @@ impl Currency {
             aliases: HashSet::new(),
             format: None,
             default: false,
-            precision: None,
-            symbol_placement: CurrencySymbolPlacement::AfterAmount,
-            negative_amount_display: NegativeAmountDisplay::BeforeSymbolAndNumber,
-            decimal_separator: Separator::Comma,
-            digit_grouping: DigitGrouping::Thousands,
-            thousands_separator: Separator::Space,
-            has_explicit_format: false,
+            display_format: DEFAULT_DISPLAY_FORMAT,
         }
     }
-    pub fn get_precision(&self) -> Option<usize> {
-        self.precision
+
+    pub fn set_note(&mut self, note: String) {
+        self.note = Some(note);
     }
+    pub fn set_default(&mut self) {
+        self.default = true;
+    }
+    pub fn set_aliases(&mut self, aliases: HashSet<String>) {
+        self.aliases = aliases;
+    }
+}
+impl CurrencyDisplayFormat {
     pub fn get_decimal_separator_str(&self) -> char {
         match self.decimal_separator {
             Separator::Dot => '.',
@@ -150,18 +159,6 @@ impl Currency {
     pub fn set_digit_grouping(&mut self, grouping: DigitGrouping) {
         self.digit_grouping = grouping
     }
-    pub fn set_precision(&mut self, precision: usize) {
-        self.precision = Some(precision);
-    }
-    pub fn set_note(&mut self, note: String) {
-        self.note = Some(note);
-    }
-    pub fn set_default(&mut self) {
-        self.default = true;
-    }
-    pub fn set_aliases(&mut self, aliases: HashSet<String>) {
-        self.aliases = aliases;
-    }
     /// Sets the format of the currency representation
     pub fn set_format(&mut self, format: String) {
         let mut parsed = GrammarParser::parse(Rule::currency_format, format.as_str())
@@ -169,9 +166,6 @@ impl Currency {
             .next()
             .unwrap()
             .into_inner();
-
-        // The format has been set explicitly
-        self.has_explicit_format = true;
 
         let mut first = parsed.next().unwrap();
         let integer_format;
@@ -218,10 +212,8 @@ impl Currency {
                 }
                 let len = separators.len();
                 if len == 0 {
-                    self.set_precision(0);
                     self.digit_grouping = DigitGrouping::None;
                 } else {
-                    self.set_precision(num_chars - separators[len - 1].1 + start - 1);
                     self.set_decimal_separator(separators[len - 1].0);
                 }
                 if len > 1 {
@@ -238,8 +230,6 @@ impl Currency {
             }
             None => self.digit_grouping = DigitGrouping::None,
         }
-
-        self.format = Some(format);
     }
 }
 
@@ -299,6 +289,17 @@ impl PartialOrd for Currency {
         self.name.partial_cmp(&other.name)
     }
 }
+
+const DEFAULT_DISPLAY_FORMAT:CurrencyDisplayFormat = CurrencyDisplayFormat {
+    
+    symbol_placement: CurrencySymbolPlacement::AfterAmount,
+    negative_amount_display: NegativeAmountDisplay::BeforeSymbolAndNumber,
+    decimal_separator: Separator::Dot,
+    digit_grouping: DigitGrouping::Thousands,
+    thousands_separator: Separator::Comma,
+    max_decimals: None,
+    min_decimals: Some(2),
+};
 
 #[cfg(test)]
 mod tests {

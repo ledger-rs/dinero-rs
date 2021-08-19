@@ -231,21 +231,17 @@ impl Display for Money {
             Money::Zero => write!(f, "{}", "0"),
             Money::Money { amount, currency } => {
                 // Suppose: -1.234.567,000358 EUR
+                
+                // Get the format
+                let format = currency.display_format;
+
                 // num = trunc + fract
                 let base: i32 = 10;
                 let mut integer_part = amount.trunc(); // -1.234.567
 
-                // Read decimals from format, two as default
-                let decimals = match currency.get_precision() {
-                    Some(p) => p,
-                    None => {
-                        if amount.fract().is_zero() {
-                            0
-                        } else {
-                            2
-                        }
-                    }
-                };
+                // TODO Read decimals from format, two as default
+                let decimals = 3;
+                
                 let decimal_part = (amount.fract() * BigInt::from(base.pow(decimals as u32 + 2)))
                     .abs()
                     .trunc();
@@ -271,19 +267,19 @@ impl Display for Money {
                             integer_part -= BigInt::from(1);
                         }
                     }
-                    let decimal_separator = currency.get_decimal_separator_str();
+                    let decimal_separator = format.get_decimal_separator_str();
                     decimal_str =
                         format!("{}{:0width$}", decimal_separator, decimal, width = decimals);
                 }
 
                 let integer_str = {
-                    match currency.get_digit_grouping() {
+                    match format.get_digit_grouping() {
                         DigitGrouping::None => integer_part.numer().abs().to_string(), // Do nothing
                         grouping => {
                             let mut group_size = 3;
                             let mut counter = 0;
                             let mut reversed = vec![];
-                            let thousands_separator = currency.get_thousands_separator_str();
+                            let thousands_separator = format.get_thousands_separator_str();
                             for c in integer_part.to_string().chars().rev() {
                                 if c == '-' {
                                     continue;
@@ -305,10 +301,10 @@ impl Display for Money {
                 };
 
                 let amount_str = format!("{}{}", integer_str, decimal_str);
-                match currency.symbol_placement {
+                match format.symbol_placement {
                     CurrencySymbolPlacement::BeforeAmount => {
                         if amount.is_negative() {
-                            match currency.negative_amount_display {
+                            match format.negative_amount_display {
                                 NegativeAmountDisplay::BeforeSymbolAndNumber => {
                                     write!(f, "-{}{}", currency.get_name(), amount_str)
                                 }
@@ -328,7 +324,7 @@ impl Display for Money {
                     }
                     CurrencySymbolPlacement::AfterAmount => {
                         if amount.is_negative() {
-                            match currency.negative_amount_display {
+                            match format.negative_amount_display {
                                 NegativeAmountDisplay::BeforeSymbolAndNumber
                                 | NegativeAmountDisplay::BeforeNumberBehindCurrency => {
                                     write!(f, "-{} {}", amount_str, currency.get_name())
