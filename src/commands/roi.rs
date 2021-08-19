@@ -1,3 +1,6 @@
+use prettytable::format;
+use prettytable::{Cell, Row, Table};
+
 use crate::commands::balance::convert_balance;
 use crate::models::{conversion, Balance, HasName, Ledger, Money};
 use crate::parser::utils::rational2float;
@@ -136,6 +139,10 @@ pub fn execute(
 
     let mut prev_final_balance = Balance::new();
     let mut prev_final_money = None;
+
+    let mut table = Table::new();
+    table.set_format(*format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
+    table.set_titles(row!["Period", r->"Cash flow", r->"Final balance", r->"twr"]);
     for (i, p) in periods.iter_mut().enumerate() {
         if i > 0 {
             p.initial_balance = prev_final_balance;
@@ -160,22 +167,18 @@ pub fn execute(
             );
         }
 
-        println!(
-            "{}-{}   {}   {}   {}     {}",
-            p.start,
-            p.end,
-            p.initial_money.as_ref().unwrap(),
-            p.final_money.as_ref().unwrap(),
-            p.cash_flow,
-            rational2float(&p.twr(), 4)
-        );
+        table.add_row(row![
+            format!("{}", p.start)[0..7],
+            r->format!("{}", p.cash_flow),
+            r->format!("{}", p.final_money.as_ref().unwrap()),
+            r->format!("{}%", rational2float(&(&p.twr() * BigInt::from(100)), 2)),
+        ]);
 
         prev_final_balance = p.final_balance.clone();
         prev_final_money = p.final_money.clone();
     }
-    for (_, amount) in periods.iter().next_back().unwrap().final_balance.iter() {
-        println!("{}", amount);
-    }
+    // Print the table to stdout
+    table.printstd();
     Ok(())
 }
 
