@@ -1,6 +1,7 @@
 use num::rational::BigRational;
 use std::{
     collections::{HashMap, HashSet},
+    convert::TryFrom,
     path::PathBuf,
 };
 
@@ -17,11 +18,11 @@ pub use transaction::{
     Cleared, Posting, PostingOrigin, PostingType, Transaction, TransactionStatus, TransactionType,
 };
 
-use crate::models::transaction::Cost;
 use crate::parser::value_expr::build_root_node_from_expression;
 use crate::parser::ParsedLedger;
 use crate::parser::{tokenizers, value_expr};
 use crate::{filter::filter_expression, CommonOpts};
+use crate::{models::transaction::Cost, parser::Tokenizer};
 use crate::{Error, List};
 use num::BigInt;
 use std::cell::RefCell;
@@ -45,6 +46,18 @@ pub struct Ledger {
     pub(crate) prices: Vec<Price>,
     pub(crate) payees: List<Payee>,
     pub(crate) files: Vec<PathBuf>,
+}
+
+impl TryFrom<&CommonOpts> for Ledger {
+    type Error = Error;
+    fn try_from(options: &CommonOpts) -> Result<Self, Self::Error> {
+        // Get the options
+        let path: PathBuf = options.input_file.clone();
+        let mut tokenizer: Tokenizer = Tokenizer::from(&path);
+        let items = tokenizer.tokenize(options);
+        let ledger = items.to_ledger(options)?;
+        Ok(ledger)
+    }
 }
 
 impl Ledger {
@@ -382,6 +395,7 @@ impl ParsedLedger {
                 transaction.comments = parsed.comments.clone();
                 transaction.date = parsed.date;
                 transaction.effective_date = parsed.effective_date;
+                transaction.payee = parsed.payee.clone();
 
                 for comment in parsed.comments.iter() {
                     transaction.tags.append(&mut comment.get_tags());
@@ -507,4 +521,33 @@ pub trait HasAliases {
 
 pub trait FromDirective {
     fn is_from_directive(&self) -> bool;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{parser::Tokenizer, CommonOpts};
+
+    #[test]
+    fn payee_with_pipe_issue_121() {
+        let mut tokenizer = Tokenizer::from(
+            "2022-05-13 ! (8760) Intereses | EstateGuru
+            EstateGuru               1.06 EUR
+            Ingresos:Rendimientos
+            "
+            .to_string(),
+        );
+        let options = CommonOpts::new();
+
+        let items = tokenizer.tokenize(&options);
+        dbg!(&items.transactions[0].payee);
+        let ledger = items.to_ledger(&options).unwrap();
+        let t = &ledger.transactions[0];
+        let payee = t.get_payee(&ledger.payees);
+        assert!(&ledger.payees.get("EstateGuru").is_ok());
+        dbg!(&payee);
+        dbg!(&t.payee);
+        dbg!(&ledger.payees);
+        assert!(payee.is_some());
+    }
 }

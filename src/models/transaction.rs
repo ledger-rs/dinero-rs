@@ -87,28 +87,34 @@ impl<T> Transaction<T> {
         }
     }
     pub fn get_payee(&self, payees: &List<Payee>) -> Option<Rc<Payee>> {
-        match payees.get(&self.description) {
-            Ok(x) => Some(x.clone()),
-            Err(_) => None,
+        match &self.payee {
+            Some(payee) => match payees.get(payee) {
+                Ok(x) => Some(x.clone()),
+                Err(_) => panic!("Couldn't find payee {}", payee),
+            },
+            None => match payees.get(&self.description) {
+                Ok(x) => Some(x.clone()),
+                Err(_) => None,
+            },
         }
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum TransactionStatus {
     NotChecked,
     InternallyBalanced,
     Correct,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum TransactionType {
     Real,
     Automated,
     Periodic,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Cleared {
     Unknown,
     NotCleared,
@@ -173,7 +179,7 @@ impl Posting {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Cost {
     Total { amount: Money },
     PerUnit { amount: Money },

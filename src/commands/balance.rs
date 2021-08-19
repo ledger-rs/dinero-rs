@@ -1,11 +1,10 @@
 use std::collections::{HashMap, HashSet};
-use std::path::PathBuf;
+use std::convert::TryFrom;
 
 use colored::Colorize;
 
-use crate::models::{conversion, Account, Balance, Currency, HasName, Money};
+use crate::models::{conversion, Account, Balance, Currency, HasName, Ledger, Money};
 use crate::parser::value_expr::build_root_node_from_expression;
-use crate::parser::Tokenizer;
 use crate::Error;
 use crate::{filter, CommonOpts};
 use chrono::Utc;
@@ -14,14 +13,18 @@ use std::ops::Deref;
 use std::rc::Rc;
 
 /// Balance report
-pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(), Error> {
-    // Get the options
-    let path: PathBuf = options.input_file.clone();
-    let depth = options.depth;
-    let mut tokenizer: Tokenizer = Tokenizer::from(&path);
-    let items = tokenizer.tokenize(options);
-    let mut ledger = items.to_ledger(options)?;
+pub fn execute(
+    options: &CommonOpts,
+    maybe_ledger: Option<Ledger>,
+    flat: bool,
+    show_total: bool,
+) -> Result<(), Error> {
+    let mut ledger = match maybe_ledger {
+        Some(ledger) => ledger,
+        None => Ledger::try_from(options)?,
+    };
 
+    let depth = options.depth;
     let mut balances: HashMap<Rc<Account>, Balance> = HashMap::new();
 
     // Build a cache of abstract value trees, it takes time to parse expressions, so better do it only once
@@ -262,7 +265,7 @@ pub fn execute(options: &CommonOpts, flat: bool, show_total: bool) -> Result<(),
     Ok(())
 }
 
-fn convert_balance(
+pub(crate) fn convert_balance(
     balance: &Balance,
     multipliers: &HashMap<Rc<Currency>, BigRational>,
     currency: &Currency,
