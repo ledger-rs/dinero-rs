@@ -461,10 +461,19 @@ fn build_ast_from_expr(
                             currency: money.next().unwrap().as_str().to_string(),
                             amount: parse_rational(child),
                         },
-                        Rule::currency => Node::Money {
-                            currency: child.as_str().to_string(),
-                            amount: parse_rational(money.next().unwrap()),
-                        },
+                        Rule::currency => {
+                            if child.as_str().starts_with("-") {
+                                Node::Money {
+                                    currency: child.as_str().to_string(),
+                                    amount: -parse_rational(money.next().unwrap()),
+                                }
+                            } else {
+                                Node::Money {
+                                    currency: child.as_str().to_string(),
+                                    amount: parse_rational(money.next().unwrap()),
+                                }
+                            }
+                        }
                         unknown => panic!("Unknown rule: {:?}", unknown),
                     }
                 }
