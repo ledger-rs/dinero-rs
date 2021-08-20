@@ -54,7 +54,7 @@ pub struct Currency {
     aliases: HashSet<String>,
     format: Option<String>,
     default: bool,
-    pub (crate) display_format: CurrencyDisplayFormat,
+    pub(crate) display_format: CurrencyDisplayFormat,
 }
 
 /// Definition of how to display a currency
@@ -159,9 +159,13 @@ impl CurrencyDisplayFormat {
     pub fn set_digit_grouping(&mut self, grouping: DigitGrouping) {
         self.digit_grouping = grouping
     }
+}
+
+impl From<&str> for CurrencyDisplayFormat {
     /// Sets the format of the currency representation
-    pub fn set_format(&mut self, format: String) {
-        let mut parsed = GrammarParser::parse(Rule::currency_format, format.as_str())
+    fn from(format: &str) -> Self {
+        let mut display_format = DEFAULT_DISPLAY_FORMAT;
+        let mut parsed = GrammarParser::parse(Rule::currency_format, format)
             .unwrap()
             .next()
             .unwrap()
@@ -171,9 +175,9 @@ impl CurrencyDisplayFormat {
         let integer_format;
 
         if first.as_rule() == Rule::currency_format_positive {
-            self.negative_amount_display = NegativeAmountDisplay::BeforeSymbolAndNumber;
+            display_format.negative_amount_display = NegativeAmountDisplay::BeforeSymbolAndNumber;
             if first.as_str().starts_with("(") {
-                self.negative_amount_display = NegativeAmountDisplay::Parentheses;
+                display_format.negative_amount_display = NegativeAmountDisplay::Parentheses;
             }
             parsed = first.into_inner();
             first = parsed.next().unwrap();
@@ -193,8 +197,9 @@ impl CurrencyDisplayFormat {
                     rule = parsed.next().unwrap();
                 }
                 integer_format = Some(rule);
-                self.symbol_placement = CurrencySymbolPlacement::BeforeAmount;
-                self.negative_amount_display = NegativeAmountDisplay::BeforeSymbolAndNumber;
+                display_format.symbol_placement = CurrencySymbolPlacement::BeforeAmount;
+                display_format.negative_amount_display =
+                    NegativeAmountDisplay::BeforeSymbolAndNumber;
             }
             other => {
                 panic!("Other: {:?}", other);
@@ -212,24 +217,25 @@ impl CurrencyDisplayFormat {
                 }
                 let len = separators.len();
                 if len == 0 {
-                    self.digit_grouping = DigitGrouping::None;
+                    display_format.digit_grouping = DigitGrouping::None;
                 } else {
-                    self.set_decimal_separator(separators[len - 1].0);
+                    display_format.set_decimal_separator(separators[len - 1].0);
                 }
                 if len > 1 {
-                    self.set_thousands_separator(separators[len - 2].0);
+                    display_format.set_thousands_separator(separators[len - 2].0);
                 }
                 if len > 2 {
                     let n = separators[len - 2].1 - separators[len - 3].1;
                     match n {
-                        2 => self.digit_grouping = DigitGrouping::Indian,
-                        3 => self.digit_grouping = DigitGrouping::Thousands,
+                        2 => display_format.digit_grouping = DigitGrouping::Indian,
+                        3 => display_format.digit_grouping = DigitGrouping::Thousands,
                         _ => eprintln!("Wrong number format: {}", &format),
                     }
                 }
             }
-            None => self.digit_grouping = DigitGrouping::None,
+            None => display_format.digit_grouping = DigitGrouping::None,
         }
+        display_format
     }
 }
 
@@ -290,8 +296,7 @@ impl PartialOrd for Currency {
     }
 }
 
-const DEFAULT_DISPLAY_FORMAT:CurrencyDisplayFormat = CurrencyDisplayFormat {
-    
+const DEFAULT_DISPLAY_FORMAT: CurrencyDisplayFormat = CurrencyDisplayFormat {
     symbol_placement: CurrencySymbolPlacement::AfterAmount,
     negative_amount_display: NegativeAmountDisplay::BeforeSymbolAndNumber,
     decimal_separator: Separator::Dot,
@@ -306,39 +311,37 @@ mod tests {
     use super::*;
     #[test]
     fn format_1() {
-        let format = "-1.234,00 €";
-        let mut currency = Currency::from_directive(format.to_string());
-        currency.set_format(format.to_string());
+        let format_str = "-1.234,00 €";
+        let format = CurrencyDisplayFormat::from(format_str);
 
-        assert_eq!(currency.get_precision(), Some(2));
-        assert_eq!(currency.get_thousands_separator_str(), '.');
-        assert_eq!(currency.get_decimal_separator_str(), ',');
-        assert_eq!(currency.get_digit_grouping(), DigitGrouping::Thousands);
+        // assert_eq!(format.get_precision(), Some(2));
+        assert_eq!(format.get_thousands_separator_str(), '.');
+        assert_eq!(format.get_decimal_separator_str(), ',');
+        assert_eq!(format.get_digit_grouping(), DigitGrouping::Thousands);
         assert_eq!(
-            currency.symbol_placement,
+            format.symbol_placement,
             CurrencySymbolPlacement::AfterAmount
         );
         assert_eq!(
-            currency.negative_amount_display,
+            format.negative_amount_display,
             NegativeAmountDisplay::BeforeSymbolAndNumber
         );
     }
     #[test]
     fn format_2() {
-        let format = "($1,234.00)";
-        let mut currency = Currency::from_directive(format.to_string());
-        currency.set_format(format.to_string());
+        let format_str = "($1,234.00)";
+        let format = CurrencyDisplayFormat::from(format_str);
 
-        assert_eq!(currency.get_precision(), Some(2));
-        assert_eq!(currency.get_thousands_separator_str(), ',');
-        assert_eq!(currency.get_decimal_separator_str(), '.');
-        assert_eq!(currency.get_digit_grouping(), DigitGrouping::Thousands);
+        // assert_eq!(format.get_precision(), Some(2));
+        assert_eq!(format.get_thousands_separator_str(), ',');
+        assert_eq!(format.get_decimal_separator_str(), '.');
+        assert_eq!(format.get_digit_grouping(), DigitGrouping::Thousands);
         assert_eq!(
-            currency.symbol_placement,
+            format.symbol_placement,
             CurrencySymbolPlacement::BeforeAmount
         );
         assert_eq!(
-            currency.negative_amount_display,
+            format.negative_amount_display,
             NegativeAmountDisplay::BeforeSymbolAndNumber
         );
     }
