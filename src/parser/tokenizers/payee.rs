@@ -44,24 +44,19 @@ impl<'a> Tokenizer<'a> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{CommonOpts, models::HasName};
+    use crate::{models::HasName, CommonOpts};
 
-    
     #[test]
     //#[should_panic(expected = "Can't compare different currencies. € and USD.")]
     fn parse_ko() {
-        
         let input = "payee ACME  ; From the Looney Tunes\n\tWrong Acme, Inc.\n".to_string();
         let mut tokenizer = Tokenizer::from(input);
         let items = tokenizer.tokenize(&CommonOpts::new());
-        dbg!(&items);
         assert_eq!(items.payees.len(), 0);
     }
-    
 
     #[test]
     fn parse_ok() {
@@ -76,4 +71,3 @@ mod tests {
         assert_eq!(payee.get_name(), "ACME");
     }
 }
-

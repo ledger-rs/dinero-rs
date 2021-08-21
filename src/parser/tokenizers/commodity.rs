@@ -48,8 +48,9 @@ impl<'a> Tokenizer<'a> {
             currency.set_note(note.unwrap());
         }
         if format.is_some() {
-            currency.set_format(format.unwrap());
+            currency.format = format;
         }
+
         currency
     }
 }

@@ -44,6 +44,7 @@ fn test_account_names() {
             .to_string(),
         ),
     ];
+
     for (i, mut tokenizer) in tokenizers.into_iter().enumerate() {
         println!("Test case #{}", i);
         let parsed = tokenizer.tokenize(&CommonOpts::new());
