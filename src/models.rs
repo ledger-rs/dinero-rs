@@ -8,7 +8,7 @@ use std::{
 pub use account::Account;
 pub use balance::Balance;
 pub use comment::Comment;
-pub use currency::{Currency, DigitGrouping};
+pub use currency::{Currency, CurrencyDisplayFormat, DigitGrouping};
 pub use models::{ParsedPrice, Tag};
 pub use money::Money;
 pub use payee::Payee;
@@ -540,14 +540,10 @@ mod tests {
         let options = CommonOpts::new();
 
         let items = tokenizer.tokenize(&options);
-        dbg!(&items.transactions[0].payee);
         let ledger = items.to_ledger(&options).unwrap();
         let t = &ledger.transactions[0];
         let payee = t.get_payee(&ledger.payees);
         assert!(&ledger.payees.get("EstateGuru").is_ok());
-        dbg!(&payee);
-        dbg!(&t.payee);
-        dbg!(&ledger.payees);
         assert!(payee.is_some());
     }
 }

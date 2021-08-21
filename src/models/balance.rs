@@ -7,6 +7,7 @@ use std::fmt::{Display, Formatter};
 use std::ops::{Add, Neg, Sub};
 use std::rc::Rc;
 
+/// Balance is money with several currencies, for example 100 USD and 50 EUR
 #[derive(Debug, Clone)]
 pub struct Balance {
     pub balance: HashMap<Option<Rc<Currency>>, Money>,
@@ -19,6 +20,8 @@ impl Balance {
         }
     }
 
+    /// Automatic conversion from balance to regular money
+    /// it can only be done if the balance has only one currency
     pub fn to_money(&self) -> Result<Money, LedgerError> {
         let vec = self
             .balance
@@ -44,6 +47,9 @@ impl Balance {
             }
         }
     }
+
+    /// Whether a balance can be zero
+    /// To be true, there must be positive and negative amounts
     pub fn can_be_zero(&self) -> bool {
         if self.is_zero() {
             return true;

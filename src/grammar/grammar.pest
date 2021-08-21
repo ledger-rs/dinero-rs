@@ -55,7 +55,7 @@ account_dir = { "account" ~ ws+ ~ account ~ ws* ~ comment? ~ end ~
         )?
     ~end)*
     }
-commodity_property = { (alias | note | format | isin) ~ ws+ ~ property_value }
+commodity_property = { (alias | note | format | isin ) ~ ws+ ~ property_value }
 payee_property = { (alias | note) ~ ws+ ~ property_value }
 account_property = { (alias | payee_subdirective | check | assert | note | iban | country ) ~ ws+ ~ property_value }
 tag_property = { (check | assert) ~ ws+ ~ property_value }

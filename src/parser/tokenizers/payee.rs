@@ -55,7 +55,6 @@ mod tests {
         let input = "payee ACME  ; From the Looney Tunes\n\tWrong Acme, Inc.\n".to_string();
         let mut tokenizer = Tokenizer::from(input);
         let items = tokenizer.tokenize(&CommonOpts::new());
-        dbg!(&items);
         assert_eq!(items.payees.len(), 0);
     }
 
