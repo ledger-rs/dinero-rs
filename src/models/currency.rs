@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::collections::HashSet;
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -54,7 +55,7 @@ pub struct Currency {
     aliases: HashSet<String>,
     format: Option<String>,
     default: bool,
-    pub(crate) display_format: CurrencyDisplayFormat,
+    pub(crate) display_format: RefCell<CurrencyDisplayFormat>,
 }
 
 /// Definition of how to display a currency
@@ -65,8 +66,8 @@ pub struct CurrencyDisplayFormat {
     pub decimal_separator: Separator,
     pub digit_grouping: DigitGrouping,
     pub thousands_separator: Separator,
+    pub precision: usize,
     pub max_decimals: Option<usize>,
-    pub min_decimals: Option<usize>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -107,7 +108,7 @@ impl Currency {
             aliases: HashSet::new(),
             format: None,
             default: false,
-            display_format: DEFAULT_DISPLAY_FORMAT,
+            display_format: RefCell::new(DEFAULT_DISPLAY_FORMAT),
         }
     }
 
@@ -119,6 +120,15 @@ impl Currency {
     }
     pub fn set_aliases(&mut self, aliases: HashSet<String>) {
         self.aliases = aliases;
+    }
+    pub fn set_precision(&self, precision: usize) {
+        self.display_format.borrow_mut().set_precision(precision);
+    }
+    pub fn get_precision(&self) -> usize {
+        self.display_format.borrow().precision
+    }
+    pub fn update_precision(&self, precision: usize) {
+        self.display_format.borrow_mut().update_precision(precision);
     }
 }
 impl CurrencyDisplayFormat {
@@ -158,6 +168,14 @@ impl CurrencyDisplayFormat {
     }
     pub fn set_digit_grouping(&mut self, grouping: DigitGrouping) {
         self.digit_grouping = grouping
+    }
+    pub fn update_precision(&mut self, precision: usize) {
+        if precision > self.precision {
+            self.precision = precision;
+        }
+    }
+    pub fn set_precision(&mut self, precision: usize) {
+        self.max_decimals = Some(precision);
     }
 }
 
@@ -209,9 +227,8 @@ impl From<&str> for CurrencyDisplayFormat {
         // Get thousands separator and type of separation
         match integer_format {
             Some(x) => {
-                let start = x.as_span().start();
                 let mut separators = vec![];
-                let num_chars = x.as_str().len();
+                let num_str = x.as_str();
                 for sep in x.into_inner() {
                     separators.push((sep.as_str().chars().nth(0).unwrap(), sep.as_span().start()));
                 }
@@ -232,6 +249,9 @@ impl From<&str> for CurrencyDisplayFormat {
                         _ => eprintln!("Wrong number format: {}", &format),
                     }
                 }
+
+                // Get the precision
+                display_format.precision = num_str.split(separators[len - 1].0).last().unwrap().len();
             }
             None => display_format.digit_grouping = DigitGrouping::None,
         }
@@ -302,8 +322,8 @@ const DEFAULT_DISPLAY_FORMAT: CurrencyDisplayFormat = CurrencyDisplayFormat {
     decimal_separator: Separator::Dot,
     digit_grouping: DigitGrouping::Thousands,
     thousands_separator: Separator::Comma,
+    precision: 0,
     max_decimals: None,
-    min_decimals: Some(2),
 };
 
 #[cfg(test)]
@@ -314,7 +334,7 @@ mod tests {
         let format_str = "-1.234,00 €";
         let format = CurrencyDisplayFormat::from(format_str);
 
-        // assert_eq!(format.get_precision(), Some(2));
+        assert_eq!(format.precision, 2);
         assert_eq!(format.get_thousands_separator_str(), '.');
         assert_eq!(format.get_decimal_separator_str(), ',');
         assert_eq!(format.get_digit_grouping(), DigitGrouping::Thousands);
@@ -332,7 +352,7 @@ mod tests {
         let format_str = "($1,234.00)";
         let format = CurrencyDisplayFormat::from(format_str);
 
-        // assert_eq!(format.get_precision(), Some(2));
+        assert_eq!(format.precision, 2);
         assert_eq!(format.get_thousands_separator_str(), ',');
         assert_eq!(format.get_decimal_separator_str(), '.');
         assert_eq!(format.get_digit_grouping(), DigitGrouping::Thousands);

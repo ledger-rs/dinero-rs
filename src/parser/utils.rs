@@ -77,3 +77,42 @@ pub(crate) fn parse_string(string: Pair<Rule>) -> String {
         _ => string.as_str().trim().to_string(),
     }
 }
+
+/// Counts the number of decimals in an amount as defined in the grammar
+pub(crate) fn count_decimals(amount: &str) -> usize {
+    let mut parsed = GrammarParser::parse(Rule::money, amount)
+        .unwrap()
+        .next()
+        .unwrap()
+        .into_inner();
+    let mut number = parsed.next().unwrap();
+
+    let number = match number.as_rule() {
+        Rule::number => number,
+        Rule::currency => parsed.next().unwrap(),
+        x => {
+            dbg!(x);
+            return 0;
+        }
+    };
+
+    let text = number.as_str();
+    // dbg!(text);
+    if text.contains(".") {
+        number.as_str().split(".").last().unwrap().len()
+    } else {
+        0
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::parser::utils::count_decimals;
+
+    #[test]
+    fn count_decimals_test() {
+        assert_eq!(count_decimals("150.4 EUR"), 1);
+        assert_eq!(count_decimals("150 EUR"), 0);
+        assert_eq!(count_decimals("EUR 150.4"), 1);
+    }
+}

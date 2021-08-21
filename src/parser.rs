@@ -6,11 +6,15 @@
 //! - Directive payee
 //! - Directive commodity
 
+use std::cell::RefCell;
 use std::collections::HashSet;
 use std::fs::read_to_string;
 use std::path::PathBuf;
 
-use crate::models::{Account, Comment, Currency, Payee, Transaction};
+use crate::models::{
+    Account, Comment, Currency, CurrencyDisplayFormat, HasName, Payee, Transaction,
+};
+use crate::parser::utils::count_decimals;
 use crate::{models, CommonOpts, List};
 use pest::Parser;
 
@@ -150,7 +154,12 @@ impl<'a> Tokenizer<'a> {
                                     ledger.tags.push(self.parse_tag(inner));
                                 }
                                 Rule::commodity => {
-                                    let commodity = self.parse_commodity(inner);
+                                    let mut commodity = self.parse_commodity(inner);
+                                    if let Ok(old_commodity) =
+                                        ledger.commodities.get(&commodity.get_name())
+                                    {
+                                        commodity.update_precision(old_commodity.get_precision());
+                                    }
                                     ledger.commodities.remove(&commodity);
                                     ledger.commodities.insert(commodity);
                                 }
@@ -173,17 +182,33 @@ impl<'a> Tokenizer<'a> {
                                 ];
                                 for (currency, format) in currencies {
                                     if let Some(c) = currency {
-                                        let found = ledger.commodities.get(c);
-                                        if found.is_err() {
-                                            if options.pedantic {
-                                                panic!("Error: commodity {} not declared.", c);
-                                            }
-                                            if options.strict {
-                                                eprintln!("Warning: commodity {} not declared.", c);
-                                            }
+                                        match ledger.commodities.get(c) {
+                                            Err(_) => {
+                                                if options.pedantic {
+                                                    panic!("Error: commodity {} not declared.", c);
+                                                }
+                                                if options.strict {
+                                                    eprintln!(
+                                                        "Warning: commodity {} not declared.",
+                                                        c
+                                                    );
+                                                }
 
-                                            let mut commodity = Currency::from(c.as_str());
-                                            ledger.commodities.insert(commodity);
+                                                let mut commodity = Currency::from(c.as_str());
+                                                if let Some(format_string) = format {
+                                                    commodity.update_precision(count_decimals(
+                                                        format_string.as_str(),
+                                                    ));
+                                                }
+                                                ledger.commodities.insert(commodity);
+                                            }
+                                            Ok(c) => {
+                                                if let Some(format_string) = format {
+                                                    c.update_precision(count_decimals(
+                                                        format_string.as_str(),
+                                                    ));
+                                                }
+                                            }
                                         }
                                     }
                                 }

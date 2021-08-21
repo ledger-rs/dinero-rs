@@ -233,14 +233,17 @@ impl Display for Money {
                 // Suppose: -1.234.567,000358 EUR
 
                 // Get the format
-                let format = currency.display_format;
+                let format = currency.display_format.borrow();
 
                 // num = trunc + fract
                 let base: i32 = 10;
                 let mut integer_part = amount.trunc(); // -1.234.567
 
                 // TODO Read decimals from format, two as default
-                let decimals = 3;
+                let decimals = match format.max_decimals {
+                    Some(d) => d,
+                    None => format.precision,
+                };
 
                 let decimal_part = (amount.fract() * BigInt::from(base.pow(decimals as u32 + 2)))
                     .abs()
