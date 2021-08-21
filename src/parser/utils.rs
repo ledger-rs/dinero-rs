@@ -85,12 +85,11 @@ pub(crate) fn count_decimals(amount: &str) -> usize {
 
     let number = match number.as_rule() {
         Rule::number => number,
-        Rule::currency => parsed.next().unwrap(),
-        x => {
-            dbg!(x);
-            return 0;
-        }
+        //Rule::currency is the only other option
+        _ => parsed.next().unwrap(),
     };
+
+    assert_eq!(number.as_rule(), Rule::number);
 
     let text = number.as_str();
     // dbg!(text);
