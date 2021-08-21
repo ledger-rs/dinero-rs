@@ -229,7 +229,7 @@ impl Display for Money {
                 let base: i32 = 10;
                 let mut integer_part = amount.trunc(); // -1.234.567
 
-                // TODO Read decimals from format, two as default
+                // Read number of decimals from format
                 let decimals = match format.max_decimals {
                     Some(d) => d,
                     None => format.precision,

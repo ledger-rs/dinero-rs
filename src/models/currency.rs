@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
+use std::ops::DerefMut;
 
 use super::super::parser::{GrammarParser, Rule};
 use crate::models::{FromDirective, HasAliases, HasName, Origin};
@@ -129,6 +130,16 @@ impl Currency {
     }
     pub fn update_precision(&self, precision: usize) {
         self.display_format.borrow_mut().update_precision(precision);
+    }
+    pub fn set_format(&self, format:&CurrencyDisplayFormat) {
+        let mut current_format = self.display_format.borrow_mut();
+        current_format.symbol_placement = format.symbol_placement;
+        current_format.negative_amount_display = format.negative_amount_display;
+        current_format.decimal_separator = format.decimal_separator;
+        current_format.digit_grouping = format.digit_grouping;
+        current_format.thousands_separator = format.thousands_separator;
+        current_format.precision = format.precision;
+        current_format.max_decimals = format.max_decimals;
     }
 }
 impl CurrencyDisplayFormat {

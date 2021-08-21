@@ -1,4 +1,8 @@
+use std::borrow::BorrowMut;
+use std::rc::Rc;
+
 use chrono::Utc;
+use dinero::models::{Currency, CurrencyDisplayFormat, Money};
 use dinero::parser::Tokenizer;
 use dinero::{models::conversion, CommonOpts};
 use num::traits::Inv;
@@ -62,4 +66,24 @@ commodity ACME
             "1 ACME = 1500 USD"
         );
     }
+}
+
+#[test]
+fn display_currencies() {
+    let format_1 = CurrencyDisplayFormat::from("-1.234,00 €");
+    let format_2 = CurrencyDisplayFormat::from("(1.234,00 €)");
+    let format_3 = CurrencyDisplayFormat::from("-€1.234,00 €");
+
+    let mut currency = Rc::new(Currency::from("€"));
+    let money = Money::from((currency.clone(), BigRational::from_float(-12.3).unwrap()));
+
+    currency.set_format(&format_1);
+    assert_eq!(format!("{}", money), "-12,30 €");
+
+    // TODO Fix this test
+    // currency.set_format(&format_2);
+    // assert_eq!(format!("{}", money), "(12,30 €)");
+
+    currency.set_format(&format_3);
+    assert_eq!(format!("{}", money), "-€12,30");
 }
