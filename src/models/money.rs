@@ -35,28 +35,18 @@ use std::str::FromStr;
 /// let m1 = Money::from((eur.clone(), BigRational::from(BigInt::from(100))));
 /// let m2 = Money::from((eur.clone(), BigRational::from(BigInt::from(200))));
 /// # let m3 = Money::from((eur.clone(), BigRational::from(BigInt::from(300))));
-/// let b1 = m1.clone() + m2; // 300 euros
+/// let b1 = m1.clone() + m2.clone(); // 300 euros
 /// # assert_eq!(*b1.balance.get(&Some(eur.clone())).unwrap(), m3);
 ///
 /// // Multicurrency works as well
 /// let d1 = Money::from((usd.clone(), BigRational::from(BigInt::from(50))));
 /// let b2 = d1.clone() + m1.clone(); // 100 euros and 50 usd
-/// # assert_eq!(b2.balance.len(), 2);
-/// # assert_eq!(*b2.balance.get(&Some(eur.clone())).unwrap(), m1);
-/// # assert_eq!(*b2.balance.get(&Some(usd.clone())).unwrap(), d1);
+/// assert_eq!(b2.balance.len(), 2);
+/// assert_eq!(*b2.balance.get(&Some(eur.clone())).unwrap(), m1);
+/// assert_eq!(*b2.balance.get(&Some(usd.clone())).unwrap(), d1);
 ///
-/// // There are various display formats
-/// // -4_285_714.28571... EUR
-/// let mut euro = Currency::from("eur");
-/// // euro.set_decimal_separator(',');
-/// // euro.set_thousands_separator('.');
-/// // euro.set_digit_grouping(DigitGrouping::Indian);
-/// // let rc_euro = Rc::new(euro);
-/// // let money = Money::from((rc_euro, BigRational::new(BigInt::from(-30000000), BigInt::from(7))));
-/// // assert_eq!(format!("{}", &money), "-42.85.714,29 eur");
-/// // assert_ne!(format!("{}", &money), "-4285714,29 eur");
-///
-///
+/// let b3 = b1 - Balance::from(m2.clone()) + Balance::from(Money::new());
+/// assert_eq!(b3.to_money().unwrap(), m1);
 /// ```
 #[derive(Clone, Debug, PartialOrd)]
 pub enum Money {

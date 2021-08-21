@@ -251,7 +251,8 @@ impl From<&str> for CurrencyDisplayFormat {
                 }
 
                 // Get the precision
-                display_format.precision = num_str.split(separators[len - 1].0).last().unwrap().len();
+                display_format.precision =
+                    num_str.split(separators[len - 1].0).last().unwrap().len();
             }
             None => display_format.digit_grouping = DigitGrouping::None,
         }
