@@ -6,14 +6,11 @@
 //! - Directive payee
 //! - Directive commodity
 
-use std::cell::RefCell;
 use std::collections::HashSet;
 use std::fs::read_to_string;
 use std::path::PathBuf;
 
-use crate::models::{
-    Account, Comment, Currency, CurrencyDisplayFormat, HasName, Payee, Transaction,
-};
+use crate::models::{Account, Comment, Currency, HasName, Payee, Transaction};
 use crate::parser::utils::count_decimals;
 use crate::{models, CommonOpts, List};
 use pest::Parser;
@@ -154,7 +151,7 @@ impl<'a> Tokenizer<'a> {
                                     ledger.tags.push(self.parse_tag(inner));
                                 }
                                 Rule::commodity => {
-                                    let mut commodity = self.parse_commodity(inner);
+                                    let commodity = self.parse_commodity(inner);
                                     if let Ok(old_commodity) =
                                         ledger.commodities.get(&commodity.get_name())
                                     {
@@ -194,7 +191,7 @@ impl<'a> Tokenizer<'a> {
                                                     );
                                                 }
 
-                                                let mut commodity = Currency::from(c.as_str());
+                                                let commodity = Currency::from(c.as_str());
                                                 if let Some(format_string) = format {
                                                     commodity.update_precision(count_decimals(
                                                         format_string.as_str(),

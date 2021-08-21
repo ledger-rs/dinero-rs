@@ -1,9 +1,8 @@
 use super::super::Rule;
 use std::collections::HashSet;
-use std::usize;
 
 use crate::models::{Comment, Currency};
-use crate::parser::utils::{parse_string, parse_usize};
+use crate::parser::utils::parse_string;
 use crate::parser::Tokenizer;
 
 use pest::iterators::Pair;
@@ -48,6 +47,10 @@ impl<'a> Tokenizer<'a> {
         if note.is_some() {
             currency.set_note(note.unwrap());
         }
+        if format.is_some() {
+            currency.format = format;
+        }
+
         currency
     }
 }

@@ -52,10 +52,6 @@ pub(crate) fn parse_rational(number: Pair<Rule>) -> BigRational {
     )
 }
 
-pub(crate) fn parse_usize(number: Pair<Rule>) -> usize {
-    usize::from_str(number.as_str()).unwrap()
-}
-
 pub(crate) fn parse_string(string: Pair<Rule>) -> String {
     match string.as_rule() {
         Rule::string => {
@@ -85,7 +81,7 @@ pub(crate) fn count_decimals(amount: &str) -> usize {
         .next()
         .unwrap()
         .into_inner();
-    let mut number = parsed.next().unwrap();
+    let number = parsed.next().unwrap();
 
     let number = match number.as_rule() {
         Rule::number => number,
