@@ -108,6 +108,7 @@ pub(crate) fn rational2float(number: &BigRational, decimals: usize) -> f64 {
     }
     let repr = format!("{}{}", integer_part, decimal_str);
     f64::from_str(repr.as_str()).unwrap()
+}
 /// Counts the number of decimals in an amount as defined in the grammar
 pub(crate) fn count_decimals(amount: &str) -> usize {
     let mut parsed = GrammarParser::parse(Rule::money, amount)
