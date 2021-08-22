@@ -171,8 +171,8 @@ pub fn execute(
         }
 
         table.add_row(row![
-            format!("{}", p.start),
-            format!("{}", p.end),
+            format!("{}", p.start.format(&options.date_format)),
+            format!("{}", p.end.format(&options.date_format)),
             r->format!("{}", p.initial_money.as_ref().unwrap()),
             r->format!("{}", p.cash_flow),
             r->format!("{}", p.final_money.as_ref().unwrap()),
@@ -196,7 +196,7 @@ pub fn execute(
         total_twr *= 1.0 + p.twr().to_f64().unwrap();
         // dbg!(&total_twr);
     }
-    total_twr = (total_twr - 1.0);
+    total_twr -= 1.0;
     let num_days = ((last_date.unwrap() - first_date.unwrap()).num_days() + 1) as f64;
     let twr_annualized = (1.0 + total_twr).powf(365.25 / num_days) - 1.0;
     println!("Total TWR: {:.2}%", total_twr * 100.0);
