@@ -228,7 +228,11 @@ impl Period {
         let initial = self.initial_money.as_ref().unwrap().get_amount();
         let flow = self.cash_flow.get_amount();
         if initial.is_zero() {
-            return -(end + &flow) / flow;
+            if flow.is_zero() {
+                return flow;
+            } else {
+                return -(end + &flow) / flow;
+            };
         }
         // (end - initial + flow) / initial
         let twr = (end - &initial + flow) / initial;
