@@ -3,6 +3,8 @@ Changelog file for dinero-rs project, a command line application for managing fi
 ## [0.32.0] - xxx
 ### Added
 - Implemented ```date-format```
+### Fixed
+- [```args-only```](https://github.com/frosklis/dinero-rs/issues/120)
 
 ## [0.31.0] - 2021-08-22 
 ### Added
