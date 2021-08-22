@@ -44,8 +44,14 @@ pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(),
     println!("{} postings", num_postings);
     println!("{} transactions", &ledger.transactions.len());
 
-    println!("First transaction: {}", first_transaction_date.format(&options.date_format));
-    println!("Last transaction: {}", last_transaction_date.format(&options.date_format));
+    println!(
+        "First transaction: {}",
+        first_transaction_date.format(&options.date_format)
+    );
+    println!(
+        "Last transaction: {}",
+        last_transaction_date.format(&options.date_format)
+    );
     println!("{} days between first and last transaction", num_days);
     println!(
         "{:.2} transactions per day (average)",
