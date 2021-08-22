@@ -1,7 +1,10 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
 
-## [0.31.0] - xxx
+## [0.31.0] - 2021-08-22 
+### Added
+- [The ```roi``` command](https://github.com/frosklis/dinero-rs/issues/115) is good enough
+
 ### Fixed
 - [Currencies are shown consistently in a report](https://github.com/frosklis/dinero-rs/issues/103)
 - Read quantities like ```-$0.25```, [bug](https://github.com/frosklis/dinero-rs/issues/126)
