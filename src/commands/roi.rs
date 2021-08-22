@@ -1,9 +1,10 @@
+use num::ToPrimitive;
 use prettytable::format;
 use prettytable::Table;
 
+use crate::app::PeriodGroup;
 use crate::commands::balance::convert_balance;
 use crate::models::{conversion, Balance, HasName, Ledger, Money};
-use crate::parser::utils::rational2float;
 use crate::parser::value_expr::build_root_node_from_expression;
 use crate::Error;
 use crate::{filter, CommonOpts};
@@ -19,6 +20,7 @@ pub fn execute(
     maybe_ledger: Option<Ledger>,
     cash_flows_query: Vec<String>,
     assets_value_query: Vec<String>,
+    frequency: Frequency,
 ) -> Result<(), Error> {
     let mut ledger = match maybe_ledger {
         Some(ledger) => ledger,
@@ -27,6 +29,7 @@ pub fn execute(
 
     // dbg!(&cash_flows_query);
     // dbg!(&assets_value_query);
+    // let frequency = Frequency::Monthly;
 
     // TODO exit gracefully
     assert!(
@@ -63,9 +66,9 @@ pub fn execute(
         .clone();
 
     let mut first_date = options.begin.clone();
-    let mut last_date = options.begin.clone();
+    // let mut last_date = options.begin.clone();
     if let Some(date) = first_date {
-        first_date = Some(month_beginning(date));
+        first_date = Some(period_beginning(date, frequency));
     }
 
     let mut periods: Vec<Period> = vec![];
@@ -76,8 +79,8 @@ pub fn execute(
             if !filter::filter(&options, &cash_flows_node, t, p, &mut ledger.commodities)? {
                 continue;
             }
-            let index = get_period_index(p.date, &mut periods);
-            let mut period = &mut periods[index];
+            let index = get_period_index(p.date, &mut periods, frequency);
+            let period = &mut periods[index];
             if p.amount
                 .as_ref()
                 .unwrap()
@@ -105,7 +108,7 @@ pub fn execute(
             if !filter::filter(&options, &assets_value_node, t, p, &mut ledger.commodities)? {
                 continue;
             }
-            let index = get_period_index(p.date, &mut periods);
+            let index = get_period_index(p.date, &mut periods, frequency);
             let mut period = &mut periods[index];
 
             period.final_balance =
@@ -125,11 +128,11 @@ pub fn execute(
         // Because the gap may be more than one month, we need a loop
         'inner: loop {
             let expected = last_date.unwrap() + Duration::days(1);
-            last_date = Some(month_ending(expected.clone()));
+            last_date = Some(period_ending(expected.clone(), frequency));
             if expected == p.start {
                 break 'inner;
             }
-            let new_period = Period::from_date(expected);
+            let new_period = Period::from_date(expected, frequency);
             insertions.push(new_period);
         }
     }
@@ -142,7 +145,9 @@ pub fn execute(
 
     let mut table = Table::new();
     table.set_format(*format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
-    table.set_titles(row!["Period", r->"Cash flow", r->"Final balance", r->"twr"]);
+    table.set_titles(
+        row![r->"Begin", r->"End", r->"Value (begin)", r->"Cash flow", r->"Value (end)", r->"TWR", r->"TWR_y"],
+    );
     for (i, p) in periods.iter_mut().enumerate() {
         if i > 0 {
             p.initial_balance = prev_final_balance;
@@ -168,10 +173,13 @@ pub fn execute(
         }
 
         table.add_row(row![
-            format!("{}", p.start)[0..7],
+            format!("{}", p.start),
+            format!("{}", p.end),
+            r->format!("{}", p.initial_money.as_ref().unwrap()),
             r->format!("{}", p.cash_flow),
             r->format!("{}", p.final_money.as_ref().unwrap()),
-            r->format!("{}%", rational2float(&(&p.twr() * BigInt::from(100)), 2)),
+            r->format!("{:.2}%", (&p.twr() * BigInt::from(100)).to_f64().unwrap()),
+            r->format!("{:.2}%", &p.twr_annualized() * 100 as f64),
         ]);
 
         prev_final_balance = p.final_balance.clone();
@@ -182,14 +190,14 @@ pub fn execute(
     Ok(())
 }
 
-fn get_period_index(date: NaiveDate, periods: &mut Vec<Period>) -> usize {
-    let begin = month_beginning(date);
+fn get_period_index(date: NaiveDate, periods: &mut Vec<Period>, frequency: Frequency) -> usize {
+    let begin = period_beginning(date, frequency);
     for (i, period) in periods.iter().enumerate() {
         if period.start == begin {
             return i;
         }
     }
-    let period = Period::from_date(date);
+    let period = Period::from_date(date, frequency);
     periods.insert(0, period);
     0
 }
@@ -204,10 +212,10 @@ struct Period {
     final_money: Option<Money>,
 }
 impl Period {
-    fn from_date(d: NaiveDate) -> Self {
+    fn from_date(d: NaiveDate, frequency: Frequency) -> Self {
         Period {
-            start: month_beginning(d),
-            end: month_ending(d),
+            start: period_beginning(d, frequency),
+            end: period_ending(d, frequency),
             initial_balance: Balance::new(),
             final_balance: Balance::new(),
             cash_flow: Money::Zero,
@@ -222,29 +230,138 @@ impl Period {
     fn twr(&self) -> BigRational {
         let end = self.final_money.as_ref().unwrap().get_amount();
         let initial = self.initial_money.as_ref().unwrap().get_amount();
-        if initial.is_zero() {
-            return initial;
-        }
         let flow = self.cash_flow.get_amount();
+        if initial.is_zero() {
+            return -(end + &flow) / flow;
+        }
         // (end - initial + flow) / initial
-        let twr = (end + flow) / initial - BigInt::from(1);
+        let twr = (end - &initial + flow) / initial;
         twr
+    }
+
+    fn twr_annualized(&self) -> f64 {
+        let twr = self.twr().to_f64().unwrap() + 1.0;
+        let num_days = 1 + (self.end - self.start).num_days();
+        twr.powf(365.25 / (num_days as f64)) - 1.0
     }
 }
 
-/// Returns the first day of the month
-fn month_beginning(d: NaiveDate) -> NaiveDate {
-    NaiveDate::from_ymd(d.year(), d.month(), 1)
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum Frequency {
+    Monthly,
+    Quarterly,
+    Yearly,
 }
 
-/// Returns the last day of the month
-fn month_ending(d: NaiveDate) -> NaiveDate {
+impl From<PeriodGroup> for Frequency {
+    fn from(p: PeriodGroup) -> Self {
+        if !p.monthly & !p.quarterly & p.yearly {
+            Frequency::Yearly
+        } else if !p.monthly & p.quarterly & !p.yearly {
+            Frequency::Quarterly
+        } else if p.monthly & !p.quarterly & !p.yearly {
+            Frequency::Monthly
+        }
+        // default to yearly
+        else if !p.monthly & !p.quarterly & !p.yearly {
+            Frequency::Yearly
+        } else {
+            panic!("Incompatible options")
+        }
+    }
+}
+/// Returns the first day of the month
+fn period_beginning(d: NaiveDate, frequency: Frequency) -> NaiveDate {
+    match frequency {
+        Frequency::Monthly => NaiveDate::from_ymd(d.year(), d.month(), 1),
+        Frequency::Quarterly => NaiveDate::from_ymd(d.year(), ((d.month() - 1) / 3) * 3 + 1, 1),
+        Frequency::Yearly => NaiveDate::from_ymd(d.year(), 1, 1),
+    }
+}
+
+/// Returns the last day of the period
+fn period_ending(d: NaiveDate, frequency: Frequency) -> NaiveDate {
+    // Find the beginning of the next period and subtract one day
     let month: u32;
+
     match d.month() {
         12 => NaiveDate::from_ymd(d.year(), 12, 31),
-        other => {
-            month = other + 1;
-            NaiveDate::from_ymd(d.year(), month, 1) - Duration::days(1)
-        }
+        other => match frequency {
+            Frequency::Monthly => {
+                month = other + 1;
+                NaiveDate::from_ymd(d.year(), month, 1) - Duration::days(1)
+            }
+            Frequency::Quarterly => {
+                if d.month() > 9 {
+                    NaiveDate::from_ymd(d.year(), 12, 31)
+                } else {
+                    NaiveDate::from_ymd(d.year(), ((d.month() - 1) / 3) * 3 + 4, 1)
+                        - Duration::days(1)
+                }
+            }
+            Frequency::Yearly => NaiveDate::from_ymd(d.year(), 12, 31),
+        },
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_january() {
+        let date = NaiveDate::from_ymd(2019, 1, 15);
+        assert_eq!(
+            period_ending(date, Frequency::Monthly),
+            NaiveDate::from_ymd(2019, 1, 31)
+        );
+        assert_eq!(
+            period_ending(date, Frequency::Quarterly),
+            NaiveDate::from_ymd(2019, 3, 31)
+        );
+        assert_eq!(
+            period_ending(date, Frequency::Yearly),
+            NaiveDate::from_ymd(2019, 12, 31)
+        );
+        assert_eq!(
+            period_beginning(date, Frequency::Monthly),
+            NaiveDate::from_ymd(2019, 1, 1)
+        );
+        assert_eq!(
+            period_beginning(date, Frequency::Quarterly),
+            NaiveDate::from_ymd(2019, 1, 1)
+        );
+        assert_eq!(
+            period_beginning(date, Frequency::Yearly),
+            NaiveDate::from_ymd(2019, 1, 1)
+        );
+    }
+    #[test]
+    fn test_march() {
+        let date = NaiveDate::from_ymd(2019, 3, 15);
+        assert_eq!(
+            period_ending(date, Frequency::Monthly),
+            NaiveDate::from_ymd(2019, 3, 31)
+        );
+        assert_eq!(
+            period_ending(date, Frequency::Quarterly),
+            NaiveDate::from_ymd(2019, 3, 31)
+        );
+        assert_eq!(
+            period_ending(date, Frequency::Yearly),
+            NaiveDate::from_ymd(2019, 12, 31)
+        );
+        assert_eq!(
+            period_beginning(date, Frequency::Monthly),
+            NaiveDate::from_ymd(2019, 3, 1)
+        );
+        assert_eq!(
+            period_beginning(date, Frequency::Quarterly),
+            NaiveDate::from_ymd(2019, 1, 1)
+        );
+        assert_eq!(
+            period_beginning(date, Frequency::Yearly),
+            NaiveDate::from_ymd(2019, 1, 1)
+        );
     }
 }

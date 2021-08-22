@@ -12,6 +12,7 @@ use two_timer;
 use lazy_static::lazy_static;
 use regex::Regex;
 
+use crate::commands::roi::Frequency;
 use crate::commands::{accounts, balance, commodities, payees, prices, register, roi, statistics};
 use crate::models::Ledger;
 use crate::Error;
@@ -63,6 +64,9 @@ enum Command {
         /// Query that returns the asset value
         #[structopt(long = "--assets-value")]
         assets_value: Vec<String>,
+
+        #[structopt(flatten)]
+        period_grouping: PeriodGroup,
     },
 }
 
@@ -77,6 +81,7 @@ struct Opt {
     cmd: Command,
 }
 
+/// Options for the REPL interface
 #[derive(Debug, StructOpt)]
 struct Repl {
     #[structopt(flatten)]
@@ -184,6 +189,20 @@ impl CommonOpts {
             collapse: false,
         }
     }
+}
+
+/// Groups of time
+#[derive(StructOpt, Clone, Debug)]
+pub struct PeriodGroup {
+    /// Group by year
+    #[structopt(long = "--yearly", short = "-Y")]
+    pub yearly: bool,
+    /// Group by quarter
+    #[structopt(long = "--quarterly", short = "-Q")]
+    pub quarterly: bool,
+    /// Group by month
+    #[structopt(long = "--monthly", short = "-W")]
+    pub monthly: bool,
 }
 
 /// Entry point for the command line app
@@ -378,11 +397,18 @@ fn execute_command(opt: Opt, maybe_ledger: Option<Ledger>) -> Result<(), ()> {
             options,
             cash_flows,
             assets_value,
+            period_grouping,
         } => {
             if options.force_color {
                 env::set_var("CLICOLOR_FORCE", "1");
             }
-            roi::execute(&options, maybe_ledger, cash_flows, assets_value)
+            roi::execute(
+                &options,
+                maybe_ledger,
+                cash_flows,
+                assets_value,
+                Frequency::from(period_grouping),
+            )
         }
         Command::Commodities(options) => {
             if options.force_color {
