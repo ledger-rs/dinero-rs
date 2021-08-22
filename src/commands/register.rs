@@ -138,14 +138,14 @@ pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(),
                 match t.get_payee(&ledger.payees) {
                     Some(payee) => print!(
                         "{:w1$}{:width$}",
-                        format!("{}", t.date.unwrap().format("%y-%b-%d")).green(),
+                        format!("{}", t.date.unwrap().format(&options.date_format)).green(),
                         clip(&format!("{} ", payee), w_description),
                         width = w_description,
                         w1 = w_date
                     ),
                     None => print!(
                         "{:w1$}{:width$}",
-                        format!("{}", t.date.unwrap().format("%y-%b-%d")).green(),
+                        format!("{}", t.date.unwrap().format(&options.date_format)).green(),
                         clip(&format!("{} ", ""), w_description),
                         width = w_description,
                         w1 = w_date

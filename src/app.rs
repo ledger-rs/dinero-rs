@@ -130,8 +130,8 @@ pub struct CommonOpts {
     pub exchange: Option<String>,
 
     /// TODO Date format
-    #[structopt(long = "--date-format")]
-    date_format: Option<String>,
+    #[structopt(long = "--date-format", default_value="%y-%b-%d")]
+    pub date_format: String,
 
     #[structopt(long = "--force-color")]
     force_color: bool,
@@ -178,7 +178,7 @@ impl CommonOpts {
             now: None,
             no_balance_check: false,
             exchange: None,
-            date_format: None,
+            date_format: "%y-%b-%d".into(),
             force_color: false,
             force_pager: false,
             effective: false,
