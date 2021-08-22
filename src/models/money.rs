@@ -230,7 +230,7 @@ impl Display for Money {
                 };
 
                 // num = trunc + fract
-                let integer_part = amount.trunc().to_i128().unwrap(); // -1.234.567
+                let integer_part = amount.trunc().abs().to_i128().unwrap(); // -1.234.567
 
                 let decimal_part = amount.fract().to_f64().unwrap();
 

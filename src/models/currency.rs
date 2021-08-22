@@ -272,7 +272,6 @@ impl From<&str> for CurrencyDisplayFormat {
                         _ => eprintln!("Wrong number format: {}", &format),
                     }
                 }
-
             }
             None => display_format.digit_grouping = DigitGrouping::None,
         }
