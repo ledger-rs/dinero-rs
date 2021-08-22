@@ -21,7 +21,7 @@ commit_message="[ci skip] ${message}"
 # Update Cargo.toml
 line_number=$(grep -En "version = \"([0-9]+\.[0-9]+.[0-9]+)\"" Cargo.toml | grep -Eo -m 1 "[0-9]+" | head -n 1)
 
-sed -i "${line_number}s/.*/version = \"${bumped}\"/" Cargo.toml 
+sed -i "${line_number}s/.*/version = \"${bumped}-dev\"/" Cargo.toml 
 
 # Update Changelog
 sed -i "3i## [${bumped}] - xxx" CHANGELOG.md
