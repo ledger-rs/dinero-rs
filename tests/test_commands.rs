@@ -427,3 +427,33 @@ fn roi() {
 
     test_args(args);
 }
+
+/// It should be equivalent to pass the args-only to passing an empty ledgerrc
+#[test]
+fn args_only() {
+    let args_1 = &[
+        "bal",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
+        "-f",
+        "tests/example_files/hledger_roi.ledger",
+    ];
+    let args_2 = &[
+        "bal",
+        "--args-only",
+        "-f",
+        "tests/example_files/hledger_roi.ledger",
+    ];
+
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args_1).assert();
+    let output_1 = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    let assert_2 = Command::cargo_bin("dinero").unwrap().args(args_2).assert();
+    let output_2 = String::from_utf8(assert_2.get_output().to_owned().stdout).unwrap();
+
+    println!("{}", &output_1);
+    println!("{}", &output_2);
+    assert_eq!(output_1, output_2);
+
+    test_args(args_1);
+    test_args(args_2);
+}

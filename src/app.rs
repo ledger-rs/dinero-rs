@@ -211,6 +211,9 @@ const NO_INIT_FILE_FLAG: &str = "--args-only";
 const LEDGER_PATHS_UNDER_DIR: &str = "~/.ledgerrc";
 const LEDGER_PATHS: &str = ".ledgerrc";
 
+/// Load parameters from an external configuration file
+///
+/// It checks whether ```--args-only``` has been passed so that the configuration file is ignored
 fn init_paths(args: Vec<String>) -> Result<Vec<String>, ()> {
     let mut possible_paths: Vec<String> = Vec::new();
     let mut ignore_init = false;
@@ -265,6 +268,7 @@ pub fn run_app(input_args: Vec<String>) -> Result<(), ()> {
                     println!("dinero-rs v{}", VERSION);
 
                     let start = Instant::now();
+
                     let mut ledger = Ledger::try_from(&opt.options).unwrap();
                     let duration = start.elapsed();
                     println!(
