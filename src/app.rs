@@ -130,7 +130,7 @@ pub struct CommonOpts {
     pub exchange: Option<String>,
 
     /// TODO Date format
-    #[structopt(long = "--date-format", default_value="%y-%b-%d")]
+    #[structopt(long = "--date-format", default_value = "%y-%b-%d")]
     pub date_format: String,
 
     #[structopt(long = "--force-color")]

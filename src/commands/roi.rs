@@ -171,8 +171,8 @@ pub fn execute(
         }
 
         table.add_row(row![
-            format!("{}", p.start),
-            format!("{}", p.end),
+            format!("{}", p.start.format(&options.date_format)),
+            format!("{}", p.end.format(&options.date_format)),
             r->format!("{}", p.initial_money.as_ref().unwrap()),
             r->format!("{}", p.cash_flow),
             r->format!("{}", p.final_money.as_ref().unwrap()),
