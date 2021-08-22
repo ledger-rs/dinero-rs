@@ -159,7 +159,9 @@ fn parse_posting(
                 } else {
                     Some(PriceType::PerUnit)
                 };
-                let mut money = part.into_inner().next().unwrap().into_inner();
+                let mut inner = part.into_inner();
+                let negative = inner.as_str().starts_with("-");
+                let mut money = inner.next().unwrap().into_inner();
                 let money_format = money.as_str().to_string();
                 let amount: BigRational;
                 let mut currency = None;
@@ -171,7 +173,11 @@ fn parse_posting(
                         }
                         Rule::currency => {
                             currency = Some(parse_string(money_part));
-                            amount = parse_rational(money.next().unwrap());
+                            if negative {
+                                amount = -parse_rational(money.next().unwrap());
+                            } else {
+                                amount = parse_rational(money.next().unwrap());
+                            }
                         }
                         _ => amount = BigRational::new(BigInt::from(0), BigInt::from(1)),
                     },

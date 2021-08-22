@@ -60,3 +60,5 @@ pub mod parser;
 pub use app::{run_app, CommonOpts};
 pub(crate) use error::{Error, LedgerError};
 pub use list::List;
+#[macro_use]
+extern crate prettytable;

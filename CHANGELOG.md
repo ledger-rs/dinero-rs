@@ -4,6 +4,7 @@ Changelog file for dinero-rs project, a command line application for managing fi
 ## [0.31.0] - xxx
 ### Fixed
 - [Currencies are shown consistently in a report](https://github.com/frosklis/dinero-rs/issues/103)
+- Read quantities like ```-$0.25```, [bug](https://github.com/frosklis/dinero-rs/issues/126)
 
 ## [0.30.0] - 2021-08-18
 ## Added
