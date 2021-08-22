@@ -201,7 +201,7 @@ pub struct PeriodGroup {
     #[structopt(long = "--quarterly", short = "-Q")]
     pub quarterly: bool,
     /// Group by month
-    #[structopt(long = "--monthly", short = "-W")]
+    #[structopt(long = "--monthly", short = "-M")]
     pub monthly: bool,
 }
 

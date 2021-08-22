@@ -4,7 +4,7 @@ use prettytable::Table;
 
 use crate::app::PeriodGroup;
 use crate::commands::balance::convert_balance;
-use crate::models::{conversion, Balance, HasName, Ledger, Money};
+use crate::models::{conversion, Balance, Ledger, Money};
 use crate::parser::value_expr::build_root_node_from_expression;
 use crate::Error;
 use crate::{filter, CommonOpts};
@@ -12,7 +12,6 @@ use chrono::{Datelike, Duration, NaiveDate};
 use num::{BigInt, BigRational, Zero};
 use std::collections::HashMap;
 use std::convert::TryFrom;
-use std::rc::Rc;
 
 /// ROI (return on investment) report
 pub fn execute(
@@ -26,10 +25,6 @@ pub fn execute(
         Some(ledger) => ledger,
         None => Ledger::try_from(options)?,
     };
-
-    // dbg!(&cash_flows_query);
-    // dbg!(&assets_value_query);
-    // let frequency = Frequency::Monthly;
 
     // TODO exit gracefully
     assert!(
@@ -60,10 +55,7 @@ pub fn execute(
     };
 
     // Get a currency
-    let currency = &ledger
-        .commodities
-        .get(&options.exchange.as_ref().unwrap())?
-        .clone();
+    let mut currency = None;
 
     let mut first_date = options.begin.clone();
     // let mut last_date = options.begin.clone();
@@ -81,23 +73,26 @@ pub fn execute(
             }
             let index = get_period_index(p.date, &mut periods, frequency);
             let period = &mut periods[index];
-            if p.amount
-                .as_ref()
-                .unwrap()
-                .get_commodity()
-                .unwrap()
-                .get_name()
-                == currency.get_name()
+
+            match currency.as_ref() {
+                Some(_) => (),
+                None => {
+                    currency = Some(p.amount.as_ref().unwrap().get_commodity().unwrap().clone())
+                }
+            }
+            if p.amount.as_ref().unwrap().get_commodity().unwrap()
+                == currency.as_ref().unwrap().clone()
             {
                 period.add_cash(p.amount.as_ref().unwrap().to_owned());
             } else {
-                let multipliers = conversion(currency.clone(), p.date, &ledger.prices);
+                let multipliers =
+                    conversion(currency.as_ref().unwrap().clone(), p.date, &ledger.prices);
                 let mult = multipliers
                     .get(p.amount.as_ref().unwrap().get_commodity().unwrap().as_ref())
                     .unwrap();
                 let new_amount = Money::Money {
                     amount: p.amount.as_ref().unwrap().get_amount() * mult.clone(),
-                    currency: Rc::new(currency.as_ref().clone()),
+                    currency: currency.as_ref().unwrap().clone(),
                 };
                 period.add_cash(new_amount);
             }
@@ -156,17 +151,18 @@ pub fn execute(
         p.final_balance = p.final_balance.clone() + p.initial_balance.clone();
 
         if p.final_money.is_none() {
-            let multipliers = conversion(currency.clone(), p.end, &ledger.prices);
+            let multipliers = conversion(currency.as_ref().unwrap().clone(), p.end, &ledger.prices);
             p.final_money = Some(
-                convert_balance(&p.final_balance, &multipliers, currency)
+                convert_balance(&p.final_balance, &multipliers, currency.as_ref().unwrap())
                     .to_money()
                     .unwrap(),
             );
         }
         if p.initial_money.is_none() {
-            let multipliers = conversion(currency.clone(), p.start, &ledger.prices);
+            let multipliers =
+                conversion(currency.as_ref().unwrap().clone(), p.start, &ledger.prices);
             p.initial_money = Some(
-                convert_balance(&p.initial_balance, &multipliers, currency)
+                convert_balance(&p.initial_balance, &multipliers, currency.as_ref().unwrap())
                     .to_money()
                     .unwrap(),
             );
@@ -253,6 +249,7 @@ pub enum Frequency {
     Yearly,
 }
 
+/// Period groups
 impl From<PeriodGroup> for Frequency {
     fn from(p: PeriodGroup) -> Self {
         if !p.monthly & !p.quarterly & p.yearly {

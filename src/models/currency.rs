@@ -65,7 +65,7 @@ pub struct CurrencyDisplayFormat {
     pub negative_amount_display: NegativeAmountDisplay,
     pub decimal_separator: Separator,
     pub digit_grouping: DigitGrouping,
-    pub thousands_separator: Separator,
+    pub thousands_separator: Option<Separator>,
     pub precision: usize,
     pub max_decimals: Option<usize>,
 }
@@ -139,6 +139,7 @@ impl Currency {
         current_format.thousands_separator = format.thousands_separator;
         current_format.precision = format.precision;
         current_format.max_decimals = format.max_decimals;
+        // dbg!(format);
     }
 }
 impl CurrencyDisplayFormat {
@@ -157,20 +158,21 @@ impl CurrencyDisplayFormat {
             x => Separator::Other(x),
         };
     }
-    pub fn get_thousands_separator_str(&self) -> char {
+    pub fn get_thousands_separator_str(&self) -> Option<char> {
         match self.thousands_separator {
-            Separator::Dot => '.',
-            Separator::Comma => ',',
-            Separator::Space => '\u{202f}',
-            Separator::Other(x) => x,
+            Some(Separator::Dot) => Some('.'),
+            Some(Separator::Comma) => Some(','),
+            Some(Separator::Space) => Some('\u{202f}'),
+            Some(Separator::Other(x)) => Some(x),
+            None => None,
         }
     }
     pub fn set_thousands_separator(&mut self, separator: char) {
         self.thousands_separator = match separator {
-            '.' => Separator::Dot,
-            ',' => Separator::Comma,
-            '\u{202f}' => Separator::Space,
-            x => Separator::Other(x),
+            '.' => Some(Separator::Dot),
+            ',' => Some(Separator::Comma),
+            '\u{202f}' => Some(Separator::Space),
+            x => Some(Separator::Other(x)),
         };
     }
     pub fn get_digit_grouping(&self) -> DigitGrouping {
@@ -187,11 +189,18 @@ impl CurrencyDisplayFormat {
     pub fn set_precision(&mut self, precision: usize) {
         self.max_decimals = Some(precision);
     }
+    pub fn get_precision(&self) -> usize {
+        match self.max_decimals {
+            Some(precision) => precision,
+            None => self.precision,
+        }
+    }
 }
 
 impl From<&str> for CurrencyDisplayFormat {
     /// Sets the format of the currency representation
     fn from(format: &str) -> Self {
+        // dbg!(&format);
         let mut display_format = DEFAULT_DISPLAY_FORMAT;
         let mut parsed = GrammarParser::parse(Rule::currency_format, format)
             .unwrap()
@@ -243,10 +252,14 @@ impl From<&str> for CurrencyDisplayFormat {
                     separators.push((sep.as_str().chars().nth(0).unwrap(), sep.as_span().start()));
                 }
                 let len = separators.len();
+                display_format.thousands_separator = None;
                 if len == 0 {
                     display_format.digit_grouping = DigitGrouping::None;
                 } else {
                     display_format.set_decimal_separator(separators[len - 1].0);
+                    // Get the precision
+                    display_format.max_decimals =
+                        Some(num_str.split(separators[len - 1].0).last().unwrap().len());
                 }
                 if len > 1 {
                     display_format.set_thousands_separator(separators[len - 2].0);
@@ -260,9 +273,6 @@ impl From<&str> for CurrencyDisplayFormat {
                     }
                 }
 
-                // Get the precision
-                display_format.precision =
-                    num_str.split(separators[len - 1].0).last().unwrap().len();
             }
             None => display_format.digit_grouping = DigitGrouping::None,
         }
@@ -332,7 +342,7 @@ const DEFAULT_DISPLAY_FORMAT: CurrencyDisplayFormat = CurrencyDisplayFormat {
     negative_amount_display: NegativeAmountDisplay::BeforeSymbolAndNumber,
     decimal_separator: Separator::Dot,
     digit_grouping: DigitGrouping::Thousands,
-    thousands_separator: Separator::Comma,
+    thousands_separator: Some(Separator::Comma),
     precision: 0,
     max_decimals: None,
 };
@@ -345,8 +355,8 @@ mod tests {
         let format_str = "-1.234,00 €";
         let format = CurrencyDisplayFormat::from(format_str);
 
-        assert_eq!(format.precision, 2);
-        assert_eq!(format.get_thousands_separator_str(), '.');
+        assert_eq!(format.get_precision(), 2);
+        assert_eq!(format.get_thousands_separator_str(), Some('.'));
         assert_eq!(format.get_decimal_separator_str(), ',');
         assert_eq!(format.get_digit_grouping(), DigitGrouping::Thousands);
         assert_eq!(
@@ -363,13 +373,31 @@ mod tests {
         let format_str = "($1,234.00)";
         let format = CurrencyDisplayFormat::from(format_str);
 
-        assert_eq!(format.precision, 2);
-        assert_eq!(format.get_thousands_separator_str(), ',');
+        assert_eq!(format.get_precision(), 2);
+        assert_eq!(format.get_thousands_separator_str(), Some(','));
         assert_eq!(format.get_decimal_separator_str(), '.');
         assert_eq!(format.get_digit_grouping(), DigitGrouping::Thousands);
         assert_eq!(
             format.symbol_placement,
             CurrencySymbolPlacement::BeforeAmount
+        );
+        assert_eq!(
+            format.negative_amount_display,
+            NegativeAmountDisplay::BeforeSymbolAndNumber
+        );
+    }
+    #[test]
+    fn format_3() {
+        let format_str = "-1234,00 €";
+        let format = CurrencyDisplayFormat::from(format_str);
+
+        assert_eq!(format.get_precision(), 2);
+        assert_eq!(format.get_thousands_separator_str(), None);
+        assert_eq!(format.get_decimal_separator_str(), ',');
+        // assert_eq!(format.get_digit_grouping(), DigitGrouping::Thousands);
+        assert_eq!(
+            format.symbol_placement,
+            CurrencySymbolPlacement::AfterAmount
         );
         assert_eq!(
             format.negative_amount_display,

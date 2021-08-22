@@ -1,7 +1,7 @@
 use super::super::Rule;
 use std::collections::HashSet;
 
-use crate::models::{Comment, Currency};
+use crate::models::{Comment, Currency, CurrencyDisplayFormat};
 use crate::parser::utils::parse_string;
 use crate::parser::Tokenizer;
 
@@ -48,7 +48,8 @@ impl<'a> Tokenizer<'a> {
             currency.set_note(note.unwrap());
         }
         if format.is_some() {
-            currency.format = format;
+            currency.format = format.clone();
+            currency.set_format(&CurrencyDisplayFormat::from(format.unwrap().as_str()));
         }
 
         currency

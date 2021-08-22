@@ -230,7 +230,7 @@ impl Display for Money {
                 };
 
                 // num = trunc + fract
-                let mut integer_part = amount.trunc().to_i128().unwrap(); // -1.234.567
+                let integer_part = amount.trunc().to_i128().unwrap(); // -1.234.567
 
                 let decimal_part = amount.fract().to_f64().unwrap();
 
@@ -238,7 +238,10 @@ impl Display for Money {
                 let mut decimal_str = if decimals == 0 {
                     String::new()
                 } else {
-                    format!("{:.*}", decimals, &decimal_part).split(".").last().unwrap()
+                    format!("{:.*}", decimals, &decimal_part)
+                        .split(".")
+                        .last()
+                        .unwrap()
                         .into()
                 };
                 // now add the dot
@@ -253,23 +256,28 @@ impl Display for Money {
                             let mut group_size = 3;
                             let mut counter = 0;
                             let mut reversed = vec![];
-                            let thousands_separator = format.get_thousands_separator_str();
-                            for c in integer_part.to_string().chars().rev() {
-                                if c == '-' {
-                                    continue;
-                                }
+                            match format.get_thousands_separator_str() {
+                                Some(character) => {
+                                    let thousands_separator = character;
+                                    for c in integer_part.to_string().chars().rev() {
+                                        if c == '-' {
+                                            continue;
+                                        }
 
-                                if counter == group_size {
-                                    reversed.push(thousands_separator);
-                                    if grouping == DigitGrouping::Indian {
-                                        group_size = 2;
+                                        if counter == group_size {
+                                            reversed.push(thousands_separator);
+                                            if grouping == DigitGrouping::Indian {
+                                                group_size = 2;
+                                            }
+                                            counter = 0;
+                                        }
+                                        reversed.push(c);
+                                        counter += 1;
                                     }
-                                    counter = 0;
+                                    reversed.iter().rev().collect()
                                 }
-                                reversed.push(c);
-                                counter += 1;
+                                None => integer_part.to_string(),
                             }
-                            reversed.iter().rev().collect()
                         }
                     }
                 };
