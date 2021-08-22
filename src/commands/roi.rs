@@ -57,11 +57,8 @@ pub fn execute(
     // Get a currency
     let mut currency = None;
 
-    let mut first_date = options.begin.clone();
-    // let mut last_date = options.begin.clone();
-    if let Some(date) = first_date {
-        first_date = Some(period_beginning(date, frequency));
-    }
+    let mut first_date = None;
+    let mut last_date = None;
 
     let mut periods: Vec<Period> = vec![];
 
@@ -73,6 +70,11 @@ pub fn execute(
             }
             let index = get_period_index(p.date, &mut periods, frequency);
             let period = &mut periods[index];
+
+            if first_date.is_none() {
+                first_date = Some(p.date.clone());
+            }
+            last_date = Some(p.date.clone());
 
             match currency.as_ref() {
                 Some(_) => (),
@@ -111,19 +113,19 @@ pub fn execute(
         } // balances
     }
 
-    let mut last_date = None;
     let mut insertions: Vec<Period> = vec![];
     periods.sort_by(|a, b| a.start.partial_cmp(&b.start).unwrap());
 
+    let mut last_period_date = None;
     for p in periods.iter_mut() {
-        if last_date.is_none() {
-            last_date = Some(p.end.clone());
+        if last_period_date.is_none() {
+            last_period_date = Some(p.end.clone());
             continue;
         }
         // Because the gap may be more than one month, we need a loop
         'inner: loop {
-            let expected = last_date.unwrap() + Duration::days(1);
-            last_date = Some(period_ending(expected.clone(), frequency));
+            let expected = last_period_date.unwrap() + Duration::days(1);
+            last_period_date = Some(period_ending(expected.clone(), frequency));
             if expected == p.start {
                 break 'inner;
             }
@@ -183,6 +185,23 @@ pub fn execute(
     }
     // Print the table to stdout
     table.printstd();
+
+    // Add a summary
+    // Final unit price: 22720.00/134.93=168.38 U.
+    // Total TWR: 68.38%.
+    // Period: 5.41 years.
+    // Annualized TWR: 10.12%
+    let mut total_twr = 1.0;
+    for p in periods.iter() {
+        total_twr *= 1.0 + p.twr().to_f64().unwrap();
+        // dbg!(&total_twr);
+    }
+    total_twr = (total_twr - 1.0);
+    let num_days = ((last_date.unwrap() - first_date.unwrap()).num_days() + 1) as f64;
+    let twr_annualized = (1.0 + total_twr).powf(365.25 / num_days) - 1.0;
+    println!("Total TWR: {:.2}%", total_twr * 100.0);
+    println!("Period: {:.2} years", num_days / 365.25);
+    println!("Annualized TWR: {:.2}%", twr_annualized * 100.0);
     Ok(())
 }
 
