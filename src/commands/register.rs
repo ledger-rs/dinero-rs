@@ -145,7 +145,7 @@ pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(),
                     ),
                     None => print!(
                         "{:w1$}{:width$}",
-                        format!("{}", t.date.unwrap()),
+                        format!("{}", t.date.unwrap()).green(),
                         clip(&format!("{} ", ""), w_description),
                         width = w_description,
                         w1 = w_date

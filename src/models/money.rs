@@ -13,7 +13,6 @@ use crate::models::{Currency, HasName};
 use num::traits::Inv;
 use std::borrow::Borrow;
 use std::cmp::Ordering;
-use std::str::FromStr;
 
 /// Money representation: an amount and a currency
 ///
