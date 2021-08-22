@@ -3,8 +3,8 @@ use std::fmt::{Display, Formatter};
 use std::ops::{Add, Div, Mul, Neg, Sub};
 use std::rc::Rc;
 
-use num;
 use num::rational::BigRational;
+use num::{self, ToPrimitive};
 use num::{BigInt, Signed, Zero};
 
 use crate::models::balance::Balance;
@@ -221,53 +221,34 @@ impl Display for Money {
             Money::Zero => write!(f, "{}", "0"),
             Money::Money { amount, currency } => {
                 // Suppose: -1.234.567,000358 EUR
-
                 // Get the format
                 let format = currency.display_format.borrow();
-
-                // num = trunc + fract
-                let base: i32 = 10;
-                let mut integer_part = amount.trunc(); // -1.234.567
-
                 // Read number of decimals from format
                 let decimals = match format.max_decimals {
                     Some(d) => d,
                     None => format.precision,
                 };
 
-                let decimal_part = (amount.fract() * BigInt::from(base.pow(decimals as u32 + 2)))
-                    .abs()
-                    .trunc();
+                // num = trunc + fract
+                let mut integer_part = amount.trunc().to_i128().unwrap(); // -1.234.567
+
+                let decimal_part = amount.fract().to_f64().unwrap();
+
+                // decimal_str holds the decimal part without the dot (decimal separator)
                 let mut decimal_str = if decimals == 0 {
                     String::new()
                 } else {
-                    format!("{:0width$}", decimal_part.numer(), width = decimals + 2)
+                    format!("{:.*}", decimals, &decimal_part).split(".").last().unwrap()
+                        .into()
                 };
+                // now add the dot
                 if decimals > 0 {
-                    decimal_str.truncate(decimals + 1);
-
-                    let mut decimal = if u64::from_str(&decimal_str).unwrap() % 10 >= 5 {
-                        u64::from_str(&decimal_str).unwrap() / 10 + 1
-                    } else {
-                        u64::from_str(&decimal_str).unwrap() / 10
-                    };
-                    let len = format!("{}", decimal).len();
-                    if len == decimals + 1 {
-                        decimal = 0;
-                        if integer_part.is_positive() {
-                            integer_part += BigInt::from(1);
-                        } else {
-                            integer_part -= BigInt::from(1);
-                        }
-                    }
-                    let decimal_separator = format.get_decimal_separator_str();
-                    decimal_str =
-                        format!("{}{:0width$}", decimal_separator, decimal, width = decimals);
+                    decimal_str = format!("{}{}", format.get_decimal_separator_str(), decimal_str);
                 }
 
                 let integer_str = {
                     match format.get_digit_grouping() {
-                        DigitGrouping::None => integer_part.numer().abs().to_string(), // Do nothing
+                        DigitGrouping::None => integer_part.to_string(), // Do nothing
                         grouping => {
                             let mut group_size = 3;
                             let mut counter = 0;
