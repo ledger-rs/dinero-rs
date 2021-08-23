@@ -1,4 +1,5 @@
 ; This file was copied from https://hledger.org/return-on-investment.html
+; it was later modified
 ; will test with a command similar to:
 ; roi --init-file tests/example_files/empty_ledgerrc -f tests/example_files/hledger_roi.ledger --cash-flows cash --assets-value snake -X $
 2019-01-01 Investing in Snake Oil
@@ -28,3 +29,7 @@
 2019-12-31 Recording the growth of Snake Oil
   investment:snake oil
   equity:unrealized gains  -$0.25
+
+2020-01-01 Start the new year with a new investment
+  assets:cash  -$100
+  investment:snake oil

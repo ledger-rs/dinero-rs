@@ -1,5 +1,7 @@
 use num::ToPrimitive;
 use prettytable::format;
+use prettytable::Cell;
+use prettytable::Row;
 use prettytable::Table;
 
 use crate::app::PeriodGroup;
@@ -20,6 +22,8 @@ pub fn execute(
     cash_flows_query: Vec<String>,
     assets_value_query: Vec<String>,
     frequency: Frequency,
+    calendar: bool,
+    summary: bool,
 ) -> Result<(), Error> {
     let mut ledger = match maybe_ledger {
         Some(ledger) => ledger,
@@ -32,6 +36,9 @@ pub fn execute(
         "cash flows query has to be provided"
     );
     assert!(assets_value_query.len() > 0, "assets value query");
+    if calendar {
+        assert!(frequency != Frequency::Yearly)
+    }
 
     // Prepare the nodes for filtering
     let mut regexes = HashMap::new();
@@ -140,11 +147,6 @@ pub fn execute(
     let mut prev_final_balance = Balance::new();
     let mut prev_final_money = None;
 
-    let mut table = Table::new();
-    table.set_format(*format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
-    table.set_titles(
-        row![r->"Begin", r->"End", r->"Value (begin)", r->"Cash flow", r->"Value (end)", r->"TWR", r->"TWR_y"],
-    );
     for (i, p) in periods.iter_mut().enumerate() {
         if i > 0 {
             p.initial_balance = prev_final_balance;
@@ -170,6 +172,117 @@ pub fn execute(
             );
         }
 
+        prev_final_balance = p.final_balance.clone();
+        prev_final_money = p.final_money.clone();
+    }
+    match calendar {
+        false => print_normal(&periods, &options),
+        true => print_calendar(&periods, &frequency),
+    }
+
+    if summary {
+        // Add a summary. For example:
+        // Total TWR: 68.38%.
+        // Period: 5.41 years.
+        // Annualized TWR: 10.12%
+        let mut total_twr = 1.0;
+        for p in periods.iter() {
+            total_twr *= 1.0 + p.twr().to_f64().unwrap();
+            // dbg!(&total_twr);
+        }
+
+        total_twr -= 1.0;
+        let num_days = ((last_date.unwrap() - first_date.unwrap()).num_days() + 1) as f64;
+        let twr_annualized = (1.0 + total_twr).powf(365.25 / num_days) - 1.0;
+        println!("Total TWR: {:.2}%", total_twr * 100.0);
+        println!("Period: {:.2} years", num_days / 365.25);
+        println!("Annualized TWR: {:.2}%", twr_annualized * 100.0);
+    }
+    Ok(())
+}
+
+fn print_calendar(periods: &Vec<Period>, frequency: &Frequency) {
+    let mut table = Table::new();
+    table.set_format(*format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
+
+    // The title
+    match frequency {
+        Frequency::Monthly => {
+            table.set_titles(
+            row![r->"year", r->"Jan", r->"Feb", r->"Mar", r->"Apr", r->"May", r->"Jun", r->"Jul", r->"Aug", r->"Sep", r->"Oct", r->"Nov", r->"Dec", r->"Total"]
+        );
+        }
+        Frequency::Quarterly => {
+            table.set_titles(
+                row![r->"year", r->"Jan-Mar", r->"Apr-Jun", r->"Jul-Sep", r->"Oct-Dec",r->"Total"],
+            );
+        }
+        Frequency::Yearly => {
+            table.set_titles(row![r->"Total"]);
+        }
+    }
+
+    // The content
+    let mut content: Vec<Vec<Cell>> = vec![];
+    let mut cum_twr = 1.0;
+    let mut last_year: i32 = periods[0].start.year();
+    for (i, p) in periods.iter().enumerate() {
+        let year = p.start.year();
+        let cell_content = format!("{:.2}%", p.twr().to_f64().unwrap() * 100.0);
+        let new_row = (i == 0) | (year != last_year);
+        let mut num_rows = content.len();
+
+        if new_row {
+            content.push(vec![cell!(format!("{}", year))]);
+            if i > 0 {
+                content[num_rows - 1].push(cell!(r->format!("{:.2}%", (cum_twr - 1.0) * 100.0)));
+            }
+            cum_twr = 1.0;
+            num_rows += 1;
+        }
+
+        if i == 0 {
+            // Push empty cells until we go to the right place
+            let num_period = match frequency {
+                Frequency::Monthly => p.start.month() as usize,
+                Frequency::Quarterly => ((p.start.month() - 1) / 3 + 1) as usize,
+                Frequency::Yearly => 1,
+            };
+            for _ in 1..num_period {
+                content[0].push(cell!(""));
+            }
+        }
+
+        cum_twr *= 1.0 + p.twr().to_f64().unwrap();
+        content[num_rows - 1].push(cell!(r-> cell_content));
+        last_year = year;
+    }
+    match content.len() {
+        1 => content[0].push(cell!(format!("{:.2}%", (cum_twr - 1.0) * 100.0))),
+        x => {
+            let j = content[0].len() - 1;
+            let i = content[x - 1].len();
+            for _ in i..j {
+                content[x - 1].push(cell!(""));
+            }
+            content[x - 1].push(cell!(r->format!("{:.2}%", (cum_twr - 1.0) * 100.0)));
+        }
+    }
+    for row in content.iter() {
+        table.add_row(Row::new(row.to_vec()));
+    }
+
+    // Print the table to stdout
+    table.printstd();
+}
+
+fn print_normal(periods: &Vec<Period>, options: &CommonOpts) {
+    let mut table = Table::new();
+    table.set_format(*format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
+    table.set_titles(
+        row![r->"Begin", r->"End", r->"Value (begin)", r->"Cash flow", r->"Value (end)", r->"TWR", r->"TWR_y"],
+    );
+    for p in periods.iter() {
         table.add_row(row![
             format!("{}", p.start.format(&options.date_format)),
             format!("{}", p.end.format(&options.date_format)),
@@ -179,30 +292,9 @@ pub fn execute(
             r->format!("{:.2}%", (&p.twr() * BigInt::from(100)).to_f64().unwrap()),
             r->format!("{:.2}%", &p.twr_annualized() * 100 as f64),
         ]);
-
-        prev_final_balance = p.final_balance.clone();
-        prev_final_money = p.final_money.clone();
     }
     // Print the table to stdout
     table.printstd();
-
-    // Add a summary
-    // Final unit price: 22720.00/134.93=168.38 U.
-    // Total TWR: 68.38%.
-    // Period: 5.41 years.
-    // Annualized TWR: 10.12%
-    let mut total_twr = 1.0;
-    for p in periods.iter() {
-        total_twr *= 1.0 + p.twr().to_f64().unwrap();
-        // dbg!(&total_twr);
-    }
-    total_twr -= 1.0;
-    let num_days = ((last_date.unwrap() - first_date.unwrap()).num_days() + 1) as f64;
-    let twr_annualized = (1.0 + total_twr).powf(365.25 / num_days) - 1.0;
-    println!("Total TWR: {:.2}%", total_twr * 100.0);
-    println!("Period: {:.2} years", num_days / 365.25);
-    println!("Annualized TWR: {:.2}%", twr_annualized * 100.0);
-    Ok(())
 }
 
 fn get_period_index(date: NaiveDate, periods: &mut Vec<Period>, frequency: Frequency) -> usize {
