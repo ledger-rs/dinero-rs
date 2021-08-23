@@ -427,7 +427,7 @@ fn roi() {
 
     test_args(args);
 }
-
+#[test]
 fn roi_calendar() {
     let args = &[
         "roi",
@@ -447,7 +447,7 @@ fn roi_calendar() {
 
     for (i, line) in output.lines().into_iter().enumerate() {
         match i {
-            2 => {
+            3 => {
                 assert!(String::from(line).contains("2.50%"));
                 assert!(String::from(line).contains("2.38%"));
             }

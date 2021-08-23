@@ -73,7 +73,7 @@ enum Command {
         calendar: bool,
         /// Do not display summary
         #[structopt(long = "--no-summary")]
-        calendar: bool,
+        no_summary: bool,
     },
 }
 
