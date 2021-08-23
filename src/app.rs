@@ -67,6 +67,13 @@ enum Command {
 
         #[structopt(flatten)]
         period_grouping: PeriodGroup,
+
+        /// Whether to display as calendar table
+        #[structopt(long = "--calendar")]
+        calendar: bool,
+        /// Do not display summary
+        #[structopt(long = "--no-summary")]
+        calendar: bool,
     },
 }
 
@@ -402,6 +409,8 @@ fn execute_command(opt: Opt, maybe_ledger: Option<Ledger>) -> Result<(), ()> {
             cash_flows,
             assets_value,
             period_grouping,
+            calendar,
+            no_summary,
         } => {
             if options.force_color {
                 env::set_var("CLICOLOR_FORCE", "1");
@@ -412,6 +421,8 @@ fn execute_command(opt: Opt, maybe_ledger: Option<Ledger>) -> Result<(), ()> {
                 cash_flows,
                 assets_value,
                 Frequency::from(period_grouping),
+                calendar,
+                !no_summary,
             )
         }
         Command::Commodities(options) => {

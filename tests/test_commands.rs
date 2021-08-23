@@ -428,6 +428,36 @@ fn roi() {
     test_args(args);
 }
 
+fn roi_calendar() {
+    let args = &[
+        "roi",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
+        "-f",
+        "tests/example_files/hledger_roi.ledger",
+        "--cash-flows",
+        "cash",
+        "--assets-value",
+        "snake",
+        "-Q",
+        "--calendar",
+    ];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+
+    for (i, line) in output.lines().into_iter().enumerate() {
+        match i {
+            2 => {
+                assert!(String::from(line).contains("2.50%"));
+                assert!(String::from(line).contains("2.38%"));
+            }
+            _ => assert!(true),
+        }
+    }
+
+    test_args(args);
+}
+
 /// It should be equivalent to pass the args-only to passing an empty ledgerrc
 #[test]
 fn args_only() {
