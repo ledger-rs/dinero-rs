@@ -79,7 +79,7 @@ impl<T> Transaction<T> {
                 }
                 parts.push(current.clone());
                 //self.description.split(" ").map(|x| x.to_string()).collect();
-                let res = preprocess_query(&parts);
+                let res = preprocess_query(&parts, &false);
                 self.filter_query = Some(res.clone());
                 res
             }

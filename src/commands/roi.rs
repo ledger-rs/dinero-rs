@@ -42,7 +42,7 @@ pub fn execute(
 
     // Prepare the nodes for filtering
     let mut regexes = HashMap::new();
-    let mut query = filter::preprocess_query(&cash_flows_query);
+    let mut query = filter::preprocess_query(&cash_flows_query, &false);
     let cash_flows_node = if query.len() > 2 {
         Some(build_root_node_from_expression(
             query.as_str(),
@@ -51,7 +51,7 @@ pub fn execute(
     } else {
         None
     };
-    query = filter::preprocess_query(&assets_value_query);
+    query = filter::preprocess_query(&assets_value_query, &false);
     let assets_value_node = if query.len() > 2 {
         Some(build_root_node_from_expression(
             query.as_str(),

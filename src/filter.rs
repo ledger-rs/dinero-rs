@@ -69,10 +69,10 @@ pub fn filter_expression(
 /// ```rust
 /// # use dinero::filter::preprocess_query;
 /// let params:Vec<String> = vec!["@payee", "savings" , "and", "checking", "and", "expr", "/aeiou/"].iter().map(|x| x.to_string()).collect();
-/// let processed = preprocess_query(&params);
+/// let processed = preprocess_query(&params, &false);
 /// assert_eq!(processed, "((payee =~ /(?i)payee/) or (account =~ /(?i)savings/) and (account =~ /(?i)checking/) and (/aeiou/))")
 /// ```
-pub fn preprocess_query(query: &Vec<String>) -> String {
+pub fn preprocess_query(query: &Vec<String>, related:&bool) -> String {
     let mut expression = String::new();
     let mut and = false;
     let mut first = true;
@@ -132,5 +132,10 @@ pub fn preprocess_query(query: &Vec<String>) -> String {
         expr = false;
         first = false;
     }
-    format!("({})", expression)
+    
+    if *related {
+        format!("(any({}) and not({}))", expression, expression)
+    } else {
+        format!("({})", expression)
+    }
 }
