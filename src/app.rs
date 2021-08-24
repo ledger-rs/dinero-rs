@@ -340,7 +340,10 @@ fn parse_config_file(file: &Path, input_args: &Vec<String>) -> Vec<String> {
         match option.chars().nth(0) {
             Some(c) => match c {
                 '-' => {
-                    let message = format!("Bad config file {:?}. Only long option names allowed.\n{}", file, line);
+                    let message = format!(
+                        "Bad config file {:?}. Only long option names allowed.\n{}",
+                        file, line
+                    );
                     assert!(line.starts_with("--"), "{}", message);
                     let mut iter = line.split_whitespace();
                     let option = iter.next().unwrap();
