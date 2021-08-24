@@ -1,6 +1,9 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
-## [0.33.0] - xxx
+## [0.32.2] - xxx
+### Fixed
+- Now [parameters can be overriden](https://github.com/frosklis/dinero-rs/issues/138)
+
 ## [0.32.1] - 2021-08-24
 ### Changed
 - continuous integration pipeline
