@@ -59,7 +59,7 @@ impl Comment {
                         let mut tags: Vec<Tag> = value
                             .split(':')
                             .map(|x| Tag {
-                                name: x.clone().to_string(),
+                                name: x.into(),
                                 check: vec![],
                                 assert: vec![],
                                 value: None,

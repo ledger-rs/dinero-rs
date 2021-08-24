@@ -121,7 +121,17 @@ impl PartialEq for Money {
 
 impl Ord for Money {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap()
+        match self.partial_cmp(other) {
+            Some(c) => c,
+            None => {
+                let self_commodity = self.get_commodity().unwrap();
+                let other_commodity = other.get_commodity().unwrap();
+                panic!(
+                    "Can't compare different currencies. {} and {}.",
+                    self_commodity, other_commodity
+                );
+            }
+        }
     }
 }
 impl PartialOrd for Money {

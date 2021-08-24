@@ -84,7 +84,7 @@ pub fn execute(
                 .iter()
                 .filter(|x| (x.0 == account) | x.0.starts_with(&prefix))
                 .fold(Balance::new(), |acc, new| acc + new.1.clone());
-            new_balances.insert(account.as_str().clone(), balance);
+            new_balances.insert(account.as_str(), balance);
         }
         vec_balances = new_balances
             .iter()
