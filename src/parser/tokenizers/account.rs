@@ -22,7 +22,7 @@ impl<'a> Tokenizer<'a> {
         let mut iban = None;
         let mut country = None;
 
-        while let Some(part) = parsed.next() {
+        for part in parsed {
             match part.as_rule() {
                 Rule::account_property => {
                     let mut property = part.into_inner();
@@ -45,7 +45,7 @@ impl<'a> Tokenizer<'a> {
                 _ => {}
             }
         }
-        let account = Account::new(
+        Account::new(
             name,
             Origin::FromDirective,
             note,
@@ -56,8 +56,7 @@ impl<'a> Tokenizer<'a> {
             assert,
             payee,
             default,
-        );
-        account
+        )
     }
 }
 /*

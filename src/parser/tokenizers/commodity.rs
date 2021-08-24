@@ -44,8 +44,8 @@ impl<'a> Tokenizer<'a> {
         if default {
             currency.set_default();
         }
-        if note.is_some() {
-            currency.set_note(note.unwrap());
+        if let Some(n) = note {
+            currency.set_note(n);
         }
         if let Some(f) = format {
             currency.format = Some(f.clone());

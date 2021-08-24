@@ -20,7 +20,7 @@ fn main() {
     match GrammarParser::parse(Rule::journal, content.as_str()) {
         Ok(mut parsed) => {
             let mut elements = parsed.next().unwrap().into_inner();
-            while let Some(element) = elements.next() {
+            for element in elements {
                 println!("{:?}: {}", element.as_rule(), element.as_str());
             }
         }

@@ -288,14 +288,14 @@ impl ParsedLedger {
                                         &mut regexes,
                                     )),
                                     Some(alias) => {
-                                        if alias == "" {
+                                        if alias.is_empty() {
                                             Some(Money::from((
                                                 p.amount.clone().unwrap().get_commodity().unwrap(),
                                                 p.amount.clone().unwrap().get_amount()
                                                     * auto_posting.money_amount.clone().unwrap(),
                                             )))
                                         } else {
-                                            match self.commodities.get(&alias) {
+                                            match self.commodities.get(alias) {
                                                 Ok(_) => {} // do nothing
                                                 Err(_) => self
                                                     .commodities
@@ -311,7 +311,7 @@ impl ParsedLedger {
 
                                 let posting = Posting {
                                     account: account.clone(),
-                                    date: p.date.clone(),
+                                    date: p.date,
                                     amount: money,
                                     balance: None,
                                     cost: None,
@@ -341,7 +341,7 @@ impl ParsedLedger {
 
             // Balance the transactions
             for t in transactions.iter_mut() {
-                let date = t.date.unwrap().clone();
+                let date = t.date.unwrap();
                 // output_balances(&balances);
                 let balance = match t.balance(&mut balances, options.no_balance_check) {
                     Ok(balance) => balance,
@@ -439,14 +439,14 @@ impl ParsedLedger {
                     // Modify posting with amounts
                     if let Some(c) = &p.money_currency {
                         posting.amount = Some(Money::from((
-                            self.commodities.get(&c.as_str()).unwrap().clone(),
+                            self.commodities.get(c.as_str()).unwrap().clone(),
                             p.money_amount.clone().unwrap(),
                         )));
                     }
                     if let Some(c) = &p.cost_currency {
                         let posting_currency = self
                             .commodities
-                            .get(&p.money_currency.as_ref().unwrap().as_str())
+                            .get(p.money_currency.as_ref().unwrap().as_str())
                             .unwrap();
                         let amount = Money::from((
                             self.commodities.get(c.as_str()).unwrap().clone(),
@@ -483,11 +483,8 @@ impl ParsedLedger {
                     }
                     transaction.postings.borrow_mut().push(posting.to_owned());
                 }
-                match transaction.clone().is_balanced() {
-                    true => {
-                        transaction.status = TransactionStatus::InternallyBalanced;
-                    }
-                    false => {}
+                if transaction.is_balanced() {
+                    transaction.status = TransactionStatus::InternallyBalanced;
                 }
                 transactions.push(transaction);
             }
