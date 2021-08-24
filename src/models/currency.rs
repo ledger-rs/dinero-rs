@@ -41,7 +41,7 @@ use std::cmp::Ordering;
 /// assert_eq!(currencies.len(), 2, "List len should be 2");
 /// assert_eq!(currencies.len_alias(), 4, "Alias len should be 4");
 /// assert_eq!(currencies.get("eur").unwrap().as_ref(), &eur);
-/// assert_eq!(currencies.get('€').unwrap().as_ref(), &eur);
+/// assert_eq!(currencies.get("€").unwrap().as_ref(), &eur);
 ///
 ///
 /// assert_eq!(currencies.get("eur").unwrap(), currencies.get('€').unwrap(), "EUR and € should be the same");
