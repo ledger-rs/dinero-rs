@@ -22,12 +22,12 @@ echo Tagging version $version. Previous version was $previous.
 message=$({ echo "${version}\n" & git --no-pager log ${previous}..HEAD --oneline ; } | cat )
 
 git tag -a $version -m "$message"
-git push
+git push origin $version
 
 #
 # Update tag for development
 #
-message="Bump from $version to $bumped"
+message="Bump from ${version} to ${bumped}-dev"
 commit_message="[ci skip] ${message}"
 
 # Update Cargo.toml
