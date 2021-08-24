@@ -168,9 +168,15 @@ pub struct CommonOpts {
     /// Whether to collapse postings from the same account in the same transaction
     #[structopt(long = "--collapse")]
     pub collapse: bool,
+
+    /// Show the other postings in the transaction
+    #[structopt(long = "--related")]
+    pub related: bool,
 }
 
+
 impl CommonOpts {
+    // TODO remove this function
     pub fn new() -> Self {
         CommonOpts {
             input_file: PathBuf::new(),
@@ -194,6 +200,7 @@ impl CommonOpts {
             unrealized_gains: None,
             unrealized_losses: None,
             collapse: false,
+            related: false,
         }
     }
 }

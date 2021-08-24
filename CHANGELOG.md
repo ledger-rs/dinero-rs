@@ -5,6 +5,7 @@ Changelog file for dinero-rs project, a command line application for managing fi
 - Implemented ```date-format```
 - Added ```--calendar``` to the ```roi``` command, showing a [calendar view of TWR](https://github.com/frosklis/dinero-rs/issues/115).
 - Added ```--no-summary``` flag to the ```roi``` command, to suppress the summary after the table
+- Implemented [```--related``` flag](https://github.com/frosklis/dinero-rs/issues/102)
 ### Fixed
 - [```args-only```](https://github.com/frosklis/dinero-rs/issues/120)
 

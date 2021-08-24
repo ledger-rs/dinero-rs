@@ -487,3 +487,30 @@ fn args_only() {
     test_args(args_1);
     test_args(args_2);
 }
+
+
+
+#[test]
+/// Check the collapse option
+fn related() {
+    let args = &[
+        "reg",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
+        "-f",
+        "tests/example_files/collapse_demo.ledger",
+        "--related",
+        "travel"
+    ];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+
+    for (i, line) in output.lines().into_iter().enumerate() {
+        match i {
+            0 => assert!(String::from(line).contains("Checking account")),
+            _ => assert!(false),
+        }
+    }
+
+    test_args(args);
+}

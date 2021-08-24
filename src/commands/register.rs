@@ -40,7 +40,7 @@ pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(),
 
     // Build a cache of abstract value trees, it takes time to parse expressions, so better do it only once
     let mut regexes = HashMap::new();
-    let query = filter::preprocess_query(&options.query);
+    let query = filter::preprocess_query(&options.query, &options.related);
     let node = if query.len() > 2 {
         Some(build_root_node_from_expression(
             query.as_str(),
