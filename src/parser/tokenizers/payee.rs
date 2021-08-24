@@ -46,6 +46,8 @@ impl<'a> Tokenizer<'a> {
 
 #[cfg(test)]
 mod tests {
+    use structopt::StructOpt;
+
     use super::*;
     use crate::{models::HasName, CommonOpts};
 
@@ -54,7 +56,7 @@ mod tests {
     fn parse_ko() {
         let input = "payee ACME  ; From the Looney Tunes\n\tWrong Acme, Inc.\n".to_string();
         let mut tokenizer = Tokenizer::from(input);
-        let items = tokenizer.tokenize(&CommonOpts::new());
+        let items = tokenizer.tokenize(&CommonOpts::from_iter(["", "-f", ""].iter()));
         assert_eq!(items.payees.len(), 0);
     }
 
@@ -63,7 +65,7 @@ mod tests {
         let input = "payee ACME\n\talias Acme, Inc.\n".to_string();
         let mut tokenizer = Tokenizer::from(input);
 
-        let items = tokenizer.tokenize(&CommonOpts::new());
+        let items = tokenizer.tokenize(&CommonOpts::from_iter(["", "-f", ""].iter()));
         assert_eq!(items.payees.len(), 1);
 
         assert!(items.payees.get("acme, inc.").is_ok());

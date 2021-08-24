@@ -174,37 +174,6 @@ pub struct CommonOpts {
     pub related: bool,
 }
 
-
-impl CommonOpts {
-    // TODO remove this function
-    pub fn new() -> Self {
-        CommonOpts {
-            input_file: PathBuf::new(),
-            args_only: false,
-            init_file: None,
-            depth: None,
-            query: vec![],
-            real: false,
-            begin: None,
-            end: None,
-            period: None,
-            now: None,
-            no_balance_check: false,
-            exchange: None,
-            date_format: "%y-%b-%d".into(),
-            force_color: false,
-            force_pager: false,
-            effective: false,
-            strict: false,
-            pedantic: false,
-            unrealized_gains: None,
-            unrealized_losses: None,
-            collapse: false,
-            related: false,
-        }
-    }
-}
-
 /// Groups of time
 #[derive(StructOpt, Clone, Debug)]
 pub struct PeriodGroup {

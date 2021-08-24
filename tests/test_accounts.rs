@@ -1,4 +1,5 @@
 use dinero::{parser::Tokenizer, CommonOpts};
+use structopt::StructOpt;
 
 #[test]
 fn test_account_names() {
@@ -47,10 +48,10 @@ fn test_account_names() {
 
     for (i, mut tokenizer) in tokenizers.into_iter().enumerate() {
         println!("Test case #{}", i);
-        let parsed = tokenizer.tokenize(&CommonOpts::new());
+        let parsed = tokenizer.tokenize(&CommonOpts::from_iter(["", "-f", ""].iter()));
         let mut num_accounts = parsed.accounts.len();
         assert_eq!(num_accounts, 0, "There should be no accounts when parsed");
-        let mut options = CommonOpts::new();
+        let mut options = CommonOpts::from_iter(["", "-f", ""].iter());
         options.no_balance_check = true;
         num_accounts = parsed.to_ledger(&options).unwrap().accounts.len();
         assert_eq!(num_accounts, 2, "There should be two accounts");
@@ -67,7 +68,7 @@ fn test_account_directive() {
             .to_string(),
     );
 
-    let parsed = tokenizer.tokenize(&CommonOpts::new());
+    let parsed = tokenizer.tokenize(&CommonOpts::from_iter(["", "-f", ""].iter()));
     let num_accounts = parsed.accounts.len();
     assert_eq!(num_accounts, 1, "Parse one account")
 }

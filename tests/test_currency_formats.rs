@@ -1,4 +1,3 @@
-use std::borrow::BorrowMut;
 use std::rc::Rc;
 
 use chrono::Utc;
@@ -7,6 +6,7 @@ use dinero::parser::Tokenizer;
 use dinero::{models::conversion, CommonOpts};
 use num::traits::Inv;
 use num::{BigInt, BigRational};
+use structopt::StructOpt;
 
 #[test]
 fn currency_formats() {
@@ -40,7 +40,7 @@ commodity ACME
         "
         .to_string(),
     );
-    let options = CommonOpts::new();
+    let options = CommonOpts::from_iter(["", "-f", ""].iter());
     let items = tokenizer.tokenize(&options);
     let ledger = items.to_ledger(&options).unwrap();
     let eur = ledger.get_commodities().get("eur").unwrap();

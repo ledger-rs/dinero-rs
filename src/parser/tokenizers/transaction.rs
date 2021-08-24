@@ -238,6 +238,8 @@ fn parse_posting(
 }
 #[cfg(test)]
 mod tests {
+    use structopt::StructOpt;
+
     use super::*;
     use crate::models::{Cleared, TransactionStatus};
     use crate::{parser::Tokenizer, CommonOpts};
@@ -253,7 +255,7 @@ mod tests {
             .to_string(),
         );
 
-        let parsed = tokenizer.tokenize(&CommonOpts::new());
+        let parsed = tokenizer.tokenize(&CommonOpts::from_iter(["", "-f", ""].iter()));
         let transaction = &parsed.transactions[0];
         assert_eq!(transaction.cleared, Cleared::NotCleared);
         assert_eq!(transaction.status, TransactionStatus::NotChecked);

@@ -72,7 +72,7 @@ pub fn filter_expression(
 /// let processed = preprocess_query(&params, &false);
 /// assert_eq!(processed, "((payee =~ /(?i)payee/) or (account =~ /(?i)savings/) and (account =~ /(?i)checking/) and (/aeiou/))")
 /// ```
-pub fn preprocess_query(query: &Vec<String>, related:&bool) -> String {
+pub fn preprocess_query(query: &Vec<String>, related: &bool) -> String {
     let mut expression = String::new();
     let mut and = false;
     let mut first = true;
@@ -132,7 +132,7 @@ pub fn preprocess_query(query: &Vec<String>, related:&bool) -> String {
         expr = false;
         first = false;
     }
-    
+
     if *related {
         format!("(any({}) and not({}))", expression, expression)
     } else {
