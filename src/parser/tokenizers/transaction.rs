@@ -238,6 +238,8 @@ fn parse_posting(
 }
 #[cfg(test)]
 mod tests {
+    use structopt::StructOpt;
+
     use super::*;
     use crate::models::{Cleared, TransactionStatus};
     use crate::{parser::Tokenizer, CommonOpts};
