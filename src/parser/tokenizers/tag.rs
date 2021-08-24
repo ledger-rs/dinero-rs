@@ -16,7 +16,7 @@ impl<'a> Tokenizer<'a> {
         let mut check = vec![];
         let mut assert = vec![];
 
-        while let Some(part) = parsed.next() {
+        for part in parsed {
             match part.as_rule() {
                 Rule::commodity_property => {
                     let mut property = part.into_inner();

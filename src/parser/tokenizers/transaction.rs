@@ -20,9 +20,9 @@ impl<'a> Tokenizer<'a> {
         //
         // Parse the transaction head
         //
-        let mut head = parsed_transaction.next().unwrap().into_inner();
+        let head = parsed_transaction.next().unwrap().into_inner();
 
-        while let Some(part) = head.next() {
+        for part in head {
             match part.as_rule() {
                 Rule::transaction_date => {
                     transaction.date = Some(parse_date(part.into_inner().next().unwrap()));
@@ -62,7 +62,7 @@ impl<'a> Tokenizer<'a> {
 
         // Adjust the payee
         if transaction.payee.is_none() {
-            if transaction.description.len() > 0 {
+            if !transaction.description.is_empty() {
                 transaction.payee = Some(transaction.description.clone());
             } else {
                 transaction.payee = Some("[Unspecified payee]".to_string())
@@ -72,7 +72,7 @@ impl<'a> Tokenizer<'a> {
         //
         // Go for the indented part
         //
-        while let Some(part) = parsed_transaction.next() {
+        for part in parsed_transaction {
             match part.as_rule() {
                 Rule::posting | Rule::automated_posting => transaction
                     .postings
@@ -140,8 +140,8 @@ fn parse_posting(
     default_date: &Option<NaiveDate>,
 ) -> RawPosting {
     let mut posting = RawPosting::new();
-    let mut elements = raw.into_inner();
-    while let Some(part) = elements.next() {
+    let elements = raw.into_inner();
+    for part in elements {
         let rule = part.as_rule();
         match rule {
             Rule::posting_kind => {
@@ -215,24 +215,18 @@ fn parse_posting(
         }
     }
     for c in posting.comments.iter() {
-        match c.get_payee_str() {
-            Some(payee) => {
-                posting.payee = Some(payee);
-            }
-            None => {}
+        if let Some(payee) = c.get_payee_str() {
+            posting.payee = Some(payee);
         }
-        match c.get_date() {
-            Some(date) => {
-                posting.date = Some(date);
-            }
-            None => {}
+        if let Some(date) = c.get_date() {
+            posting.date = Some(date);
         }
     }
     if posting.payee.is_none() {
         posting.payee = default_payee.clone();
     }
     if posting.date.is_none() {
-        posting.date = default_date.clone();
+        posting.date = *default_date;
     }
     posting
 }
