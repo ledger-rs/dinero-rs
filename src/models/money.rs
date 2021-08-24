@@ -46,7 +46,7 @@ use std::cmp::Ordering;
 /// let b3 = b1 - Balance::from(m2.clone()) + Balance::from(Money::new());
 /// assert_eq!(b3.to_money().unwrap(), m1);
 /// ```
-#[derive(Clone, Debug, PartialOrd)]
+#[derive(Clone, Debug)]
 pub enum Money {
     Zero,
     Money {
@@ -121,20 +121,22 @@ impl PartialEq for Money {
 
 impl Ord for Money {
     fn cmp(&self, other: &Self) -> Ordering {
+        self.partial_cmp(other).unwrap()
+    }
+}
+impl PartialOrd for Money {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         let self_amount = self.get_amount();
         let other_amount = other.get_amount();
         match self.get_commodity() {
-            None => self_amount.cmp(other_amount.borrow()),
+            None => self_amount.partial_cmp(other_amount.borrow()),
             Some(self_currency) => match other.get_commodity() {
-                None => self_amount.cmp(other_amount.borrow()),
+                None => self_amount.partial_cmp(other_amount.borrow()),
                 Some(other_currency) => {
                     if self_currency == other_currency {
-                        self_amount.cmp(other_amount.borrow())
+                        self_amount.partial_cmp(other_amount.borrow())
                     } else {
-                        panic!(
-                            "Can't compare different currencies. {} and {}.",
-                            self_currency, other_currency
-                        );
+                        None
                     }
                 }
             },
@@ -157,7 +159,6 @@ impl Div<BigRational> for Money {
     type Output = Money;
 
     fn div(self, rhs: BigRational) -> Self::Output {
-        
         match self {
             Money::Zero => Money::new(),
             Money::Money { amount, currency } => Money::from((currency, amount / rhs)),
