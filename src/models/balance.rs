@@ -12,7 +12,11 @@ use std::rc::Rc;
 pub struct Balance {
     pub balance: HashMap<Option<Rc<Currency>>, Money>,
 }
-
+impl Default for Balance {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl Balance {
     pub fn new() -> Balance {
         Balance {

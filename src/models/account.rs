@@ -126,10 +126,7 @@ impl From<&str> for Account {
 
 impl FromDirective for Account {
     fn is_from_directive(&self) -> bool {
-        match self.origin {
-            Origin::FromDirective => true,
-            _ => false,
-        }
+        matches!(self.origin, Origin::FromDirective)
     }
 }
 
