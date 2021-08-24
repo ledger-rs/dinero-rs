@@ -41,7 +41,5 @@ sed -i "3i## [${bumped}] - xxx" CHANGELOG.md
 echo ${commit_message}
 
 # Publishing tag
-
-message=$(source scripts/ci_bump_version.sh)
-git commit -a -m "${message}"
+git commit -a -m "${commit_message}"
 git push
