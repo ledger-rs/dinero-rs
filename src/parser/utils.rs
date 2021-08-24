@@ -93,8 +93,8 @@ pub(crate) fn count_decimals(amount: &str) -> usize {
 
     let text = number.as_str();
     // dbg!(text);
-    if text.contains(".") {
-        number.as_str().split(".").last().unwrap().len()
+    if text.contains('.') {
+        number.as_str().split('.').last().unwrap().len()
     } else {
         0
     }

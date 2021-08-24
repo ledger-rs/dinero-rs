@@ -160,7 +160,7 @@ fn parse_posting(
                     Some(PriceType::PerUnit)
                 };
                 let mut inner = part.into_inner();
-                let negative = inner.as_str().starts_with("-");
+                let negative = inner.as_str().starts_with('-');
                 let mut money = inner.next().unwrap().into_inner();
                 let money_format = money.as_str().to_string();
                 let amount: BigRational;

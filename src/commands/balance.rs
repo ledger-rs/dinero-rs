@@ -63,7 +63,7 @@ pub fn execute(
     if !flat {
         for (acc, bal) in balances.iter() {
             let mut pattern = "".to_string();
-            for part in acc.get_name().split(":") {
+            for part in acc.get_name().split(':') {
                 if pattern.len() > 0 {
                     pattern.push_str(":");
                 }
@@ -75,7 +75,7 @@ pub fn execute(
 
         // Sort by depth
         vec = accounts.iter().map(|x| x.clone()).collect();
-        vec.sort_by(|a, b| a.matches(":").count().cmp(&b.matches(":").count()));
+        vec.sort_by(|a, b| a.matches(':').count().cmp(&b.matches(':').count()));
 
         for account in vec.iter() {
             let mut prefix = account.clone();
@@ -100,7 +100,7 @@ pub fn execute(
                     .map(|x| {
                         (
                             x.0.get_name()
-                                .split(":")
+                                .split(':')
                                 .collect::<Vec<&str>>()
                                 .iter()
                                 .map(|x| x.to_string())
@@ -163,7 +163,7 @@ pub fn execute(
     while index < num_bal {
         let (account, bal) = &vec_balances[index];
         if let Some(depth) = depth {
-            if account.split(":").count() > depth {
+            if account.split(':').count() > depth {
                 index += 1;
                 continue;
             }
@@ -192,19 +192,19 @@ pub fn execute(
         if flat {
             println!("  {}", account.blue());
         } else {
-            let mut n = account.split(":").count();
+            let mut n = account.split(':').count();
             for _ in 0..n {
                 print!("  ");
             }
             // start by getting the account name
-            let mut text = account.split(":").last().unwrap().to_string();
+            let mut text = account.split(':').last().unwrap().to_string();
             // This is where it gets tricky, we need to collapse while we can
             let mut collapse = true;
             loop {
                 if (index + 1) >= num_bal {
                     break;
                 }
-                if vec_balances[index + 1].0.split(":").count() != (n + 1) {
+                if vec_balances[index + 1].0.split(':').count() != (n + 1) {
                     break;
                 }
                 for j in (index + 2)..num_bal {
@@ -212,7 +212,7 @@ pub fn execute(
                     if !name.starts_with(account) {
                         break;
                     }
-                    let this_depth = name.split(":").count();
+                    let this_depth = name.split(':').count();
                     if this_depth == n + 1 {
                         collapse = false;
                         break;
@@ -220,7 +220,7 @@ pub fn execute(
                 }
                 if collapse {
                     text.push(':');
-                    text.push_str(&vec_balances[index + 1].0.split(":").last().unwrap());
+                    text.push_str(&vec_balances[index + 1].0.split(':').last().unwrap());
                     n = n + 1;
                     index = index + 1;
                 } else {

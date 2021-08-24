@@ -57,7 +57,7 @@ impl Comment {
                             .unwrap()
                             .as_str();
                         let mut tags: Vec<Tag> = value
-                            .split(":")
+                            .split(':')
                             .map(|x| Tag {
                                 name: x.clone().to_string(),
                                 check: vec![],
@@ -76,7 +76,7 @@ impl Comment {
                             captures.next();
                             let name: String =
                                 captures.next().unwrap().unwrap().as_str().to_string();
-                            if name.contains(":") {
+                            if name.contains(':') {
                                 vec![]
                             } else {
                                 vec![Tag {

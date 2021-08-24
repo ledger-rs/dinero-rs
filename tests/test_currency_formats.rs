@@ -74,7 +74,7 @@ fn display_currencies() {
     let format_2 = CurrencyDisplayFormat::from("(1.234,00 €)");
     let format_3 = CurrencyDisplayFormat::from("-€1.234,00 €");
 
-    let currency = Rc::new(Currency::from("€"));
+    let currency = Rc::new(Currency::from('€'));
     let money = Money::from((currency.clone(), BigRational::from_float(-12.3).unwrap()));
 
     currency.set_format(&format_1);

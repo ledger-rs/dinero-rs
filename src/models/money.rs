@@ -238,7 +238,7 @@ impl Display for Money {
                     String::new()
                 } else {
                     format!("{:.*}", decimals, &decimal_part)
-                        .split(".")
+                        .split('.')
                         .last()
                         .unwrap()
                         .into()
