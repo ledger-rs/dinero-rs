@@ -560,7 +560,7 @@ mod tests {
     }
     #[test]
     #[should_panic(
-        expected = "Bad config file \"tests/example_files/example_bad_ledgerrc2\"\n- This does not parse either. And it shouldn't."
+        expected = "Bad config file \"tests/example_files/example_bad_ledgerrc2\". Only long option names allowed.\n- This does not parse either. And it shouldn't."
     )]
     fn other_bad_ledgerrc() {
         let args: Vec<String> = vec![
