@@ -132,8 +132,8 @@ impl<'a> Tokenizer<'a> {
         }
         match GrammarParser::parse(Rule::journal, self.content.as_str()) {
             Ok(mut parsed) => {
-                let mut elements = parsed.next().unwrap().into_inner();
-                while let Some(element) = elements.next() {
+                let elements = parsed.next().unwrap().into_inner();
+                for element in elements {
                     match element.as_rule() {
                         Rule::directive => {
                             let inner = element.into_inner().next().unwrap();
@@ -141,7 +141,7 @@ impl<'a> Tokenizer<'a> {
                                 Rule::include => {
                                     // This is the special case
                                     let mut new_ledger =
-                                        self.include(inner, &options, &ledger.commodities);
+                                        self.include(inner, options, &ledger.commodities);
                                     ledger.append(&mut new_ledger);
                                 }
                                 Rule::price => {
@@ -153,7 +153,7 @@ impl<'a> Tokenizer<'a> {
                                 Rule::commodity => {
                                     let commodity = self.parse_commodity(inner);
                                     if let Ok(old_commodity) =
-                                        ledger.commodities.get(&commodity.get_name())
+                                        ledger.commodities.get(commodity.get_name())
                                     {
                                         commodity.update_precision(old_commodity.get_precision());
                                     }
