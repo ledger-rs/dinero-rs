@@ -44,7 +44,7 @@ use std::cmp::Ordering;
 /// assert_eq!(currencies.get("€").unwrap().as_ref(), &eur);
 ///
 ///
-/// assert_eq!(currencies.get("eur").unwrap(), currencies.get("€".unwrap(), "EUR and € should be the same");
+/// assert_eq!(currencies.get("eur").unwrap(), currencies.get("€").unwrap(), "EUR and € should be the same");
 ///
 /// ```
 #[derive(Debug, Clone)]
