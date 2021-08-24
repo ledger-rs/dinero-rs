@@ -89,7 +89,7 @@ pub fn execute(
         vec_balances = new_balances
             .iter()
             .filter(|x| !x.1.is_zero())
-            .map(|x| (x.0.clone(), x.1.clone()))
+            .map(|x| (*x.0, x.1.clone()))
             .collect()
     } else {
         match depth {
@@ -147,10 +147,7 @@ pub fn execute(
             multipliers = conversion(currency.clone(), date, &ledger.prices);
             let mut updated_balances = Vec::new();
             for (acc, balance) in vec_balances.iter() {
-                updated_balances.push((
-                    acc.clone(),
-                    convert_balance(balance, &multipliers, currency),
-                ));
+                updated_balances.push((*acc, convert_balance(balance, &multipliers, currency)));
             }
             vec_balances = updated_balances;
         }
@@ -208,7 +205,7 @@ pub fn execute(
                     break;
                 }
                 for j in (index + 2)..num_bal {
-                    let name = vec_balances[j].0.clone();
+                    let name = vec_balances[j].0;
                     if !name.starts_with(account) {
                         break;
                     }
