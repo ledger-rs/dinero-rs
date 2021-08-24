@@ -39,6 +39,11 @@ pub struct ParsedLedger {
     pub files: Vec<PathBuf>,
 }
 
+impl Default for ParsedLedger {
+    fn default() -> Self {
+        ParsedLedger::new()
+    }
+}
 impl ParsedLedger {
     pub fn new() -> Self {
         ParsedLedger {
@@ -71,6 +76,9 @@ impl ParsedLedger {
             + self.prices.len()
             + self.comments.len()
             + self.tags.len()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 }
 
@@ -123,9 +131,8 @@ impl<'a> Tokenizer<'a> {
         defined_currencies: Option<&List<Currency>>,
     ) -> ParsedLedger {
         let mut ledger: ParsedLedger = ParsedLedger::new();
-        match defined_currencies {
-            Some(x) => ledger.commodities.append(x),
-            None => (),
+        if let Some(x) = defined_currencies {
+            ledger.commodities.append(x);
         }
         if let Some(file) = self.file {
             ledger.files.push(file.clone());
