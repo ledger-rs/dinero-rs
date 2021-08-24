@@ -5,7 +5,6 @@ use crate::parser::Tokenizer;
 use chrono::NaiveDate;
 use num::{rational::BigRational, BigInt};
 use pest::iterators::Pair;
-use structopt::StructOpt;
 
 impl<'a> Tokenizer<'a> {
     /// Parses a transaction
@@ -254,7 +253,7 @@ mod tests {
             .to_string(),
         );
 
-        let parsed = tokenizer.tokenize(&CommonOpts::from_iter([""].iter()));
+        let parsed = tokenizer.tokenize(&CommonOpts::from_iter(["", "-f", ""].iter()));
         let transaction = &parsed.transactions[0];
         assert_eq!(transaction.cleared, Cleared::NotCleared);
         assert_eq!(transaction.status, TransactionStatus::NotChecked);

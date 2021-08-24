@@ -538,7 +538,7 @@ mod tests {
             "
             .to_string(),
         );
-        let options = CommonOpts::from_iter([""].iter());
+        let options = CommonOpts::from_iter(["", "-f", ""].iter());
 
         let items = tokenizer.tokenize(&options);
         let ledger = items.to_ledger(&options).unwrap();

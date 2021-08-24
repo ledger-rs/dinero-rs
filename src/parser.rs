@@ -239,7 +239,7 @@ mod tests {
     fn test_empty_string() {
         let content = "".to_string();
         let mut tokenizer = Tokenizer::from(content);
-        let items = tokenizer.tokenize(&CommonOpts::from_iter([""].iter()));
+        let items = tokenizer.tokenize(&CommonOpts::from_iter(["", "-f", ""].iter()));
         assert_eq!(items.len(), 0, "Should be empty");
     }
 
@@ -247,7 +247,7 @@ mod tests {
     fn test_only_spaces() {
         let content = "\n\n\n\n\n".to_string();
         let mut tokenizer = Tokenizer::from(content);
-        let items = tokenizer.tokenize(&CommonOpts::from_iter([""].iter()));
+        let items = tokenizer.tokenize(&CommonOpts::from_iter(["", "-f", ""].iter()));
         assert_eq!(items.len(), 0, "Should be empty")
     }
 }

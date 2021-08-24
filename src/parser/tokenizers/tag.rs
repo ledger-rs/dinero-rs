@@ -50,7 +50,7 @@ mod tests {
     #[test]
     fn test_spaces_in_tag_names() {
         let mut tokenizer = Tokenizer::from("tag   A tag name with spaces   ".to_string());
-        let items = tokenizer.tokenize(&CommonOpts::from_iter([""].iter()));
+        let items = tokenizer.tokenize(&CommonOpts::from_iter(["", "-f", ""].iter()));
         let tag = &items.tags[0];
         assert_eq!(tag.get_name(), "A tag name with spaces");
     }

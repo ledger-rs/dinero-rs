@@ -18,7 +18,7 @@ fn test_balances() {
 "
         .to_string(),
     );
-    let options = CommonOpts::from_iter([""].iter());
+    let options = CommonOpts::from_iter(["", "-f", ""].iter());
     let parsed = tokenizer.tokenize(&options);
     let ledger = parsed.to_ledger(&options);
     assert!(ledger.is_ok(), "This should balance");

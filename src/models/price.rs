@@ -306,15 +306,15 @@ mod tests {
     use crate::parser::Tokenizer;
     use crate::CommonOpts;
     use chrono::Utc;
-    use structopt::StructOpt;
     use std::path::PathBuf;
+    use structopt::StructOpt;
 
     #[test]
     fn test_graph() {
         // Copy from balance command
         let path = PathBuf::from("tests/example_files/demo.ledger");
         let mut tokenizer = Tokenizer::from(&path);
-        let options = CommonOpts::from_iter([""].iter());
+        let options = CommonOpts::from_iter(["", "-f", ""].iter());
         let items = tokenizer.tokenize(&options);
         let ledger = items.to_ledger(&options).unwrap();
 
