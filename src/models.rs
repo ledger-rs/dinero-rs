@@ -9,7 +9,6 @@ pub use account::Account;
 pub use balance::Balance;
 pub use comment::Comment;
 pub use currency::{Currency, CurrencyDisplayFormat, DigitGrouping};
-pub use models::{ParsedPrice, Tag};
 pub use money::Money;
 pub use payee::Payee;
 pub use price::conversion;
@@ -32,7 +31,6 @@ mod account;
 mod balance;
 mod comment;
 mod currency;
-mod models;
 mod money;
 mod payee;
 mod price;
@@ -252,7 +250,7 @@ impl ParsedLedger {
                             node.unwrap(), // automated.get_filter_query().as_str(),
                             p,
                             t,
-                            &mut self.commodities,
+                            &self.commodities,
                             &mut regexes,
                         )? {
                             for comment in automated.comments.iter() {
@@ -543,5 +541,29 @@ mod tests {
         let payee = t.get_payee(&ledger.payees);
         assert!(&ledger.payees.get("EstateGuru").is_ok());
         assert!(payee.is_some());
+    }
+}
+
+use chrono::NaiveDate;
+
+#[derive(Debug, Clone)]
+pub struct ParsedPrice {
+    pub(crate) date: NaiveDate,
+    pub(crate) commodity: String,
+    pub(crate) other_commodity: String,
+    pub(crate) other_quantity: BigRational,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Tag {
+    pub name: String,
+    pub check: Vec<String>,
+    pub assert: Vec<String>,
+    pub value: Option<String>,
+}
+
+impl HasName for Tag {
+    fn get_name(&self) -> &str {
+        self.name.as_str()
     }
 }
