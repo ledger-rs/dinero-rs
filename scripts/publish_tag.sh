@@ -1,5 +1,4 @@
-# $1 - semver string
-# $2 - level to incr {release,minor,major} - release by default
+set -e 
 function bump_version() { 
     local RE='[^0-9]*\([0-9]*\)[.]\([0-9]*\)[.]\([0-9]*\)\([0-9A-Za-z-]*\)'
     major=`echo $1 | sed -e "s#$RE#\1#"`
@@ -13,8 +12,21 @@ function bump_version() {
     echo "$major.$minor.$release"
 }
 
+previous=$(git tag | sort -t "." -k1,1n -k2,2n -k3,3n  | tail -n 1)
 version=$(grep -E "version = \"([0-9]+\.[0-9]+.[0-9]+(-.*)?)\"" Cargo.toml | grep -Eo -m 1 "[0-9]+\.[0-9]+.[0-9]+")
 bumped=$(bump_version ${version})
+
+echo Tagging version $version. Previous version was $previous.
+
+# Publish create the tag
+message=$({ echo "${version}\n" & git --no-pager log ${previous}..HEAD --oneline ; } | cat )
+
+git tag -a $version -m "$message"
+git push
+
+#
+# Update tag for development
+#
 message="Bump from $version to $bumped"
 commit_message="[ci skip] ${message}"
 
@@ -27,3 +39,9 @@ sed -i "${line_number}s/.*/version = \"${bumped}-dev\"/" Cargo.toml
 sed -i "3i## [${bumped}] - xxx" CHANGELOG.md
 
 echo ${commit_message}
+
+# Publishing tag
+
+message=$(source scripts/ci_bump_version.sh)
+git commit -a -m "${message}"
+git push

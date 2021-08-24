@@ -21,12 +21,3 @@ jobs:
         env:
           CARGO_TOKEN: ${{ secrets.CARGO_TOKEN }}
         run: cargo publish --token ${CARGO_TOKEN}
-      - name: Bump version for development
-        run: |
-          git config user.email "claudio.noguera@gmail.com"
-          git config user.name "tags workflow"
-          git fetch origin master
-          git checkout master
-          message=$(source scripts/ci_bump_version.sh)
-          git commit -a -m "${message}"
-          git push https://${github.token}@github.com/${github.repository}.git
