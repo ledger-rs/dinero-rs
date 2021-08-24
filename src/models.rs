@@ -268,13 +268,13 @@ impl ParsedLedger {
                                     }
                                 }
                                 let payee = if let Some(payee_alias) = &auto_posting.payee {
-                                    match self.payees.get(&payee_alias) {
+                                    match self.payees.get(payee_alias) {
                                         Ok(_) => {} // do nothing
                                         Err(_) => {
                                             self.payees.insert(Payee::from(payee_alias.as_str()))
                                         }
                                     }
-                                    Some(self.payees.get(&payee_alias).unwrap().clone())
+                                    Some(self.payees.get(payee_alias).unwrap().clone())
                                 } else {
                                     p.payee.clone()
                                 };
