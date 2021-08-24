@@ -1,5 +1,6 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
+## [0.33.0] - xxx
 ## [0.32.0] - 2021-08-24
 ### Added
 - Implemented ```date-format```
