@@ -10,7 +10,6 @@ use num::{BigInt, Signed, Zero};
 use crate::models::balance::Balance;
 use crate::models::currency::{CurrencySymbolPlacement, DigitGrouping, NegativeAmountDisplay};
 use crate::models::{Currency, HasName};
-use num::traits::Inv;
 use std::borrow::Borrow;
 use std::cmp::Ordering;
 
@@ -158,7 +157,11 @@ impl Div<BigRational> for Money {
     type Output = Money;
 
     fn div(self, rhs: BigRational) -> Self::Output {
-        self * rhs.inv()
+        
+        match self {
+            Money::Zero => Money::new(),
+            Money::Money { amount, currency } => Money::from((currency, amount / rhs)),
+        }
     }
 }
 
