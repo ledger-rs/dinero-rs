@@ -1,6 +1,6 @@
 [package]
 name = "dinero-rs"
-version = "0.32.2-dev"
+version = "0.32.3"
 authors = ["Claudio Noguera <claudio.noguera@gmail.com>"]
 edition = "2018"
 readme = "README.md"

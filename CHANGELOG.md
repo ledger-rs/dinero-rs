@@ -1,6 +1,9 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
-## [0.32.2] - xxx
+
+## [0.32.3] - 2021-08-24
+- The last one was a bad release
+## [0.32.2] - 2021-08-24 
 ### Fixed
 - Now [parameters can be overriden](https://github.com/frosklis/dinero-rs/issues/138)
 
