@@ -23,8 +23,8 @@ jobs:
         run: cargo publish --token ${CARGO_TOKEN}
       - name: Bump version for development
         run: |
-          git config user.email "$claudio.noguera@gmail.com"
-          git config user.name "${GH_USERNAME}"
+          git config user.email "claudio.noguera@gmail.com"
+          git config user.name "tags workflow"
           git fetch origin master
           git checkout master
           message=$(source scripts/ci_bump_version.sh)
