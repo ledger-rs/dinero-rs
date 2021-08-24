@@ -326,14 +326,24 @@ fn parse_config_file(file: &Path, input_args: &Vec<String>) -> Vec<String> {
     let mut args = input_args.clone();
 
     let mut aliases = HashMap::new();
+    // TODO you shouldn't have to do this manually
     aliases.insert("-f".to_string(), "--file".to_string());
+    aliases.insert("-b".to_string(), "--begin".to_string());
+    aliases.insert("-d".to_string(), "--depth".to_string());
+    aliases.insert("-e".to_string(), "--end".to_string());
+    aliases.insert("-X".to_string(), "--exchange".to_string());
+    aliases.insert("-p".to_string(), "--period ".to_string());
+
     let contents = read_to_string(file).unwrap();
     for line in contents.lines() {
         let option = line.trim_start();
         match option.chars().nth(0) {
             Some(c) => match c {
                 '-' => {
-                    let message = format!("Bad config file {:?}\n{}", file, line);
+                    let message = format!(
+                        "Bad config file {:?}. Only long option names allowed.\n{}",
+                        file, line
+                    );
                     assert!(line.starts_with("--"), "{}", message);
                     let mut iter = line.split_whitespace();
                     let option = iter.next().unwrap();
@@ -550,7 +560,7 @@ mod tests {
     }
     #[test]
     #[should_panic(
-        expected = "Bad config file \"tests/example_files/example_bad_ledgerrc2\"\n- This does not parse either. And it shouldn't."
+        expected = "Bad config file \"tests/example_files/example_bad_ledgerrc2\". Only long option names allowed.\n- This does not parse either. And it shouldn't."
     )]
     fn other_bad_ledgerrc() {
         let args: Vec<String> = vec![
