@@ -3,6 +3,7 @@ use dinero::parser::Tokenizer;
 use dinero::{models::conversion, CommonOpts};
 use num::traits::Inv;
 use num::{BigInt, BigRational};
+use structopt::StructOpt;
 
 #[test]
 fn exchange() {
@@ -29,7 +30,7 @@ P 2020-07-01 EUR 1.5 USD
         "
         .to_string(),
     );
-    let options = CommonOpts::new();
+    let options = CommonOpts::from_iter([""].iter());
     let items = tokenizer.tokenize(&options);
     let ledger = items.to_ledger(&options).unwrap();
     let eur = ledger.get_commodities().get("eur").unwrap();

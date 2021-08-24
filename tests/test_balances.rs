@@ -1,4 +1,5 @@
 use dinero::{parser::Tokenizer, CommonOpts};
+use structopt::StructOpt;
 #[test]
 fn test_balances() {
     let mut tokenizer = Tokenizer::from(
@@ -17,7 +18,7 @@ fn test_balances() {
 "
         .to_string(),
     );
-    let options = CommonOpts::new();
+    let options = CommonOpts::from_iter([""].iter());
     let parsed = tokenizer.tokenize(&options);
     let ledger = parsed.to_ledger(&options);
     assert!(ledger.is_ok(), "This should balance");

@@ -525,6 +525,8 @@ pub trait FromDirective {
 
 #[cfg(test)]
 mod tests {
+    use structopt::StructOpt;
+
     use crate::{parser::Tokenizer, CommonOpts};
 
     #[test]
@@ -536,7 +538,7 @@ mod tests {
             "
             .to_string(),
         );
-        let options = CommonOpts::new();
+        let options = CommonOpts::from_iter([""].iter());
 
         let items = tokenizer.tokenize(&options);
         let ledger = items.to_ledger(&options).unwrap();

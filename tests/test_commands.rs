@@ -488,8 +488,6 @@ fn args_only() {
     test_args(args_2);
 }
 
-
-
 #[test]
 /// Check the collapse option
 fn related() {
@@ -500,7 +498,7 @@ fn related() {
         "-f",
         "tests/example_files/collapse_demo.ledger",
         "--related",
-        "travel"
+        "travel",
     ];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
     let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();

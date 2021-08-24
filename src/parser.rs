@@ -231,13 +231,15 @@ impl<'a> Tokenizer<'a> {
 }
 #[cfg(test)]
 mod tests {
+    use structopt::StructOpt;
+
     use super::*;
 
     #[test]
     fn test_empty_string() {
         let content = "".to_string();
         let mut tokenizer = Tokenizer::from(content);
-        let items = tokenizer.tokenize(&CommonOpts::new());
+        let items = tokenizer.tokenize(&CommonOpts::from_iter([""].iter()));
         assert_eq!(items.len(), 0, "Should be empty");
     }
 
@@ -245,7 +247,7 @@ mod tests {
     fn test_only_spaces() {
         let content = "\n\n\n\n\n".to_string();
         let mut tokenizer = Tokenizer::from(content);
-        let items = tokenizer.tokenize(&CommonOpts::new());
+        let items = tokenizer.tokenize(&CommonOpts::from_iter([""].iter()));
         assert_eq!(items.len(), 0, "Should be empty")
     }
 }
