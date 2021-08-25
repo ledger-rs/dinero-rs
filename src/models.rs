@@ -187,10 +187,11 @@ impl ParsedLedger {
         let mut automated_transactions = Vec::new();
 
         for parsed in self.transactions.iter() {
-            let (mut t, mut auto, mut new_prices) = self._transaction_to_ledger(parsed)?;
-            transactions.append(&mut t);
-            automated_transactions.append(&mut auto);
-            prices.append(&mut new_prices);
+            let mut transformer = self._transaction_to_ledger(parsed)?;
+            // (mut t, mut auto, mut new_prices)
+            transactions.append(&mut transformer.ledger_transactions);
+            automated_transactions.append(&mut transformer.raw_transactions);
+            prices.append(&mut transformer.prices);
         }
 
         // Now sort the transactions vector by date
@@ -374,14 +375,7 @@ impl ParsedLedger {
     fn _transaction_to_ledger(
         &self,
         parsed: &Transaction<tokenizers::transaction::RawPosting>,
-    ) -> Result<
-        (
-            Vec<Transaction<Posting>>,
-            Vec<Transaction<tokenizers::transaction::RawPosting>>,
-            Vec<Price>,
-        ),
-        Error,
-    > {
+    ) -> Result<TransactionTransformer, Error> {
         let mut automated_transactions = vec![];
         let mut prices = vec![];
         let mut transactions = vec![];
@@ -495,7 +489,11 @@ impl ParsedLedger {
                 eprintln!("Found periodic transaction. Skipping.");
             }
         }
-        Ok((transactions, automated_transactions, prices))
+        Ok(TransactionTransformer {
+            ledger_transactions: transactions,
+            raw_transactions: automated_transactions,
+            prices,
+        })
     }
 }
 
@@ -566,4 +564,10 @@ impl HasName for Tag {
     fn get_name(&self) -> &str {
         self.name.as_str()
     }
+}
+
+struct TransactionTransformer {
+    ledger_transactions: Vec<Transaction<Posting>>,
+    raw_transactions: Vec<Transaction<tokenizers::transaction::RawPosting>>,
+    prices: Vec<Price>,
 }
