@@ -11,42 +11,31 @@ use std::hash::{Hash, Hasher};
 #[derive(Debug, Clone)]
 pub struct Account {
     name: String,
-    origin: Origin,
-    note: Option<String>,
-    iban: Option<String>,
-    country: Option<String>,
-    aliases: HashSet<String>,
-    check: Vec<String>,
-    assert: Vec<String>,
-    payee: Vec<Regex>,
-    default: bool,
+    pub(crate) origin: Origin,
+    pub(crate) note: Option<String>,
+    pub(crate) iban: Option<String>,
+    pub(crate) country: Option<String>,
+    pub(crate) aliases: HashSet<String>,
+    pub(crate) check: Vec<String>,
+    pub(crate) assert: Vec<String>,
+    pub(crate) payee: Vec<Regex>,
+    pub(crate) default: bool,
     matches: RefCell<HashMap<String, bool>>,
 }
 
 impl Account {
-    pub fn new(
-        name: String,
-        origin: Origin,
-        note: Option<String>,
-        iban: Option<String>,
-        country: Option<String>,
-        aliases: HashSet<String>,
-        check: Vec<String>,
-        assert: Vec<String>,
-        payee: Vec<Regex>,
-        default: bool,
-    ) -> Account {
+    pub fn from_directive(name: String) -> Account {
         Account {
             name,
-            origin,
-            note,
-            iban,
-            country,
-            aliases,
-            check,
-            assert,
-            payee,
-            default,
+            origin: Origin::FromDirective,
+            note: None,
+            iban: None,
+            country: None,
+            aliases: HashSet::new(),
+            check: vec![],
+            assert: vec![],
+            payee: vec![],
+            default: false,
             matches: RefCell::new(HashMap::new()),
         }
     }

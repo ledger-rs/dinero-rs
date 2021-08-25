@@ -1,26 +1,16 @@
 use super::super::Rule;
 use crate::parser::Tokenizer;
-use crate::{
-    models::{Account, Origin},
-    parser::utils::parse_string,
-};
+use crate::{models::Account, parser::utils::parse_string};
 
 use pest::iterators::Pair;
 use regex::Regex;
-use std::collections::HashSet;
 
 impl<'a> Tokenizer<'a> {
     pub(crate) fn parse_account(&self, element: Pair<Rule>) -> Account {
         let mut parsed = element.into_inner();
         let name = parse_string(parsed.next().unwrap());
-        let mut default = false;
-        let mut aliases = HashSet::new();
-        let mut check = Vec::new();
-        let mut assert = Vec::new();
-        let mut payee: Vec<Regex> = Vec::new();
-        let mut note = None;
-        let mut iban = None;
-        let mut country = None;
+
+        let mut account = Account::from_directive(name);
 
         for part in parsed {
             match part.as_rule() {
@@ -28,35 +18,28 @@ impl<'a> Tokenizer<'a> {
                     let mut property = part.into_inner();
                     match property.next().unwrap().as_rule() {
                         Rule::alias => {
-                            aliases.insert(parse_string(property.next().unwrap()));
+                            account
+                                .aliases
+                                .insert(parse_string(property.next().unwrap()));
                         }
-                        Rule::note => note = Some(parse_string(property.next().unwrap())),
-                        Rule::iban => iban = Some(parse_string(property.next().unwrap())),
-                        Rule::country => country = Some(parse_string(property.next().unwrap())),
-                        Rule::assert => assert.push(parse_string(property.next().unwrap())),
-                        Rule::check => check.push(parse_string(property.next().unwrap())),
-                        Rule::payee_subdirective => payee.push(
+                        Rule::note => account.note = Some(parse_string(property.next().unwrap())),
+                        Rule::iban => account.iban = Some(parse_string(property.next().unwrap())),
+                        Rule::country => {
+                            account.country = Some(parse_string(property.next().unwrap()))
+                        }
+                        Rule::assert => account.assert.push(parse_string(property.next().unwrap())),
+                        Rule::check => account.check.push(parse_string(property.next().unwrap())),
+                        Rule::payee_subdirective => account.payee.push(
                             Regex::new(parse_string(property.next().unwrap()).trim()).unwrap(),
                         ),
                         _ => {}
                     }
                 }
-                Rule::flag => default = true,
+                Rule::flag => account.default = true,
                 _ => {}
             }
         }
-        Account::new(
-            name,
-            Origin::FromDirective,
-            note,
-            iban,
-            country,
-            aliases,
-            check,
-            assert,
-            payee,
-            default,
-        )
+        account
     }
 }
 /*
