@@ -392,7 +392,7 @@ fn reg_exchange() {
         match i {
             0 => assert!(String::from(line).contains("100")),
             1 => assert!(String::from(line).contains("133")),
-            _ => assert!(false),
+            _ => unreachable!(),
         }
     }
 

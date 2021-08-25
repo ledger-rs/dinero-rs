@@ -36,7 +36,7 @@ use std::cmp::Ordering;
 /// let b1 = m1.clone() + m2.clone(); // 300 euros
 /// # assert_eq!(*b1.balance.get(&Some(eur.clone())).unwrap(), m3);
 ///
-/// // Multicurrency works as well
+/// // Multi-currency works as well
 /// let d1 = Money::from((usd.clone(), BigRational::from(BigInt::from(50))));
 /// let b2 = d1.clone() + m1.clone(); // 100 euros and 50 usd
 /// assert_eq!(b2.balance.len(), 2);
