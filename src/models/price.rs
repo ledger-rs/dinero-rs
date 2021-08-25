@@ -44,7 +44,9 @@ pub enum PriceType {
 /// Convert from one currency to every other currency
 ///
 /// This uses an implementation of the [Dijkstra algorithm](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm) to find the shortest path from every
-/// currency to the desired one
+/// currency to the desired one.
+///
+/// The return value is a conversion factor to every other currency
 pub fn conversion(
     currency: Rc<Currency>,
     date: NaiveDate,
@@ -169,6 +171,7 @@ impl Edge {
     }
 }
 
+/// A graph
 #[derive(Debug, Clone)]
 struct Graph {
     nodes: Vec<Rc<Node>>,
@@ -177,15 +180,21 @@ struct Graph {
 }
 
 impl Graph {
+    /// Build the graph from prices
+    /// every price is a potential connection between two currencies,
+    /// so the prices are actually the edges of the graph
     fn from_prices(prices: &[Price], source: Node) -> Self {
         let mut nodes = HashMap::new();
         let mut edges = Vec::new();
+
+        // keep the dates for which there is a price
         let mut currency_dates = HashSet::new();
         currency_dates.insert((source.currency.clone(), source.date));
         // Remove redundant prices and create the nodes
         let mut prices_nodup = HashMap::new();
         for p in prices.iter() {
-            if p.date > source.date {
+            // Do not use prices from the future
+            if p.date >= source.date {
                 continue;
             };
             let commodities =

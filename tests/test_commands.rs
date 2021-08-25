@@ -374,33 +374,6 @@ fn collapse() {
 
 #[test]
 /// Check the exchange option in the register report
-fn reg_exchange() {
-    let args = &[
-        "reg",
-        "--init-file",
-        "tests/example_files/empty_ledgerrc",
-        "-f",
-        "tests/example_files/reg_exchange.ledger",
-        "--exchange",
-        "EUR",
-        "travel",
-    ];
-    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
-    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
-
-    for (i, line) in output.lines().into_iter().enumerate() {
-        match i {
-            0 => assert!(String::from(line).contains("100")),
-            1 => assert!(String::from(line).contains("133")),
-            _ => unreachable!(),
-        }
-    }
-
-    test_args(args);
-}
-
-#[test]
-/// Check the exchange option in the register report
 fn roi() {
     let args = &[
         "roi",
