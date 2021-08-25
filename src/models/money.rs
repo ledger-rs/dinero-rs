@@ -235,7 +235,7 @@ impl Display for Money {
 
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Money::Zero => write!(f, "{}", "0"),
+            Money::Zero => write!(f, "0"),
             Money::Money { amount, currency } => {
                 // Suppose: -1.234.567,000358 EUR
                 // Get the format
