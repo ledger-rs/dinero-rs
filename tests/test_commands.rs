@@ -446,13 +446,10 @@ fn roi_calendar() {
     let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
 
     for (i, line) in output.lines().into_iter().enumerate() {
-        match i {
-            3 => {
-                assert!(String::from(line).contains("2.50%"));
-                assert!(String::from(line).contains("2.38%"));
-            }
-            _ => assert!(true),
-        }
+        if let 3 = i {
+            assert!(String::from(line).contains("2.50%"));
+            assert!(String::from(line).contains("2.38%"));
+        } 
     }
 
     test_args(args);
