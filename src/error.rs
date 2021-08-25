@@ -1,11 +1,12 @@
-use colored::ColoredString;
+use colored::{ColoredString, Colorize};
 use std::error::Error;
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct EmptyLedgerFileError;
-impl Error for EmptyLedgerFileError{}
+impl Error for EmptyLedgerFileError {}
 impl Display for EmptyLedgerFileError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "The file does not have any information")
@@ -13,17 +14,25 @@ impl Display for EmptyLedgerFileError {
 }
 
 #[derive(Debug)]
-pub struct ConfigFileDoesNotExistError;
-impl Error for ConfigFileDoesNotExistError{}
-impl Display for ConfigFileDoesNotExistError {
+pub enum MissingFileError {
+    ConfigFileDoesNotExistError(PathBuf),
+    JournalFileDoesNotExistError(PathBuf),
+}
+impl Error for MissingFileError{}
+impl Display for MissingFileError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "Config file does not exist.")
+        let (title, file) =
+        match self {
+            MissingFileError::ConfigFileDoesNotExistError(x) => ("Configuration", x.to_str().unwrap()),
+            MissingFileError::JournalFileDoesNotExistError(x) => ("Journal", x.to_str().unwrap()),
+        };
+        write!(f, "{} file does not exist: {}", title, format!("{}",file).red().bold())
     }
 }
 
 #[derive(Debug)]
 pub struct TimeParseError;
-impl Error for TimeParseError{}
+impl Error for TimeParseError {}
 impl Display for TimeParseError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "Couldn't parse time.")

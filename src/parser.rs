@@ -11,6 +11,7 @@ use std::convert::TryFrom;
 use std::fs::read_to_string;
 use std::path::PathBuf;
 
+use crate::error::MissingFileError;
 use crate::models::{Account, Comment, Currency, HasName, Payee, Transaction};
 use crate::parser::utils::count_decimals;
 use crate::{models, CommonOpts, List};
@@ -92,7 +93,7 @@ pub struct Tokenizer<'a> {
 }
 
 impl<'a> TryFrom<&'a PathBuf> for Tokenizer<'a> {
-    type Error = std::io::Error;
+    type Error = Box<dyn std::error::Error>;
     fn try_from(file: &'a PathBuf) -> Result<Self, Self::Error> {
         match read_to_string(file) {
             Ok(content) => {
@@ -103,8 +104,15 @@ impl<'a> TryFrom<&'a PathBuf> for Tokenizer<'a> {
                     content,
                     seen_files,
                 })
-            }
-            Err(err) => Err(err),
+            },
+            Err(err) => {
+                match err.kind() {
+                    std::io::ErrorKind::NotFound => {
+                        Err(Box::new(MissingFileError::JournalFileDoesNotExistError(file.to_path_buf())))
+                    },
+                    _ => Err(Box::new(err))
+                }
+            },
         }
     }
 }

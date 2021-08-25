@@ -13,7 +13,7 @@ use regex::Regex;
 
 use crate::commands::roi::Frequency;
 use crate::commands::{accounts, balance, commodities, payees, prices, register, roi, statistics};
-use crate::error::{ConfigFileDoesNotExistError, TimeParseError};
+use crate::error::{MissingFileError, TimeParseError};
 use crate::models::Ledger;
 use chrono::NaiveDate;
 
@@ -206,7 +206,7 @@ fn init_paths(args: Vec<String>) -> Result<Vec<String>, Box<dyn std::error::Erro
             let file = Path::new(&args[i + 1]);
             if !file.exists() {
                 eprintln!("Config file '{}' does not exist", args[i + 1]);
-                return Err(Box::new(ConfigFileDoesNotExistError{}));
+                return Err(Box::new(MissingFileError::ConfigFileDoesNotExistError(file.to_path_buf())));
             }
             possible_paths.push(args[i + 1].clone());
             continue;
@@ -222,7 +222,6 @@ fn init_paths(args: Vec<String>) -> Result<Vec<String>, Box<dyn std::error::Erro
         Ok(vec![])
     }
 }
-
 
 /// Entry point for the command line app
 pub fn run_app(input_args: Vec<String>) -> Result<(), Box<dyn std::error::Error>> {
@@ -251,7 +250,7 @@ pub fn run_app(input_args: Vec<String>) -> Result<(), Box<dyn std::error::Error>
 
                     let start = Instant::now();
 
-                    let mut ledger = Ledger::try_from(&opt.options).unwrap();
+                    let mut ledger = Ledger::try_from(&opt.options)?;
                     let duration = start.elapsed();
                     println!(
                         "Loaded ledger from {:?} in {:?}",
@@ -368,7 +367,10 @@ fn parse_config_file(file: &Path, input_args: &[String]) -> Vec<String> {
     }
     args
 }
-fn execute_command(opt: Opt, maybe_ledger: Option<Ledger>) -> Result<(), Box<dyn std::error::Error>> {
+fn execute_command(
+    opt: Opt,
+    maybe_ledger: Option<Ledger>,
+) -> Result<(), Box<dyn std::error::Error>> {
     // Print options
     if let Err(e) = match opt.cmd {
         Command::Balance {
@@ -472,7 +474,7 @@ pub fn date_parser(date: &str) -> Result<NaiveDate, Box<dyn std::error::Error>> 
             Ok((t1, _t2, _b)) => Ok(t1.date()),
             Err(e) => {
                 eprintln!("{:?}", e);
-                Err(Box::new(TimeParseError{}))
+                Err(Box::new(TimeParseError {}))
             }
         }
     }

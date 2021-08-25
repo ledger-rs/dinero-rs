@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
 use crate::models::Ledger;
-use crate::{ CommonOpts};
+use crate::CommonOpts;
 
 /// Statistics command
 ///
