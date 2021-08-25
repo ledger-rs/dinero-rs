@@ -204,7 +204,7 @@ impl ParsedLedger {
 
         // Balance the transactions
         for t in transactions.iter_mut() {
-            let date = t.date.unwrap().clone();
+            let date = t.date.unwrap();
             // output_balances(&balances);
             let balance = match t.balance(&mut balances, options.no_balance_check) {
                 Ok(balance) => balance,
@@ -227,7 +227,7 @@ impl ParsedLedger {
         }
 
         // 5. Go over the transactions again and see if there is something we need to do with them
-        if automated_transactions.len() > 0 {
+        if !automated_transactions.is_empty() {
             // Build a cache of abstract value trees, it takes time to parse expressions, so better do it only once
             let mut root_nodes = HashMap::new();
             let mut regexes = HashMap::new();

@@ -83,7 +83,7 @@ pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(),
             }
         }
 
-        if options.collapse && (postings_vec.len() > 0) {
+        if options.collapse && (!postings_vec.is_empty()) {
             // Sort ...
             postings_vec.sort_by(|a, b| {
                 (&format!(

@@ -32,10 +32,10 @@ pub fn execute(
 
     // TODO exit gracefully
     assert!(
-        cash_flows_query.len() > 0,
+        !cash_flows_query.is_empty(),
         "cash flows query has to be provided"
     );
-    assert!(assets_value_query.len() > 0, "assets value query");
+    assert!(!assets_value_query.is_empty(), "assets value query");
     if calendar {
         assert!(frequency != Frequency::Yearly)
     }

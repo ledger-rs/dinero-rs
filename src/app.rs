@@ -245,7 +245,7 @@ pub fn run_app(input_args: Vec<String>) -> Result<(), ()> {
     match Opt::from_iter_safe(args.iter()) {
         Err(error) => match Repl::from_iter_safe(args.iter()) {
             Ok(opt) => {
-                if opt.options.query.len() > 0 {
+                if !opt.options.query.is_empty() {
                     error.exit()
                 } else {
                     println!("dinero-rs v{}", VERSION);
@@ -356,7 +356,7 @@ fn parse_config_file(file: &Path, input_args: &Vec<String>) -> Vec<String> {
                             rest.push_str(" ");
                             rest.push_str(arg);
                         }
-                        if rest.len() > 0 {
+                        if !rest.is_empty() {
                             args.push(rest.trim().to_string());
                         }
                     }
@@ -441,7 +441,7 @@ fn execute_command(opt: Opt, maybe_ledger: Option<Ledger>) -> Result<(), ()> {
         }
     } {
         let err_str = format!("{}", e);
-        if err_str.len() > 0 {
+        if !err_str.is_empty() {
             eprintln!("{}", err_str);
         }
         return Err(());

@@ -64,7 +64,7 @@ pub fn execute(
         for (acc, bal) in balances.iter() {
             let mut pattern = "".to_string();
             for part in acc.get_name().split(':') {
-                if pattern.len() > 0 {
+                if !pattern.is_empty() {
                     pattern.push_str(":");
                 }
                 pattern.push_str(part);
@@ -236,7 +236,7 @@ pub fn execute(
             .iter()
             .fold(Balance::new(), |acc, x| acc + x.1.to_owned());
         print!("{}", "--------------------");
-        if multipliers.len() > 0 {
+        if !multipliers.is_empty() {
             total_balance = convert_balance(
                 &total_balance,
                 &multipliers,
