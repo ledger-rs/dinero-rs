@@ -23,7 +23,7 @@ impl<'a> Tokenizer<'a> {
         let mut files: Vec<PathBuf> = Vec::new();
         if let Some(current_path) = self.file {
             let mut parent = current_path.parent().unwrap().to_str().unwrap().to_string();
-            if parent.len() == 0 {
+            if parent.is_empty() {
                 parent.push('.')
             }
             parent.push('/');
@@ -35,11 +35,8 @@ impl<'a> Tokenizer<'a> {
             match entry {
                 Ok(path) => {
                     files.push(path.clone());
-                    match self.seen_files.get(&path) {
-                        Some(_) => {
-                            panic!("Cycle detected. {:?}", &path);
-                        }
-                        None => (),
+                    if self.seen_files.get(&path).is_some() {
+                        panic!("Cycle detected. {:?}", &path);
                     }
                 }
                 Err(e) => eprintln!("{:?}", e),
@@ -52,7 +49,7 @@ impl<'a> Tokenizer<'a> {
                 inner_tokenizer.seen_files.insert(*p);
             }
             let mut new_items: ParsedLedger =
-                inner_tokenizer.tokenize_with_currencies(&options, Some(commodities));
+                inner_tokenizer.tokenize_with_currencies(options, Some(commodities));
             items.append(&mut new_items);
         }
         items

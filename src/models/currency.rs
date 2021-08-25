@@ -37,7 +37,7 @@ use std::cmp::Ordering;
 /// let eur = Currency::from("eur");
 /// currencies.add_alias("euro".to_string(), &eur);
 /// assert_eq!(currencies.len_alias(), 3, "Alias len should be 3");
-/// currencies.add_alias("€".to_string(), &eur);
+/// currencies.add_alias('€'.to_string(), &eur);
 /// assert_eq!(currencies.len(), 2, "List len should be 2");
 /// assert_eq!(currencies.len_alias(), 4, "Alias len should be 4");
 /// assert_eq!(currencies.get("eur").unwrap().as_ref(), &eur);
@@ -213,7 +213,7 @@ impl From<&str> for CurrencyDisplayFormat {
 
         if first.as_rule() == Rule::currency_format_positive {
             display_format.negative_amount_display = NegativeAmountDisplay::BeforeSymbolAndNumber;
-            if first.as_str().starts_with("(") {
+            if first.as_str().starts_with('(') {
                 display_format.negative_amount_display = NegativeAmountDisplay::Parentheses;
             }
             parsed = first.into_inner();
@@ -249,7 +249,7 @@ impl From<&str> for CurrencyDisplayFormat {
                 let mut separators = vec![];
                 let num_str = x.as_str();
                 for sep in x.into_inner() {
-                    separators.push((sep.as_str().chars().nth(0).unwrap(), sep.as_span().start()));
+                    separators.push((sep.as_str().chars().next().unwrap(), sep.as_span().start()));
                 }
                 let len = separators.len();
                 display_format.thousands_separator = None;
@@ -305,10 +305,7 @@ impl<'a> From<&'a str> for Currency {
 
 impl FromDirective for Currency {
     fn is_from_directive(&self) -> bool {
-        match self.origin {
-            Origin::FromDirective => true,
-            _ => false,
-        }
+        matches!(self.origin, Origin::FromDirective)
     }
 }
 

@@ -28,17 +28,17 @@ pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(),
         }
     }
 
-    let first_transaction_date = &ledger.transactions.iter().nth(0).unwrap().date.unwrap();
+    let first_transaction_date = &ledger.transactions.get(0).unwrap().date.unwrap();
     let last_transaction_date = &ledger
         .transactions
         .iter()
         .rev()
-        .nth(0)
+        .next()
         .unwrap()
         .date
         .unwrap();
     let num_days = 1 + last_transaction_date
-        .signed_duration_since(first_transaction_date.clone())
+        .signed_duration_since(*first_transaction_date)
         .num_days();
     // Print the stats
     println!("{} postings", num_postings);
@@ -55,7 +55,7 @@ pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(),
     println!("{} days between first and last transaction", num_days);
     println!(
         "{:.2} transactions per day (average)",
-        (*&ledger.transactions.len() as f64) / (num_days as f64)
+        (ledger.transactions.len() as f64) / (num_days as f64)
     );
     println!(
         "{:.2} postings per day (average)",

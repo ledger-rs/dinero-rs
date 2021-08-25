@@ -18,7 +18,7 @@ impl<'a> Tokenizer<'a> {
         let mut note: Option<String> = None;
         let mut alias = HashSet::new();
 
-        while let Some(part) = parsed.next() {
+        for part in parsed {
             match part.as_rule() {
                 Rule::comment => {}
                 Rule::payee_property => {
@@ -39,8 +39,7 @@ impl<'a> Tokenizer<'a> {
             .iter()
             .map(|x| Regex::new(x.clone().as_str()).unwrap())
             .collect();
-        let payee = Payee::new(name, note, alias, alias_regex, Origin::FromDirective);
-        payee
+        Payee::new(name, note, alias, alias_regex, Origin::FromDirective)
     }
 }
 

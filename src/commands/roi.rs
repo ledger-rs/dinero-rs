@@ -25,17 +25,17 @@ pub fn execute(
     calendar: bool,
     summary: bool,
 ) -> Result<(), Error> {
-    let mut ledger = match maybe_ledger {
+    let ledger = match maybe_ledger {
         Some(ledger) => ledger,
         None => Ledger::try_from(options)?,
     };
 
     // TODO exit gracefully
     assert!(
-        cash_flows_query.len() > 0,
+        !cash_flows_query.is_empty(),
         "cash flows query has to be provided"
     );
-    assert!(assets_value_query.len() > 0, "assets value query");
+    assert!(!assets_value_query.is_empty(), "assets value query");
     if calendar {
         assert!(frequency != Frequency::Yearly)
     }
@@ -72,16 +72,16 @@ pub fn execute(
     for t in ledger.transactions.iter() {
         // cash_flows
         for p in t.postings.borrow().iter() {
-            if !filter::filter(&options, &cash_flows_node, t, p, &mut ledger.commodities)? {
+            if !filter::filter(options, &cash_flows_node, t, p, &ledger.commodities)? {
                 continue;
             }
             let index = get_period_index(p.date, &mut periods, frequency);
             let period = &mut periods[index];
 
             if first_date.is_none() {
-                first_date = Some(p.date.clone());
+                first_date = Some(p.date);
             }
-            last_date = Some(p.date.clone());
+            last_date = Some(p.date);
 
             match currency.as_ref() {
                 Some(_) => (),
@@ -109,7 +109,7 @@ pub fn execute(
 
         // balances
         for p in t.postings.borrow().iter() {
-            if !filter::filter(&options, &assets_value_node, t, p, &mut ledger.commodities)? {
+            if !filter::filter(options, &assets_value_node, t, p, &ledger.commodities)? {
                 continue;
             }
             let index = get_period_index(p.date, &mut periods, frequency);
@@ -126,13 +126,13 @@ pub fn execute(
     let mut last_period_date = None;
     for p in periods.iter_mut() {
         if last_period_date.is_none() {
-            last_period_date = Some(p.end.clone());
+            last_period_date = Some(p.end);
             continue;
         }
         // Because the gap may be more than one month, we need a loop
         'inner: loop {
             let expected = last_period_date.unwrap() + Duration::days(1);
-            last_period_date = Some(period_ending(expected.clone(), frequency));
+            last_period_date = Some(period_ending(expected, frequency));
             if expected == p.start {
                 break 'inner;
             }
@@ -176,7 +176,7 @@ pub fn execute(
         prev_final_money = p.final_money.clone();
     }
     match calendar {
-        false => print_normal(&periods, &options),
+        false => print_normal(&periods, options),
         true => print_calendar(&periods, &frequency),
     }
 
@@ -201,7 +201,7 @@ pub fn execute(
     Ok(())
 }
 
-fn print_calendar(periods: &Vec<Period>, frequency: &Frequency) {
+fn print_calendar(periods: &[Period], frequency: &Frequency) {
     let mut table = Table::new();
     table.set_format(*format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
 
@@ -276,7 +276,7 @@ fn print_calendar(periods: &Vec<Period>, frequency: &Frequency) {
     table.printstd();
 }
 
-fn print_normal(periods: &Vec<Period>, options: &CommonOpts) {
+fn print_normal(periods: &[Period], options: &CommonOpts) {
     let mut table = Table::new();
     table.set_format(*format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
     table.set_titles(
@@ -290,7 +290,7 @@ fn print_normal(periods: &Vec<Period>, options: &CommonOpts) {
             r->format!("{}", p.cash_flow),
             r->format!("{}", p.final_money.as_ref().unwrap()),
             r->format!("{:.2}%", (&p.twr() * BigInt::from(100)).to_f64().unwrap()),
-            r->format!("{:.2}%", &p.twr_annualized() * 100 as f64),
+            r->format!("{:.2}%", p.twr_annualized() * 100_f64),
         ]);
     }
     // Print the table to stdout
@@ -346,8 +346,7 @@ impl Period {
             };
         }
         // (end - initial + flow) / initial
-        let twr = (end - &initial + flow) / initial;
-        twr
+        (end - &initial + flow) / initial
     }
 
     fn twr_annualized(&self) -> f64 {

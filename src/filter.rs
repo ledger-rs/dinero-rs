@@ -72,14 +72,14 @@ pub fn filter_expression(
 /// let processed = preprocess_query(&params, &false);
 /// assert_eq!(processed, "((payee =~ /(?i)payee/) or (account =~ /(?i)savings/) and (account =~ /(?i)checking/) and (/aeiou/))")
 /// ```
-pub fn preprocess_query(query: &Vec<String>, related: &bool) -> String {
+pub fn preprocess_query(query: &[String], related: &bool) -> String {
     let mut expression = String::new();
     let mut and = false;
     let mut first = true;
     let mut expr = false;
     for raw_term in query.iter() {
         let term = raw_term.trim();
-        if term.len() == 0 {
+        if term.is_empty() {
             continue;
         }
         if term == "and" {
@@ -109,7 +109,7 @@ pub fn preprocess_query(query: &Vec<String>, related: &bool) -> String {
                 '@' => {
                     expression.push_str("payee =~ /(?i)"); // case insensitive
                     expression.push_str(&term.to_string()[1..]);
-                    expression.push_str("/")
+                    expression.push('/');
                 }
                 '%' => {
                     expression.push_str("has_tag(/(?i)"); // case insensitive
@@ -123,11 +123,11 @@ pub fn preprocess_query(query: &Vec<String>, related: &bool) -> String {
                 _ => {
                     expression.push_str("account =~ /(?i)"); // case insensitive
                     expression.push_str(term);
-                    expression.push_str("/")
+                    expression.push('/');
                 }
             }
         }
-        expression.push_str(")");
+        expression.push(')');
         and = false;
         expr = false;
         first = false;

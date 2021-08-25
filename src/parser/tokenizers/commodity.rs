@@ -17,7 +17,7 @@ impl<'a> Tokenizer<'a> {
         let mut default = false;
         let mut aliases = HashSet::new();
 
-        while let Some(part) = parsed.next() {
+        for part in parsed {
             match part.as_rule() {
                 Rule::comment => comments.push(Comment::from(parse_string(
                     part.into_inner().next().unwrap(),
@@ -44,12 +44,12 @@ impl<'a> Tokenizer<'a> {
         if default {
             currency.set_default();
         }
-        if note.is_some() {
-            currency.set_note(note.unwrap());
+        if let Some(n) = note {
+            currency.set_note(n);
         }
-        if format.is_some() {
-            currency.format = format.clone();
-            currency.set_format(&CurrencyDisplayFormat::from(format.unwrap().as_str()));
+        if let Some(f) = format {
+            currency.format = Some(f.clone());
+            currency.set_format(&CurrencyDisplayFormat::from(f.as_str()));
         }
 
         currency

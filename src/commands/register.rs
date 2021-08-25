@@ -57,16 +57,17 @@ pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(),
             .borrow()
             .iter()
             .filter(|p| {
-                filter::filter(&options, &node, t, p.to_owned(), &ledger.commodities).unwrap()
+                filter::filter(options, &node, t, p.to_owned(), &ledger.commodities).unwrap()
             })
-            .map(|p| p.clone())
+            .cloned()
             .collect::<Vec<Posting>>();
 
         // If the exchange option is active, change the amount of every posting to the desired currency. The balance will follow.
         if let Some(currency_string) = &options.exchange {
             if let Ok(currency) = ledger.commodities.get(currency_string) {
-                for index in 0..postings_vec.len() {
-                    let p = &postings_vec[index];
+                // for index in 0..postings_vec.len() {
+                for p in postings_vec.iter_mut() {
+                    // let p = &postings_vec[index];
                     let multipliers = conversion(currency.clone(), p.date, &ledger.prices);
                     if let Some(mult) = multipliers
                         .get(p.amount.as_ref().unwrap().get_commodity().unwrap().as_ref())
@@ -77,13 +78,14 @@ pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(),
                         };
                         let mut new_posting = p.clone();
                         new_posting.set_amount(new_amount);
-                        postings_vec[index] = new_posting;
+                        // postings_vec[index] = new_posting;
+                        *p = new_posting;
                     }
                 }
             }
         }
 
-        if options.collapse && (postings_vec.len() > 0) {
+        if options.collapse && (!postings_vec.is_empty()) {
             // Sort ...
             postings_vec.sort_by(|a, b| {
                 (&format!(
@@ -112,12 +114,12 @@ pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(),
             // ... and collapse
             let mut collapsed = vec![postings_vec[0].clone()];
             let mut ind = 0;
-            for i in 1..postings_vec.len() {
-                if (postings_vec[i].account == collapsed[ind].account)
-                    & (postings_vec[i].amount.as_ref().unwrap().get_commodity()
+            for p in postings_vec.iter().skip(1) {
+                if (p.account == collapsed[ind].account)
+                    & (p.amount.as_ref().unwrap().get_commodity()
                         == collapsed[ind].amount.as_ref().unwrap().get_commodity())
                 {
-                    let mut new_posting = postings_vec[i].clone();
+                    let mut new_posting = p.clone();
                     new_posting.set_amount(
                         (new_posting.amount.clone().unwrap()
                             + collapsed[ind].amount.clone().unwrap())
@@ -127,7 +129,7 @@ pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(),
                     collapsed[ind] = new_posting;
                 } else {
                     ind += 1;
-                    collapsed.push(postings_vec[i].clone())
+                    collapsed.push(p.clone())
                 }
             }
             postings_vec = collapsed;
@@ -211,7 +213,7 @@ pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(),
     Ok(())
 }
 
-fn clip(string: &String, width: usize) -> String {
+fn clip(string: &str, width: usize) -> String {
     if string.len() < width - 3 {
         string.to_string()
     } else {

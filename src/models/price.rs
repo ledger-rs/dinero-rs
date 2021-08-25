@@ -48,14 +48,14 @@ pub enum PriceType {
 pub fn conversion(
     currency: Rc<Currency>,
     date: NaiveDate,
-    prices: &Vec<Price>,
+    prices: &[Price],
 ) -> HashMap<Rc<Currency>, BigRational> {
     // Build the graph
     let source = Node {
         currency: currency.clone(),
         date,
     };
-    let mut graph = Graph::from_prices(prices, source.clone());
+    let mut graph = Graph::from_prices(prices, source);
     let mut distances = HashMap::new();
     let mut paths: HashMap<Rc<Node>, Vec<Rc<Edge>>> = HashMap::new();
     let mut queue = vec![];
@@ -177,7 +177,7 @@ struct Graph {
 }
 
 impl Graph {
-    fn from_prices(prices: &Vec<Price>, source: Node) -> Self {
+    fn from_prices(prices: &[Price], source: Node) -> Self {
         let mut nodes = HashMap::new();
         let mut edges = Vec::new();
         let mut currency_dates = HashSet::new();
@@ -220,21 +220,18 @@ impl Graph {
         // Create the nodes
         for (c, d) in currency_dates.iter() {
             nodes.insert(
-                (c.clone(), d.clone()),
+                (c.clone(), *d),
                 Rc::new(Node {
                     currency: c.clone(),
-                    date: d.clone(),
+                    date: *d,
                 }),
             );
         }
         // Edges from the prices
         for (_, p) in prices_nodup.iter() {
-            let from = nodes
-                .get(&(p.commodity.clone(), p.date.clone()))
-                .unwrap()
-                .clone();
+            let from = nodes.get(&(p.commodity.clone(), p.date)).unwrap().clone();
             let to = nodes
-                .get(&(p.price.get_commodity().unwrap(), p.date.clone()))
+                .get(&(p.price.get_commodity().unwrap(), p.date))
                 .unwrap()
                 .clone();
             edges.push(Rc::new(Edge {

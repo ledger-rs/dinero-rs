@@ -392,7 +392,7 @@ fn reg_exchange() {
         match i {
             0 => assert!(String::from(line).contains("100")),
             1 => assert!(String::from(line).contains("133")),
-            _ => assert!(false),
+            _ => unreachable!(),
         }
     }
 
@@ -421,7 +421,7 @@ fn roi() {
         match i {
             3 => assert!(String::from(line).contains("2.50%")),
             5 => assert!(String::from(line).contains("2.38%")),
-            _ => assert!(true),
+            _ => (),
         }
     }
 
@@ -506,9 +506,23 @@ fn related() {
     for (i, line) in output.lines().into_iter().enumerate() {
         match i {
             0 => assert!(String::from(line).contains("Checking account")),
-            _ => assert!(false),
+            _ => unreachable!(),
         }
     }
 
     test_args(args);
+}
+#[test]
+fn empty_file() {
+    let args = &[
+        "reg",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
+        "-f",
+        "tests/example_files/empty_ledgerrc",
+    ];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+
+    test_err(args);
 }

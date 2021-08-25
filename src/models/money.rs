@@ -10,7 +10,6 @@ use num::{BigInt, Signed, Zero};
 use crate::models::balance::Balance;
 use crate::models::currency::{CurrencySymbolPlacement, DigitGrouping, NegativeAmountDisplay};
 use crate::models::{Currency, HasName};
-use num::traits::Inv;
 use std::borrow::Borrow;
 use std::cmp::Ordering;
 
@@ -37,7 +36,7 @@ use std::cmp::Ordering;
 /// let b1 = m1.clone() + m2.clone(); // 300 euros
 /// # assert_eq!(*b1.balance.get(&Some(eur.clone())).unwrap(), m3);
 ///
-/// // Multicurrency works as well
+/// // Multi-currency works as well
 /// let d1 = Money::from((usd.clone(), BigRational::from(BigInt::from(50))));
 /// let b2 = d1.clone() + m1.clone(); // 100 euros and 50 usd
 /// assert_eq!(b2.balance.len(), 2);
@@ -47,7 +46,7 @@ use std::cmp::Ordering;
 /// let b3 = b1 - Balance::from(m2.clone()) + Balance::from(Money::new());
 /// assert_eq!(b3.to_money().unwrap(), m1);
 /// ```
-#[derive(Clone, Debug, PartialOrd)]
+#[derive(Clone, Debug)]
 pub enum Money {
     Zero,
     Money {
@@ -55,7 +54,11 @@ pub enum Money {
         currency: Rc<Currency>,
     },
 }
-
+impl Default for Money {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl Money {
     pub fn new() -> Self {
         Money::Zero
@@ -122,20 +125,32 @@ impl PartialEq for Money {
 
 impl Ord for Money {
     fn cmp(&self, other: &Self) -> Ordering {
+        match self.partial_cmp(other) {
+            Some(c) => c,
+            None => {
+                let self_commodity = self.get_commodity().unwrap();
+                let other_commodity = other.get_commodity().unwrap();
+                panic!(
+                    "Can't compare different currencies. {} and {}.",
+                    self_commodity, other_commodity
+                );
+            }
+        }
+    }
+}
+impl PartialOrd for Money {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         let self_amount = self.get_amount();
         let other_amount = other.get_amount();
         match self.get_commodity() {
-            None => self_amount.cmp(other_amount.borrow()),
+            None => self_amount.partial_cmp(other_amount.borrow()),
             Some(self_currency) => match other.get_commodity() {
-                None => self_amount.cmp(other_amount.borrow()),
+                None => self_amount.partial_cmp(other_amount.borrow()),
                 Some(other_currency) => {
                     if self_currency == other_currency {
-                        self_amount.cmp(other_amount.borrow())
+                        self_amount.partial_cmp(other_amount.borrow())
                     } else {
-                        panic!(
-                            "Can't compare different currencies. {} and {}.",
-                            self_currency, other_currency
-                        );
+                        None
                     }
                 }
             },
@@ -158,7 +173,10 @@ impl Div<BigRational> for Money {
     type Output = Money;
 
     fn div(self, rhs: BigRational) -> Self::Output {
-        self * rhs.inv()
+        match self {
+            Money::Zero => Money::new(),
+            Money::Money { amount, currency } => Money::from((currency, amount / rhs)),
+        }
     }
 }
 
@@ -217,7 +235,7 @@ impl Display for Money {
 
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Money::Zero => write!(f, "{}", "0"),
+            Money::Zero => write!(f, "0"),
             Money::Money { amount, currency } => {
                 // Suppose: -1.234.567,000358 EUR
                 // Get the format
@@ -238,7 +256,7 @@ impl Display for Money {
                     String::new()
                 } else {
                     format!("{:.*}", decimals, &decimal_part)
-                        .split(".")
+                        .split('.')
                         .last()
                         .unwrap()
                         .into()

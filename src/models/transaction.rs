@@ -77,8 +77,8 @@ impl<T> Transaction<T> {
                         current.push(c)
                     }
                 }
-                parts.push(current.clone());
-                //self.description.split(" ").map(|x| x.to_string()).collect();
+                parts.push(current);
+                //self.description.split(' ').map(|x| x.to_string()).collect();
                 let res = preprocess_query(&parts, &false);
                 self.filter_query = Some(res.clone());
                 res
@@ -142,7 +142,7 @@ impl Posting {
             date,
             balance: None,
             cost: None,
-            kind: kind,
+            kind,
             comments: vec![],
             tags: RefCell::new(vec![]),
             payee: Some(Rc::new(payee.clone())),
@@ -204,7 +204,7 @@ impl<PostingType> Transaction<PostingType> {
     }
 }
 
-fn total_balance(postings: &Vec<Posting>, kind: PostingType) -> Balance {
+fn total_balance(postings: &[Posting], kind: PostingType) -> Balance {
     let bal = Balance::new();
     postings
         .iter()
@@ -257,8 +257,7 @@ impl Transaction<Posting> {
             .borrow()
             .iter()
             .filter(|p| p.amount.is_none() & p.balance.is_none())
-            .collect::<Vec<&Posting>>()
-            .len()
+            .count()
     }
 
     /// Balances the transaction
@@ -354,7 +353,7 @@ impl Transaction<Posting> {
                 postings.push(Posting {
                     account: p.account.clone(),
                     amount: p.amount.clone(),
-                    date: p.date.clone(),
+                    date: p.date,
                     balance: p.balance.clone(),
                     cost: p.cost.clone(),
                     kind: PostingType::Real,
@@ -364,7 +363,7 @@ impl Transaction<Posting> {
                     transaction: p.transaction.clone(),
                     origin: PostingOrigin::FromTransaction,
                 });
-            } else if &p.balance.is_some() & !skip_balance_check {
+            } else if p.balance.is_some() & !skip_balance_check {
                 // There is a balance
                 let balance = p.balance.as_ref().unwrap();
 
@@ -377,7 +376,7 @@ impl Transaction<Posting> {
                 balances.insert(p.account.clone(), Balance::from(balance.clone()));
                 postings.push(Posting {
                     account: p.account.clone(),
-                    date: p.date.clone(),
+                    date: p.date,
                     amount: Some(money),
                     balance: p.balance.clone(),
                     cost: p.cost.clone(),
@@ -392,7 +391,7 @@ impl Transaction<Posting> {
                 // We do nothing, but this is the account for the empty post
                 fill_account = p.account.clone();
                 fill_payee = p.payee.clone();
-                fill_date = p.date.clone();
+                fill_date = p.date;
             }
         }
 
@@ -415,7 +414,7 @@ impl Transaction<Posting> {
                             .borrow_mut()
                             .iter()
                             .filter(|p| p.kind != PostingType::Real)
-                            .map(|p| p.clone())
+                            .cloned()
                             .collect(),
                     );
                     self.postings.replace(postings);
@@ -441,7 +440,7 @@ impl Transaction<Posting> {
                     comments: self.comments.clone(),
                     tags: RefCell::new(self.tags.clone()),
                     payee: fill_payee.clone(),
-                    date: fill_date.clone(),
+                    date: fill_date,
                     transaction: self.postings.borrow()[0].transaction.clone(),
                     origin: PostingOrigin::FromTransaction,
                 });
@@ -453,7 +452,7 @@ impl Transaction<Posting> {
                     .get_mut()
                     .iter()
                     .filter(|p| p.kind != PostingType::Real)
-                    .map(|p| p.clone())
+                    .cloned()
                     .collect(),
             );
             self.postings.replace(postings);

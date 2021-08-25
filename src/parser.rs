@@ -39,6 +39,11 @@ pub struct ParsedLedger {
     pub files: Vec<PathBuf>,
 }
 
+impl Default for ParsedLedger {
+    fn default() -> Self {
+        ParsedLedger::new()
+    }
+}
 impl ParsedLedger {
     pub fn new() -> Self {
         ParsedLedger {
@@ -71,6 +76,9 @@ impl ParsedLedger {
             + self.prices.len()
             + self.comments.len()
             + self.tags.len()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 }
 
@@ -123,17 +131,16 @@ impl<'a> Tokenizer<'a> {
         defined_currencies: Option<&List<Currency>>,
     ) -> ParsedLedger {
         let mut ledger: ParsedLedger = ParsedLedger::new();
-        match defined_currencies {
-            Some(x) => ledger.commodities.append(x),
-            None => (),
+        if let Some(x) = defined_currencies {
+            ledger.commodities.append(x);
         }
         if let Some(file) = self.file {
             ledger.files.push(file.clone());
         }
         match GrammarParser::parse(Rule::journal, self.content.as_str()) {
             Ok(mut parsed) => {
-                let mut elements = parsed.next().unwrap().into_inner();
-                while let Some(element) = elements.next() {
+                let elements = parsed.next().unwrap().into_inner();
+                for element in elements {
                     match element.as_rule() {
                         Rule::directive => {
                             let inner = element.into_inner().next().unwrap();
@@ -141,7 +148,7 @@ impl<'a> Tokenizer<'a> {
                                 Rule::include => {
                                     // This is the special case
                                     let mut new_ledger =
-                                        self.include(inner, &options, &ledger.commodities);
+                                        self.include(inner, options, &ledger.commodities);
                                     ledger.append(&mut new_ledger);
                                 }
                                 Rule::price => {
@@ -153,7 +160,7 @@ impl<'a> Tokenizer<'a> {
                                 Rule::commodity => {
                                     let commodity = self.parse_commodity(inner);
                                     if let Ok(old_commodity) =
-                                        ledger.commodities.get(&commodity.get_name())
+                                        ledger.commodities.get(commodity.get_name())
                                     {
                                         commodity.update_precision(old_commodity.get_precision());
                                     }

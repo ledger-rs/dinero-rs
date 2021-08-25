@@ -12,15 +12,15 @@ use std::path::PathBuf;
 pub struct GrammarParser;
 
 fn main() {
-    let file = env::args().skip(1).next();
+    let file = env::args().nth(1);
     let path = PathBuf::from(file.unwrap());
 
     let content = read_to_string(path).unwrap();
 
     match GrammarParser::parse(Rule::journal, content.as_str()) {
         Ok(mut parsed) => {
-            let mut elements = parsed.next().unwrap().into_inner();
-            while let Some(element) = elements.next() {
+            let elements = parsed.next().unwrap().into_inner();
+            for element in elements {
                 println!("{:?}: {}", element.as_rule(), element.as_str());
             }
         }

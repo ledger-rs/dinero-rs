@@ -1,78 +1,68 @@
 use super::super::Rule;
 use crate::parser::Tokenizer;
-use crate::{
-    models::{Account, Origin},
-    parser::utils::parse_string,
-};
+use crate::{models::Account, parser::utils::parse_string};
 
 use pest::iterators::Pair;
 use regex::Regex;
-use std::collections::HashSet;
 
 impl<'a> Tokenizer<'a> {
     pub(crate) fn parse_account(&self, element: Pair<Rule>) -> Account {
         let mut parsed = element.into_inner();
         let name = parse_string(parsed.next().unwrap());
-        let mut default = false;
-        let mut aliases = HashSet::new();
-        let mut check = Vec::new();
-        let mut assert = Vec::new();
-        let mut payee: Vec<Regex> = Vec::new();
-        let mut note = None;
-        let mut iban = None;
-        let mut country = None;
 
-        while let Some(part) = parsed.next() {
+        let mut account = Account::from_directive(name);
+
+        for part in parsed {
             match part.as_rule() {
                 Rule::account_property => {
                     let mut property = part.into_inner();
                     match property.next().unwrap().as_rule() {
                         Rule::alias => {
-                            aliases.insert(parse_string(property.next().unwrap()));
+                            account
+                                .aliases
+                                .insert(parse_string(property.next().unwrap()));
                         }
-                        Rule::note => note = Some(parse_string(property.next().unwrap())),
-                        Rule::iban => iban = Some(parse_string(property.next().unwrap())),
-                        Rule::country => country = Some(parse_string(property.next().unwrap())),
-                        Rule::assert => assert.push(parse_string(property.next().unwrap())),
-                        Rule::check => check.push(parse_string(property.next().unwrap())),
-                        Rule::payee_subdirective => payee.push(
+                        Rule::note => account.note = Some(parse_string(property.next().unwrap())),
+                        Rule::iban => account.iban = Some(parse_string(property.next().unwrap())),
+                        Rule::country => {
+                            account.country = Some(parse_string(property.next().unwrap()))
+                        }
+                        Rule::assert => account.assert.push(parse_string(property.next().unwrap())),
+                        Rule::check => account.check.push(parse_string(property.next().unwrap())),
+                        Rule::payee_subdirective => account.payee.push(
                             Regex::new(parse_string(property.next().unwrap()).trim()).unwrap(),
                         ),
-                        _ => {}
+                        _x => {}
                     }
                 }
-                Rule::flag => default = true,
-                _ => {}
+                Rule::flag => account.default = true,
+                _x => {}
             }
         }
-        let account = Account::new(
-            name,
-            Origin::FromDirective,
-            note,
-            iban,
-            country,
-            aliases,
-            check,
-            assert,
-            payee,
-            default,
-        );
         account
     }
 }
-/*
+
 #[cfg(test)]
 mod tests {
+    use structopt::StructOpt;
+
     use super::*;
     use crate::models::HasName;
-    use crate::List;
+    use crate::CommonOpts;
 
     #[test]
     fn test_spaces_in_account_names() {
         let mut tokenizer = Tokenizer::from("account An account name with spaces   ".to_string());
-        // let account = parse(&mut tokenizer).unwrap();
-        // assert_eq!(account.get_name(), "An account name with spaces");
-        unimplemented!("test spaces in account names");
+        let options = CommonOpts::from_iter(["", "-f", ""].iter());
+        let items = tokenizer.tokenize(&options);
+        let account = items
+            .accounts
+            .get("An account name with spaces")
+            .unwrap()
+            .as_ref();
+        assert_eq!(account.get_name(), "An account name with spaces");
+        assert_eq!(items.accounts.len(), 1);
     }
 
     #[test]
@@ -88,7 +78,13 @@ mod tests {
     "
             .to_string(),
         );
-        let account = parse(&mut tokenizer).unwrap();
+        let options = CommonOpts::from_iter(["", "-f", ""].iter());
+        let items = tokenizer.tokenize(&options);
+        let account = items
+            .accounts
+            .get("Assets:Checking account")
+            .unwrap()
+            .as_ref();
         assert!(!account.is_default(), "Not a default account");
         assert_eq!(account.get_name(), "Assets:Checking account");
     }
@@ -98,17 +94,18 @@ mod tests {
         let mut tokenizer = Tokenizer::from(
             "account Assets:MyAccount
     alias myAccount
+    check commodity == \"$\"
+    assert commodity == \"$\"
+    default
     "
             .to_string(),
         );
-        let account = parse(&mut tokenizer).unwrap();
-        assert!(!account.is_default(), "Not a default account");
+        let options = CommonOpts::from_iter(["", "-f", ""].iter());
+        let items = tokenizer.tokenize(&options);
+        let account = items.accounts.get("myAccount").unwrap().as_ref();
+        assert!(account.is_default(), "A default account");
         assert_eq!(account.get_name(), "Assets:MyAccount");
-
-        let mut accounts = List::<Account>::new();
-        accounts.insert(account);
-
-        assert!(accounts.get("myAccount").is_ok())
+        assert!(!account.check.is_empty(), "It has a check");
+        assert!(!account.assert.is_empty(), "It has an assert");
     }
 }
-*/

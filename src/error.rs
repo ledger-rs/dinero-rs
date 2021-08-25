@@ -4,6 +4,7 @@ use std::fmt::{Display, Formatter};
 
 #[derive(Debug)]
 pub enum LedgerError {
+    EmptyLedgerFile,
     TransactionIsNotBalanced,
     EmptyPostingShouldBeLast,
     AliasNotInList(String),
