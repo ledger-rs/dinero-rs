@@ -76,7 +76,7 @@ impl ParsedLedger {
     /// 4. Create automated transactions
     /// 5. Checks whether transactions are balanced again
     ///
-    /// There my be room for optimisation here
+    /// There may be room for optimization here
     pub fn to_ledger(mut self, options: &CommonOpts) -> Result<Ledger, Error> {
         let mut commodity_strs = HashSet::<String>::new();
         let mut account_strs = HashSet::<String>::new();
