@@ -421,7 +421,7 @@ fn roi() {
         match i {
             3 => assert!(String::from(line).contains("2.50%")),
             5 => assert!(String::from(line).contains("2.38%")),
-            _ => assert!(true),
+            _ => (),
         }
     }
 
@@ -506,7 +506,7 @@ fn related() {
     for (i, line) in output.lines().into_iter().enumerate() {
         match i {
             0 => assert!(String::from(line).contains("Checking account")),
-            _ => assert!(false),
+            _ => unreachable!(),
         }
     }
 
