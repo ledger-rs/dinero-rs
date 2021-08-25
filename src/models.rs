@@ -17,9 +17,9 @@ pub use transaction::{
     Cleared, Posting, PostingOrigin, PostingType, Transaction, TransactionStatus, TransactionType,
 };
 
-use crate::parser::ParsedLedger;
+use crate::{error::EmptyLedgerFileError, parser::ParsedLedger};
 use crate::parser::{tokenizers, value_expr};
-use crate::{error::LedgerError, parser::value_expr::build_root_node_from_expression};
+use crate::{parser::value_expr::build_root_node_from_expression};
 use crate::{filter::filter_expression, CommonOpts};
 use crate::{models::transaction::Cost, parser::Tokenizer};
 use crate::{GenericError, List};
@@ -47,14 +47,14 @@ pub struct Ledger {
 }
 
 impl TryFrom<&CommonOpts> for Ledger {
-    type Error = GenericError;
+    type Error = Box<dyn std::error::Error>;
     fn try_from(options: &CommonOpts) -> Result<Self, Self::Error> {
         // Get the options
         let path: PathBuf = options.input_file.clone();
-        let mut tokenizer: Tokenizer = Tokenizer::from(&path);
+        let mut tokenizer: Tokenizer = Tokenizer::try_from(&path)?;
         let items = tokenizer.tokenize(options);
         if items.is_empty() {
-            Err(LedgerError::EmptyLedgerFile.into())
+            Err(Box::new(EmptyLedgerFileError))
         } else {
             let ledger = items.to_ledger(options)?;
             Ok(ledger)

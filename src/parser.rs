@@ -7,6 +7,7 @@
 //! - Directive commodity
 
 use std::collections::HashSet;
+use std::convert::TryFrom;
 use std::fs::read_to_string;
 use std::path::PathBuf;
 
@@ -90,21 +91,20 @@ pub struct Tokenizer<'a> {
     seen_files: HashSet<&'a PathBuf>,
 }
 
-impl<'a> From<&'a PathBuf> for Tokenizer<'a> {
-    fn from(file: &'a PathBuf) -> Self {
+impl<'a> TryFrom<&'a PathBuf> for Tokenizer<'a> {
+    type Error = std::io::Error;
+    fn try_from(file: &'a PathBuf) -> Result<Self, Self::Error> {
         match read_to_string(file) {
             Ok(content) => {
                 let mut seen_files: HashSet<&PathBuf> = HashSet::new();
                 seen_files.insert(file);
-                Tokenizer {
+                Ok(Tokenizer {
                     file: Some(file),
                     content,
                     seen_files,
-                }
+                })
             }
-            Err(err) => {
-                panic!("{:?}", err);
-            }
+            Err(err) => Err(err),
         }
     }
 }
@@ -148,7 +148,7 @@ impl<'a> Tokenizer<'a> {
                                 Rule::include => {
                                     // This is the special case
                                     let mut new_ledger =
-                                        self.include(inner, options, &ledger.commodities);
+                                        self.include(inner, options, &ledger.commodities).unwrap();
                                     ledger.append(&mut new_ledger);
                                 }
                                 Rule::price => {

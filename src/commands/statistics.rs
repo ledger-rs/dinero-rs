@@ -1,12 +1,15 @@
 use std::convert::TryFrom;
 
 use crate::models::Ledger;
-use crate::{error::GenericError, CommonOpts};
+use crate::{ CommonOpts};
 
 /// Statistics command
 ///
 /// Prints summary statistics from the ledger
-pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(), GenericError> {
+pub fn execute(
+    options: &CommonOpts,
+    maybe_ledger: Option<Ledger>,
+) -> Result<(), Box<dyn std::error::Error>> {
     let ledger = match maybe_ledger {
         Some(ledger) => ledger,
         None => Ledger::try_from(options)?,

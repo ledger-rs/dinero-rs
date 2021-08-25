@@ -1,10 +1,37 @@
 use colored::ColoredString;
+use std::error::Error;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
 #[derive(Debug)]
+pub struct EmptyLedgerFileError;
+impl Error for EmptyLedgerFileError{}
+impl Display for EmptyLedgerFileError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "The file does not have any information")
+    }
+}
+
+#[derive(Debug)]
+pub struct ConfigFileDoesNotExistError;
+impl Error for ConfigFileDoesNotExistError{}
+impl Display for ConfigFileDoesNotExistError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "Config file does not exist.")
+    }
+}
+
+#[derive(Debug)]
+pub struct TimeParseError;
+impl Error for TimeParseError{}
+impl Display for TimeParseError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "Couldn't parse time.")
+    }
+}
+
+#[derive(Debug)]
 pub enum LedgerError {
-    EmptyLedgerFile,
     TransactionIsNotBalanced,
     EmptyPostingShouldBeLast,
     AliasNotInList(String),
@@ -15,6 +42,8 @@ pub enum LedgerError {
 pub struct GenericError {
     pub message: Vec<ColoredString>,
 }
+
+impl Error for GenericError {}
 
 impl Display for GenericError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {

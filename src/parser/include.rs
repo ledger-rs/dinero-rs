@@ -6,7 +6,7 @@ use crate::{
 use glob::glob;
 use pest::iterators::Pair;
 
-use std::path::PathBuf;
+use std::{convert::TryFrom, path::PathBuf};
 
 impl<'a> Tokenizer<'a> {
     /// Handles include directive
@@ -18,7 +18,7 @@ impl<'a> Tokenizer<'a> {
         element: Pair<Rule>,
         options: &CommonOpts,
         commodities: &List<Currency>,
-    ) -> ParsedLedger {
+    ) -> Result<ParsedLedger, Box<dyn std::error::Error>> {
         let mut pattern = String::new();
         let mut files: Vec<PathBuf> = Vec::new();
         if let Some(current_path) = self.file {
@@ -44,7 +44,7 @@ impl<'a> Tokenizer<'a> {
         }
         let mut items: ParsedLedger = ParsedLedger::new();
         for file in files {
-            let mut inner_tokenizer: Tokenizer = Tokenizer::from(&file);
+            let mut inner_tokenizer: Tokenizer = Tokenizer::try_from(&file)?;
             for p in self.seen_files.iter() {
                 inner_tokenizer.seen_files.insert(*p);
             }
@@ -52,6 +52,6 @@ impl<'a> Tokenizer<'a> {
                 inner_tokenizer.tokenize_with_currencies(options, Some(commodities));
             items.append(&mut new_items);
         }
-        items
+        Ok(items)
     }
 }

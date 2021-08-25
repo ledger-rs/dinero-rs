@@ -13,10 +13,9 @@ use regex::Regex;
 
 use crate::commands::roi::Frequency;
 use crate::commands::{accounts, balance, commodities, payees, prices, register, roi, statistics};
+use crate::error::{ConfigFileDoesNotExistError, TimeParseError};
 use crate::models::Ledger;
-use crate::GenericError;
 use chrono::NaiveDate;
-use colored::Colorize;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -196,7 +195,7 @@ const LEDGER_PATHS: &str = ".ledgerrc";
 /// Load parameters from an external configuration file
 ///
 /// It checks whether ```--args-only``` has been passed so that the configuration file is ignored
-fn init_paths(args: Vec<String>) -> Result<Vec<String>, AppError> {
+fn init_paths(args: Vec<String>) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     let mut possible_paths: Vec<String> = Vec::new();
     let mut ignore_init = false;
     for i in 0..args.len() {
@@ -207,7 +206,7 @@ fn init_paths(args: Vec<String>) -> Result<Vec<String>, AppError> {
             let file = Path::new(&args[i + 1]);
             if !file.exists() {
                 eprintln!("Config file '{}' does not exist", args[i + 1]);
-                return Err(AppError);
+                return Err(Box::new(ConfigFileDoesNotExistError{}));
             }
             possible_paths.push(args[i + 1].clone());
             continue;
@@ -224,11 +223,9 @@ fn init_paths(args: Vec<String>) -> Result<Vec<String>, AppError> {
     }
 }
 
-#[derive(Debug)]
-pub struct AppError;
 
 /// Entry point for the command line app
-pub fn run_app(input_args: Vec<String>) -> Result<(), AppError> {
+pub fn run_app(input_args: Vec<String>) -> Result<(), Box<dyn std::error::Error>> {
     let mut config_file = None;
     let possible_paths = init_paths(input_args.clone())?;
     for path in possible_paths.iter() {
@@ -371,7 +368,7 @@ fn parse_config_file(file: &Path, input_args: &[String]) -> Vec<String> {
     }
     args
 }
-fn execute_command(opt: Opt, maybe_ledger: Option<Ledger>) -> Result<(), AppError> {
+fn execute_command(opt: Opt, maybe_ledger: Option<Ledger>) -> Result<(), Box<dyn std::error::Error>> {
     // Print options
     if let Err(e) = match opt.cmd {
         Command::Balance {
@@ -445,13 +442,13 @@ fn execute_command(opt: Opt, maybe_ledger: Option<Ledger>) -> Result<(), AppErro
         if !err_str.is_empty() {
             eprintln!("{}", err_str);
         }
-        return Err(AppError);
+        return Err(e);
     }
     Ok(())
 }
 
 /// A parser for date expressions
-pub fn date_parser(date: &str) -> Result<NaiveDate, GenericError> {
+pub fn date_parser(date: &str) -> Result<NaiveDate, Box<dyn std::error::Error>> {
     lazy_static! {
         static ref RE_MONTH: Regex = Regex::new(r"(\d{4})[/-](\d\d?)$").unwrap();
         static ref RE_DATE: Regex = Regex::new(r"(\d{4})[/-](\d\d?)[/-](\d\d?)$").unwrap();
@@ -475,12 +472,7 @@ pub fn date_parser(date: &str) -> Result<NaiveDate, GenericError> {
             Ok((t1, _t2, _b)) => Ok(t1.date()),
             Err(e) => {
                 eprintln!("{:?}", e);
-                Err(GenericError {
-                    message: vec![format!("Invalid date {}", date)
-                        .as_str()
-                        .bold()
-                        .bright_red()],
-                })
+                Err(Box::new(TimeParseError{}))
             }
         }
     }
