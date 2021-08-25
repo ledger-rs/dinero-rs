@@ -12,21 +12,21 @@ pub enum LedgerError {
 }
 
 #[derive(Debug)]
-pub struct Error {
+pub struct GenericError {
     pub message: Vec<ColoredString>,
 }
 
-impl Display for Error {
+impl Display for GenericError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", ColoredStrings(&self.message))
     }
 }
 
-impl From<LedgerError> for Error {
+impl From<LedgerError> for GenericError {
     fn from(error: LedgerError) -> Self {
         eprintln!("{:?}", error);
         // TODO prettier error conversion
-        Error { message: vec![] }
+        GenericError { message: vec![] }
     }
 }
 

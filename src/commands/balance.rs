@@ -5,7 +5,7 @@ use colored::Colorize;
 
 use crate::models::{conversion, Account, Balance, Currency, HasName, Ledger, Money};
 use crate::parser::value_expr::build_root_node_from_expression;
-use crate::Error;
+use crate::GenericError;
 use crate::{filter, CommonOpts};
 use chrono::Utc;
 use num::rational::BigRational;
@@ -18,7 +18,7 @@ pub fn execute(
     maybe_ledger: Option<Ledger>,
     flat: bool,
     show_total: bool,
-) -> Result<(), Error> {
+) -> Result<(), GenericError> {
     let ledger = match maybe_ledger {
         Some(ledger) => ledger,
         None => Ledger::try_from(options)?,

@@ -14,7 +14,7 @@ use regex::Regex;
 use crate::commands::roi::Frequency;
 use crate::commands::{accounts, balance, commodities, payees, prices, register, roi, statistics};
 use crate::models::Ledger;
-use crate::Error;
+use crate::GenericError;
 use chrono::NaiveDate;
 use colored::Colorize;
 
@@ -451,7 +451,7 @@ fn execute_command(opt: Opt, maybe_ledger: Option<Ledger>) -> Result<(), AppErro
 }
 
 /// A parser for date expressions
-pub fn date_parser(date: &str) -> Result<NaiveDate, Error> {
+pub fn date_parser(date: &str) -> Result<NaiveDate, GenericError> {
     lazy_static! {
         static ref RE_MONTH: Regex = Regex::new(r"(\d{4})[/-](\d\d?)$").unwrap();
         static ref RE_DATE: Regex = Regex::new(r"(\d{4})[/-](\d\d?)[/-](\d\d?)$").unwrap();
@@ -475,7 +475,7 @@ pub fn date_parser(date: &str) -> Result<NaiveDate, Error> {
             Ok((t1, _t2, _b)) => Ok(t1.date()),
             Err(e) => {
                 eprintln!("{:?}", e);
-                Err(Error {
+                Err(GenericError {
                     message: vec![format!("Invalid date {}", date)
                         .as_str()
                         .bold()

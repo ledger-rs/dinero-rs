@@ -1,14 +1,14 @@
 use std::convert::TryFrom;
 
 use crate::models::Ledger;
-use crate::Error;
+use crate::GenericError;
 use crate::{
     models::{Currency, HasName},
     CommonOpts,
 };
 use std::ops::Deref;
 
-pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(), Error> {
+pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(), GenericError> {
     let ledger = match maybe_ledger {
         Some(ledger) => ledger,
         None => Ledger::try_from(options)?,

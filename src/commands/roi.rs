@@ -8,7 +8,7 @@ use crate::app::PeriodGroup;
 use crate::commands::balance::convert_balance;
 use crate::models::{conversion, Balance, Ledger, Money};
 use crate::parser::value_expr::build_root_node_from_expression;
-use crate::Error;
+use crate::GenericError;
 use crate::{filter, CommonOpts};
 use chrono::{Datelike, Duration, NaiveDate};
 use num::{BigInt, BigRational, Zero};
@@ -24,7 +24,7 @@ pub fn execute(
     frequency: Frequency,
     calendar: bool,
     summary: bool,
-) -> Result<(), Error> {
+) -> Result<(), GenericError> {
     let ledger = match maybe_ledger {
         Some(ledger) => ledger,
         None => Ledger::try_from(options)?,
