@@ -54,7 +54,11 @@ pub enum Money {
         currency: Rc<Currency>,
     },
 }
-
+impl Default for Money {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl Money {
     pub fn new() -> Self {
         Money::Zero
