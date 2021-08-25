@@ -449,7 +449,7 @@ fn roi_calendar() {
         if let 3 = i {
             assert!(String::from(line).contains("2.50%"));
             assert!(String::from(line).contains("2.38%"));
-        } 
+        }
     }
 
     test_args(args);
