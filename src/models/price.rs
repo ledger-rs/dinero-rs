@@ -229,10 +229,7 @@ impl Graph {
         }
         // Edges from the prices
         for (_, p) in prices_nodup.iter() {
-            let from = nodes
-                .get(&(p.commodity.clone(), p.date))
-                .unwrap()
-                .clone();
+            let from = nodes.get(&(p.commodity.clone(), p.date)).unwrap().clone();
             let to = nodes
                 .get(&(p.price.get_commodity().unwrap(), p.date))
                 .unwrap()
