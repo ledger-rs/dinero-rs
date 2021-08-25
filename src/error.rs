@@ -18,15 +18,16 @@ pub enum MissingFileError {
     ConfigFileDoesNotExistError(PathBuf),
     JournalFileDoesNotExistError(PathBuf),
 }
-impl Error for MissingFileError{}
+impl Error for MissingFileError {}
 impl Display for MissingFileError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let (title, file) =
-        match self {
-            MissingFileError::ConfigFileDoesNotExistError(x) => ("Configuration", x.to_str().unwrap()),
+        let (title, file) = match self {
+            MissingFileError::ConfigFileDoesNotExistError(x) => {
+                ("Configuration", x.to_str().unwrap())
+            }
             MissingFileError::JournalFileDoesNotExistError(x) => ("Journal", x.to_str().unwrap()),
         };
-        write!(f, "{} file does not exist: {}", title, format!("{}",file).red().bold())
+        write!(f, "{} file does not exist: {}", title, file.red().bold())
     }
 }
 

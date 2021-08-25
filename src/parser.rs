@@ -104,14 +104,12 @@ impl<'a> TryFrom<&'a PathBuf> for Tokenizer<'a> {
                     content,
                     seen_files,
                 })
-            },
-            Err(err) => {
-                match err.kind() {
-                    std::io::ErrorKind::NotFound => {
-                        Err(Box::new(MissingFileError::JournalFileDoesNotExistError(file.to_path_buf())))
-                    },
-                    _ => Err(Box::new(err))
-                }
+            }
+            Err(err) => match err.kind() {
+                std::io::ErrorKind::NotFound => Err(Box::new(
+                    MissingFileError::JournalFileDoesNotExistError(file.to_path_buf()),
+                )),
+                _ => Err(Box::new(err)),
             },
         }
     }

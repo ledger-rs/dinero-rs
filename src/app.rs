@@ -205,8 +205,9 @@ fn init_paths(args: Vec<String>) -> Result<Vec<String>, Box<dyn std::error::Erro
         } else if args[i] == INIT_FILE_FLAG {
             let file = Path::new(&args[i + 1]);
             if !file.exists() {
-                eprintln!("Config file '{}' does not exist", args[i + 1]);
-                return Err(Box::new(MissingFileError::ConfigFileDoesNotExistError(file.to_path_buf())));
+                return Err(Box::new(MissingFileError::ConfigFileDoesNotExistError(
+                    file.to_path_buf(),
+                )));
             }
             possible_paths.push(args[i + 1].clone());
             continue;
@@ -570,12 +571,12 @@ mod tests {
         let _res = run_app(args);
     }
     #[test]
-    #[should_panic]
     fn file_does_not_exist() {
         let args: Vec<String> = vec!["testing", "bal", "-f", "this_file_does_not_exist.ledger"]
             .iter()
             .map(|x| x.to_string())
             .collect();
-        let _res = run_app(args);
+        let res = run_app(args);
+        assert!(res.is_err())
     }
 }
