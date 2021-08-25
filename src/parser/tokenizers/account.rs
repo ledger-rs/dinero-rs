@@ -42,19 +42,27 @@ impl<'a> Tokenizer<'a> {
         account
     }
 }
-/*
+
 #[cfg(test)]
 mod tests {
+    use structopt::StructOpt;
+
     use super::*;
     use crate::models::HasName;
-    use crate::List;
+    use crate::CommonOpts;
 
     #[test]
     fn test_spaces_in_account_names() {
         let mut tokenizer = Tokenizer::from("account An account name with spaces   ".to_string());
-        // let account = parse(&mut tokenizer).unwrap();
-        // assert_eq!(account.get_name(), "An account name with spaces");
-        unimplemented!("test spaces in account names");
+        let options = CommonOpts::from_iter(["", "-f", ""].iter());
+        let items = tokenizer.tokenize(&options);
+        let account = items
+            .accounts
+            .get("An account name with spaces")
+            .unwrap()
+            .as_ref();
+        assert_eq!(account.get_name(), "An account name with spaces");
+        assert_eq!(items.accounts.len(), 1);
     }
 
     #[test]
@@ -70,7 +78,13 @@ mod tests {
     "
             .to_string(),
         );
-        let account = parse(&mut tokenizer).unwrap();
+        let options = CommonOpts::from_iter(["", "-f", ""].iter());
+        let items = tokenizer.tokenize(&options);
+        let account = items
+            .accounts
+            .get("Assets:Checking account")
+            .unwrap()
+            .as_ref();
         assert!(!account.is_default(), "Not a default account");
         assert_eq!(account.get_name(), "Assets:Checking account");
     }
@@ -83,14 +97,10 @@ mod tests {
     "
             .to_string(),
         );
-        let account = parse(&mut tokenizer).unwrap();
+        let options = CommonOpts::from_iter(["", "-f", ""].iter());
+        let items = tokenizer.tokenize(&options);
+        let account = items.accounts.get("Assets:MyAccount").unwrap().as_ref();
         assert!(!account.is_default(), "Not a default account");
         assert_eq!(account.get_name(), "Assets:MyAccount");
-
-        let mut accounts = List::<Account>::new();
-        accounts.insert(account);
-
-        assert!(accounts.get("myAccount").is_ok())
     }
 }
-*/
