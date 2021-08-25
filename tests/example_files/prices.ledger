@@ -3,6 +3,10 @@
     Assets:Crypto             1 BTC
     Equity:Opening balances
 
+; Define commodity
+commodity USD
+    format  -1234 USD
+
 ; Bitcoin prices in USD
 P 2021-08-01 BTC 39974.8945 USD
 P 2021-08-03 BTC 38027.8242 USD
