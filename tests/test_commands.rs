@@ -512,3 +512,17 @@ fn related() {
 
     test_args(args);
 }
+#[test]
+fn empty_file() {
+    let args = &[
+        "reg",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
+        "-f",
+        "tests/example_files/empty_ledgerrc",
+    ];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+
+    test_err(args);
+}
