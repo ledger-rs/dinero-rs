@@ -245,8 +245,7 @@ mod tests {
             "2022-05-13 ! (8760) Intereses | EstateGuru
             ; a transaction comment
             EstateGuru               1.06 EUR
-            ; intentional blank line
-
+            ; a posting comment
             Ingresos:Rendimientos
             "
             .to_string(),
