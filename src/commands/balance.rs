@@ -19,7 +19,7 @@ pub fn execute(
     flat: bool,
     show_total: bool,
 ) -> Result<(), Error> {
-    let mut ledger = match maybe_ledger {
+    let ledger = match maybe_ledger {
         Some(ledger) => ledger,
         None => Ledger::try_from(options)?,
     };
@@ -41,7 +41,7 @@ pub fn execute(
 
     for t in ledger.transactions.iter() {
         for p in t.postings.borrow().iter() {
-            if !filter::filter(&options, &node, t, p, &mut ledger.commodities)? {
+            if !filter::filter(options, &node, t, p, &ledger.commodities)? {
                 continue;
             }
             let mut cur_bal = balances
@@ -65,7 +65,7 @@ pub fn execute(
             let mut pattern = "".to_string();
             for part in acc.get_name().split(':') {
                 if !pattern.is_empty() {
-                    pattern.push_str(":");
+                    pattern.push(':');
                 }
                 pattern.push_str(part);
                 accounts.insert(pattern.clone());
@@ -74,8 +74,8 @@ pub fn execute(
         }
 
         // Sort by depth
-        vec = accounts.iter().map(|x| x.clone()).collect();
-        vec.sort_by(|a, b| a.matches(':').count().cmp(&b.matches(':').count()));
+        vec = accounts.iter().cloned().collect();
+        vec.sort_by_key(|a| a.matches(':').count());
 
         for account in vec.iter() {
             let mut prefix = account.clone();
@@ -114,12 +114,12 @@ pub fn execute(
                 temp.sort_by(|a, b| a.0.cmp(&b.0));
                 let mut account = String::new();
                 for (acc, value) in temp.iter() {
-                    if acc.to_string() != account {
+                    if *acc != account {
                         vec_balances.push((acc.as_str(), value.clone()));
                     } else {
                         let n = vec_balances.len();
                         vec_balances[n - 1] =
-                            (&acc.as_str(), vec_balances[n - 1].clone().1 + value.clone());
+                            (acc.as_str(), vec_balances[n - 1].clone().1 + value.clone());
                     }
 
                     account = acc.to_string();
@@ -204,8 +204,9 @@ pub fn execute(
                 if vec_balances[index + 1].0.split(':').count() != (n + 1) {
                     break;
                 }
-                for j in (index + 2)..num_bal {
-                    let name = vec_balances[j].0;
+                //for j in (index + 2)..num_bal {
+                for (name, _) in vec_balances.iter().take(num_bal).skip(index + 2) {
+                    // let name = vec_balances[j].0;
                     if !name.starts_with(account) {
                         break;
                     }
@@ -217,9 +218,9 @@ pub fn execute(
                 }
                 if collapse {
                     text.push(':');
-                    text.push_str(&vec_balances[index + 1].0.split(':').last().unwrap());
-                    n = n + 1;
-                    index = index + 1;
+                    text.push_str(vec_balances[index + 1].0.split(':').last().unwrap());
+                    n += 1;
+                    index += 1;
                 } else {
                     break;
                 }
@@ -235,7 +236,7 @@ pub fn execute(
         let mut total_balance = balances
             .iter()
             .fold(Balance::new(), |acc, x| acc + x.1.to_owned());
-        print!("{}", "--------------------");
+        print!("--------------------");
         if !multipliers.is_empty() {
             total_balance = convert_balance(
                 &total_balance,
