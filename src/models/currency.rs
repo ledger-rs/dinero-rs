@@ -249,7 +249,7 @@ impl From<&str> for CurrencyDisplayFormat {
                 let mut separators = vec![];
                 let num_str = x.as_str();
                 for sep in x.into_inner() {
-                    separators.push((sep.as_str().chars().nth(0).unwrap(), sep.as_span().start()));
+                    separators.push((sep.as_str().chars().next().unwrap(), sep.as_span().start()));
                 }
                 let len = separators.len();
                 display_format.thousands_separator = None;
@@ -305,10 +305,7 @@ impl<'a> From<&'a str> for Currency {
 
 impl FromDirective for Currency {
     fn is_from_directive(&self) -> bool {
-        match self.origin {
-            Origin::FromDirective => true,
-            _ => false,
-        }
+        matches!(self.origin, Origin::FromDirective)
     }
 }
 
