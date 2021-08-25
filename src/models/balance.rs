@@ -61,8 +61,8 @@ impl Balance {
         let mut positive = false;
         let mut negative = false;
         for (_, m) in self.balance.iter() {
-            positive = m.is_positive() | positive;
-            negative = m.is_negative() | negative;
+            positive |= m.is_positive();
+            negative |= m.is_negative();
             if positive & negative {
                 return true;
             }
@@ -71,6 +71,9 @@ impl Balance {
     }
     pub fn len(&self) -> usize {
         self.balance.len()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.balance.is_empty()
     }
     pub fn iter(&self) -> Iter<'_, Option<Rc<Currency>>, Money> {
         self.balance.iter()
