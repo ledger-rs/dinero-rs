@@ -42,64 +42,64 @@ impl Comment {
             static ref RE_VALUE: Regex = Regex::new(" *(.*): *(.*) *$").unwrap();
         }
         let calculated_tags = *self.calculated_tags.borrow_mut();
-        let tags = if !calculated_tags {
-            self.calculated_tags.replace(true);
-            self.tags
-                .borrow_mut()
-                .append(&mut match RE_FLAGS.is_match(&self.comment) {
-                    true => {
-                        let value = RE_FLAGS
-                            .captures(&self.comment)
-                            .unwrap()
-                            .iter()
-                            .nth(1)
-                            .unwrap()
-                            .unwrap()
-                            .as_str();
-                        let mut tags: Vec<Tag> = value
-                            .split(':')
-                            .map(|x| Tag {
-                                name: x.into(),
-                                check: vec![],
-                                assert: vec![],
-                                value: None,
-                            })
-                            .collect();
-                        tags.pop();
-                        tags.remove(0);
-                        tags
-                    }
-                    false => match RE_VALUE.is_match(&self.comment) {
+        let tags = {
+            if !calculated_tags {
+                self.calculated_tags.replace(true);
+                self.tags
+                    .borrow_mut()
+                    .append(&mut match RE_FLAGS.is_match(&self.comment) {
                         true => {
-                            let re_captures = RE_VALUE.captures(&self.comment).unwrap();
-                            let mut captures = re_captures.iter();
-                            captures.next();
-                            let name: String =
-                                captures.next().unwrap().unwrap().as_str().to_string();
-                            if name.contains(':') {
-                                vec![]
-                            } else {
-                                vec![Tag {
-                                    name,
+                            let value = RE_FLAGS
+                                .captures(&self.comment)
+                                .unwrap()
+                                .iter()
+                                .nth(1)
+                                .unwrap()
+                                .unwrap()
+                                .as_str();
+                            let mut tags: Vec<Tag> = value
+                                .split(':')
+                                .map(|x| Tag {
+                                    name: x.into(),
                                     check: vec![],
                                     assert: vec![],
-                                    value: Some(
-                                        captures
-                                            .next()
-                                            .unwrap()
-                                            .unwrap()
-                                            .as_str()
-                                            .trim()
-                                            .to_string(),
-                                    ),
-                                }]
-                            }
+                                    value: None,
+                                })
+                                .collect();
+                            tags.pop();
+                            tags.remove(0);
+                            tags
                         }
-                        false => vec![],
-                    },
-                });
-            self.tags.borrow().clone()
-        } else {
+                        false => match RE_VALUE.is_match(&self.comment) {
+                            true => {
+                                let re_captures = RE_VALUE.captures(&self.comment).unwrap();
+                                let mut captures = re_captures.iter();
+                                captures.next();
+                                let name: String =
+                                    captures.next().unwrap().unwrap().as_str().to_string();
+                                if name.contains(':') {
+                                    vec![]
+                                } else {
+                                    vec![Tag {
+                                        name,
+                                        check: vec![],
+                                        assert: vec![],
+                                        value: Some(
+                                            captures
+                                                .next()
+                                                .unwrap()
+                                                .unwrap()
+                                                .as_str()
+                                                .trim()
+                                                .to_string(),
+                                        ),
+                                    }]
+                                }
+                            }
+                            false => vec![],
+                        },
+                    });
+            }
             self.tags.borrow().clone()
         };
         tags
@@ -131,7 +131,7 @@ impl Comment {
         }
         match RE_VALUE.is_match(&self.comment) {
             true => Some(parse_str_as_date(
-                &self.comment.as_str().trim().split_at(2).1,
+                self.comment.as_str().trim().split_at(2).1,
             )),
             false => None,
         }
