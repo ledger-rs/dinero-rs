@@ -7,7 +7,6 @@ use std::fs::read_to_string;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 use structopt::StructOpt;
-use two_timer;
 
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -19,7 +18,7 @@ use crate::Error;
 use chrono::NaiveDate;
 use colored::Colorize;
 
-const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Debug, StructOpt)]
 enum Command {
@@ -197,7 +196,7 @@ const LEDGER_PATHS: &str = ".ledgerrc";
 /// Load parameters from an external configuration file
 ///
 /// It checks whether ```--args-only``` has been passed so that the configuration file is ignored
-fn init_paths(args: Vec<String>) -> Result<Vec<String>, ()> {
+fn init_paths(args: Vec<String>) -> Result<Vec<String>, AppError> {
     let mut possible_paths: Vec<String> = Vec::new();
     let mut ignore_init = false;
     for i in 0..args.len() {
@@ -208,7 +207,7 @@ fn init_paths(args: Vec<String>) -> Result<Vec<String>, ()> {
             let file = Path::new(&args[i + 1]);
             if !file.exists() {
                 eprintln!("Config file '{}' does not exist", args[i + 1]);
-                return Err(());
+                return Err(AppError);
             }
             possible_paths.push(args[i + 1].clone());
             continue;
@@ -225,8 +224,11 @@ fn init_paths(args: Vec<String>) -> Result<Vec<String>, ()> {
     }
 }
 
+#[derive(Debug)]
+pub struct AppError;
+
 /// Entry point for the command line app
-pub fn run_app(input_args: Vec<String>) -> Result<(), ()> {
+pub fn run_app(input_args: Vec<String>) -> Result<(), AppError> {
     let mut config_file = None;
     let possible_paths = init_paths(input_args.clone())?;
     for path in possible_paths.iter() {
@@ -322,8 +324,8 @@ pub fn run_app(input_args: Vec<String>) -> Result<(), ()> {
     }
 }
 
-fn parse_config_file(file: &Path, input_args: &Vec<String>) -> Vec<String> {
-    let mut args = input_args.clone();
+fn parse_config_file(file: &Path, input_args: &[String]) -> Vec<String> {
+    let mut args = input_args.to_owned();
 
     let mut aliases = HashMap::new();
     // TODO you shouldn't have to do this manually
@@ -337,8 +339,8 @@ fn parse_config_file(file: &Path, input_args: &Vec<String>) -> Vec<String> {
     let contents = read_to_string(file).unwrap();
     for line in contents.lines() {
         let option = line.trim_start();
-        match option.chars().nth(0) {
-            Some(c) => match c {
+        if let Some(c) = option.chars().next() {
+            match c {
                 '-' => {
                     let message = format!(
                         "Bad config file {:?}. Only long option names allowed.\n{}",
@@ -353,7 +355,7 @@ fn parse_config_file(file: &Path, input_args: &Vec<String>) -> Vec<String> {
                         args.push(option.to_string());
                         let mut rest = String::new();
                         for arg in iter {
-                            rest.push_str(" ");
+                            rest.push(' ');
                             rest.push_str(arg);
                         }
                         if !rest.is_empty() {
@@ -364,13 +366,12 @@ fn parse_config_file(file: &Path, input_args: &Vec<String>) -> Vec<String> {
                 ';' | '#' | '!' | '%' => (), // a comment
 
                 _ => panic!("Bad config file {:?}\n{}", file, line),
-            },
-            None => (),
+            }
         }
     }
     args
 }
-fn execute_command(opt: Opt, maybe_ledger: Option<Ledger>) -> Result<(), ()> {
+fn execute_command(opt: Opt, maybe_ledger: Option<Ledger>) -> Result<(), AppError> {
     // Print options
     if let Err(e) = match opt.cmd {
         Command::Balance {
@@ -444,7 +445,7 @@ fn execute_command(opt: Opt, maybe_ledger: Option<Ledger>) -> Result<(), ()> {
         if !err_str.is_empty() {
             eprintln!("{}", err_str);
         }
-        return Err(());
+        return Err(AppError);
     }
     Ok(())
 }
