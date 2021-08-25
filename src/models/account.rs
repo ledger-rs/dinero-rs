@@ -59,12 +59,7 @@ impl Account {
 
     /// Depth of the account, useful for filters and other
     pub fn depth(&self) -> usize {
-        self.name
-            .chars()
-            .filter(|c| *c == ':')
-            .collect::<Vec<char>>()
-            .len()
-            + 1
+        self.name.chars().filter(|c| *c == ':').count() + 1
     }
 
     pub fn is_match(&self, regex: Regex) -> bool {
