@@ -243,7 +243,10 @@ mod tests {
     fn difficult_transaction_head() {
         let mut tokenizer = Tokenizer::from(
             "2022-05-13 ! (8760) Intereses | EstateGuru
+            ; a transaction comment
             EstateGuru               1.06 EUR
+            ; intentional blank line
+
             Ingresos:Rendimientos
             "
             .to_string(),

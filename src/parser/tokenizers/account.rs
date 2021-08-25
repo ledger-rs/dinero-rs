@@ -36,7 +36,7 @@ impl<'a> Tokenizer<'a> {
                     }
                 }
                 Rule::flag => account.default = true,
-                _x => {},
+                _x => {}
             }
         }
         account
