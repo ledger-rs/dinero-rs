@@ -1,6 +1,34 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
-## [0.31.0] - xxx
+## [0.33.0] - xxx
+## Changed
+- Nicer error messages (without Rust trace) when there is a missing file.
+## [0.32.3] - 2021-08-24
+- The last one was a bad release
+## [0.32.2] - 2021-08-24 
+### Fixed
+- Now [parameters can be overriden](https://github.com/frosklis/dinero-rs/issues/138)
+
+## [0.32.1] - 2021-08-24
+### Changed
+- continuous integration pipeline
+## [0.32.0] - 2021-08-24
+### Added
+- Implemented ```date-format```
+- Added ```--calendar``` to the ```roi``` command, showing a [calendar view of TWR](https://github.com/frosklis/dinero-rs/issues/115).
+- Added ```--no-summary``` flag to the ```roi``` command, to suppress the summary after the table
+- Implemented [```--related``` flag](https://github.com/frosklis/dinero-rs/issues/102)
+### Fixed
+- [```args-only```](https://github.com/frosklis/dinero-rs/issues/120)
+
+## [0.31.0] - 2021-08-22 
+### Added
+- [The ```roi``` command](https://github.com/frosklis/dinero-rs/issues/115) is good enough
+
+### Fixed
+- [Currencies are shown consistently in a report](https://github.com/frosklis/dinero-rs/issues/103)
+- Read quantities like ```-$0.25```, [bug](https://github.com/frosklis/dinero-rs/issues/126)
+
 ## [0.30.0] - 2021-08-18
 ## Added
 - Show more info when loading the repl
@@ -33,6 +61,7 @@ Changelog file for dinero-rs project, a command line application for managing fi
 ## [0.26.0] - 2021-08-02
 ### Added
 - ```--args-only``` flag to ignore init files
+- ```precision``` property in the ```commodity``` directive
 ### Changed
 - Check whether dependencies are updated or not with deps.rs service
 ### Fixed

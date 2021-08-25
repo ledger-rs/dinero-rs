@@ -1,7 +1,4 @@
 use assert_cmd::Command;
-use dinero::run_app;
-use std::thread;
-use std::time::Duration;
 mod common;
 // const CARGO: &'static str = env!("CARGO");
 

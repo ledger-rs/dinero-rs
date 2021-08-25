@@ -1,6 +1,6 @@
 use crate::models::{Currency, Posting, PostingType, Transaction};
 use crate::parser::value_expr::{eval, EvalResult, Node};
-use crate::{CommonOpts, Error, List};
+use crate::{CommonOpts, GenericError, List};
 use colored::Colorize;
 use regex::Regex;
 use std::collections::HashMap;
@@ -12,7 +12,7 @@ pub fn filter(
     transaction: &Transaction<Posting>,
     posting: &Posting,
     commodities: &List<Currency>,
-) -> Result<bool, Error> {
+) -> Result<bool, GenericError> {
     // Get what's needed
     let real = options.real;
 
@@ -47,11 +47,11 @@ pub fn filter_expression(
     transaction: &Transaction<Posting>,
     commodities: &List<Currency>,
     regexes: &mut HashMap<String, Regex>,
-) -> Result<bool, Error> {
+) -> Result<bool, GenericError> {
     let result = eval(predicate, posting, transaction, commodities, regexes);
     match result {
         EvalResult::Boolean(b) => Ok(b),
-        _ => Err(Error {
+        _ => Err(GenericError {
             message: vec![
                 format!("{:?}", predicate).red().bold(),
                 "should return a boolean".normal(),
@@ -69,17 +69,17 @@ pub fn filter_expression(
 /// ```rust
 /// # use dinero::filter::preprocess_query;
 /// let params:Vec<String> = vec!["@payee", "savings" , "and", "checking", "and", "expr", "/aeiou/"].iter().map(|x| x.to_string()).collect();
-/// let processed = preprocess_query(&params);
+/// let processed = preprocess_query(&params, &false);
 /// assert_eq!(processed, "((payee =~ /(?i)payee/) or (account =~ /(?i)savings/) and (account =~ /(?i)checking/) and (/aeiou/))")
 /// ```
-pub fn preprocess_query(query: &Vec<String>) -> String {
+pub fn preprocess_query(query: &[String], related: &bool) -> String {
     let mut expression = String::new();
     let mut and = false;
     let mut first = true;
     let mut expr = false;
     for raw_term in query.iter() {
         let term = raw_term.trim();
-        if term.len() == 0 {
+        if term.is_empty() {
             continue;
         }
         if term == "and" {
@@ -109,7 +109,7 @@ pub fn preprocess_query(query: &Vec<String>) -> String {
                 '@' => {
                     expression.push_str("payee =~ /(?i)"); // case insensitive
                     expression.push_str(&term.to_string()[1..]);
-                    expression.push_str("/")
+                    expression.push('/');
                 }
                 '%' => {
                     expression.push_str("has_tag(/(?i)"); // case insensitive
@@ -123,14 +123,19 @@ pub fn preprocess_query(query: &Vec<String>) -> String {
                 _ => {
                     expression.push_str("account =~ /(?i)"); // case insensitive
                     expression.push_str(term);
-                    expression.push_str("/")
+                    expression.push('/');
                 }
             }
         }
-        expression.push_str(")");
+        expression.push(')');
         and = false;
         expr = false;
         first = false;
     }
-    format!("({})", expression)
+
+    if *related {
+        format!("(any({}) and not({}))", expression, expression)
+    } else {
+        format!("({})", expression)
+    }
 }

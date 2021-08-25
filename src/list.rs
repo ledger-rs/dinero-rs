@@ -23,7 +23,11 @@ pub struct List<T> {
     list: HashMap<String, Rc<T>>,
     matches: HashMap<String, Option<String>>,
 }
-
+impl<'a, T: Eq + Hash + HasName + Clone + FromDirective + HasAliases + Debug> Default for List<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl<'a, T: Eq + Hash + HasName + Clone + FromDirective + HasAliases + Debug> List<T> {
     pub fn new() -> Self {
         let aliases: HashMap<String, String> = HashMap::new();
@@ -47,7 +51,7 @@ impl<'a, T: Eq + Hash + HasName + Clone + FromDirective + HasAliases + Debug> Li
                 for alias in element.get_aliases().iter() {
                     self.aliases.insert(alias.to_lowercase(), name.clone());
                 }
-                self.list.insert(name.clone(), Rc::new(element));
+                self.list.insert(name, Rc::new(element));
             }
         }
     }
@@ -87,7 +91,6 @@ impl<'a, T: Eq + Hash + HasName + Clone + FromDirective + HasAliases + Debug> Li
                     .insert(alias.to_lowercase(), for_element.get_name().to_lowercase());
             }
         }
-        ()
     }
 
     pub fn get(&self, index: &str) -> Result<&Rc<T>, LedgerError> {
@@ -145,6 +148,9 @@ impl<'a, T: Eq + Hash + HasName + Clone + FromDirective + HasAliases + Debug> Li
     pub fn len(&self) -> usize {
         self.list.len()
     }
+    pub fn is_empty(&self) -> bool {
+        self.list.is_empty()
+    }
     pub fn len_alias(&self) -> usize {
         self.aliases.len() + self.len()
     }
@@ -158,10 +164,8 @@ impl<T: Clone + FromDirective + HasAliases + Debug + Eq + Hash + HasName> List<T
                 for alias in value.get_aliases().iter() {
                     self.aliases.insert(alias.to_lowercase(), key.clone());
                 }
-            } else {
-                if self.get(key).is_err() {
-                    self.list.insert(key.clone(), value.clone());
-                }
+            } else if self.get(key).is_err() {
+                self.list.insert(key.clone(), value.clone());
             }
         }
     }

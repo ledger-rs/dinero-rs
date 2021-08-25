@@ -7,18 +7,17 @@ use std::fs::read_to_string;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 use structopt::StructOpt;
-use two_timer;
 
 use lazy_static::lazy_static;
 use regex::Regex;
 
-use crate::commands::{accounts, balance, commodities, payees, prices, register, statistics};
+use crate::commands::roi::Frequency;
+use crate::commands::{accounts, balance, commodities, payees, prices, register, roi, statistics};
+use crate::error::{MissingFileError, TimeParseError};
 use crate::models::Ledger;
-use crate::Error;
 use chrono::NaiveDate;
-use colored::Colorize;
 
-const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Debug, StructOpt)]
 enum Command {
@@ -51,6 +50,29 @@ enum Command {
     /// List commodities
     #[structopt(alias = "stats")]
     Statistics(CommonOpts),
+
+    #[structopt(alias = "roi")]
+    ReturnOnInvestment {
+        #[structopt(flatten)]
+        options: CommonOpts,
+
+        /// Query that returns the cash flows for the investment
+        #[structopt(long = "--cash-flows")]
+        cash_flows: Vec<String>,
+        /// Query that returns the asset value
+        #[structopt(long = "--assets-value")]
+        assets_value: Vec<String>,
+
+        #[structopt(flatten)]
+        period_grouping: PeriodGroup,
+
+        /// Whether to display as calendar table
+        #[structopt(long = "--calendar")]
+        calendar: bool,
+        /// Do not display summary
+        #[structopt(long = "--no-summary")]
+        no_summary: bool,
+    },
 }
 
 #[derive(Debug, StructOpt)]
@@ -64,6 +86,7 @@ struct Opt {
     cmd: Command,
 }
 
+/// Options for the REPL interface
 #[derive(Debug, StructOpt)]
 struct Repl {
     #[structopt(flatten)]
@@ -112,8 +135,8 @@ pub struct CommonOpts {
     pub exchange: Option<String>,
 
     /// TODO Date format
-    #[structopt(long = "--date-format")]
-    date_format: Option<String>,
+    #[structopt(long = "--date-format", default_value = "%y-%b-%d")]
+    pub date_format: String,
 
     #[structopt(long = "--force-color")]
     force_color: bool,
@@ -143,34 +166,24 @@ pub struct CommonOpts {
     /// Whether to collapse postings from the same account in the same transaction
     #[structopt(long = "--collapse")]
     pub collapse: bool,
+
+    /// Show the other postings in the transaction
+    #[structopt(long = "--related")]
+    pub related: bool,
 }
 
-impl CommonOpts {
-    pub fn new() -> Self {
-        CommonOpts {
-            input_file: PathBuf::new(),
-            args_only: false,
-            init_file: None,
-            depth: None,
-            query: vec![],
-            real: false,
-            begin: None,
-            end: None,
-            period: None,
-            now: None,
-            no_balance_check: false,
-            exchange: None,
-            date_format: None,
-            force_color: false,
-            force_pager: false,
-            effective: false,
-            strict: false,
-            pedantic: false,
-            unrealized_gains: None,
-            unrealized_losses: None,
-            collapse: false,
-        }
-    }
+/// Groups of time
+#[derive(StructOpt, Clone, Debug)]
+pub struct PeriodGroup {
+    /// Group by year
+    #[structopt(long = "--yearly", short = "-Y")]
+    pub yearly: bool,
+    /// Group by quarter
+    #[structopt(long = "--quarterly", short = "-Q")]
+    pub quarterly: bool,
+    /// Group by month
+    #[structopt(long = "--monthly", short = "-M")]
+    pub monthly: bool,
 }
 
 /// Entry point for the command line app
@@ -179,7 +192,10 @@ const NO_INIT_FILE_FLAG: &str = "--args-only";
 const LEDGER_PATHS_UNDER_DIR: &str = "~/.ledgerrc";
 const LEDGER_PATHS: &str = ".ledgerrc";
 
-fn init_paths(args: Vec<String>) -> Result<Vec<String>, ()> {
+/// Load parameters from an external configuration file
+///
+/// It checks whether ```--args-only``` has been passed so that the configuration file is ignored
+fn init_paths(args: Vec<String>) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     let mut possible_paths: Vec<String> = Vec::new();
     let mut ignore_init = false;
     for i in 0..args.len() {
@@ -189,8 +205,9 @@ fn init_paths(args: Vec<String>) -> Result<Vec<String>, ()> {
         } else if args[i] == INIT_FILE_FLAG {
             let file = Path::new(&args[i + 1]);
             if !file.exists() {
-                eprintln!("Config file '{}' does not exist", args[i + 1]);
-                return Err(());
+                return Err(Box::new(MissingFileError::ConfigFileDoesNotExistError(
+                    file.to_path_buf(),
+                )));
             }
             possible_paths.push(args[i + 1].clone());
             continue;
@@ -208,7 +225,7 @@ fn init_paths(args: Vec<String>) -> Result<Vec<String>, ()> {
 }
 
 /// Entry point for the command line app
-pub fn run_app(input_args: Vec<String>) -> Result<(), ()> {
+pub fn run_app(input_args: Vec<String>) -> Result<(), Box<dyn std::error::Error>> {
     let mut config_file = None;
     let possible_paths = init_paths(input_args.clone())?;
     for path in possible_paths.iter() {
@@ -227,13 +244,14 @@ pub fn run_app(input_args: Vec<String>) -> Result<(), ()> {
     match Opt::from_iter_safe(args.iter()) {
         Err(error) => match Repl::from_iter_safe(args.iter()) {
             Ok(opt) => {
-                if opt.options.query.len() > 0 {
+                if !opt.options.query.is_empty() {
                     error.exit()
                 } else {
                     println!("dinero-rs v{}", VERSION);
 
                     let start = Instant::now();
-                    let mut ledger = Ledger::try_from(&opt.options).unwrap();
+
+                    let mut ledger = Ledger::try_from(&opt.options)?;
                     let duration = start.elapsed();
                     println!(
                         "Loaded ledger from {:?} in {:?}",
@@ -303,18 +321,28 @@ pub fn run_app(input_args: Vec<String>) -> Result<(), ()> {
     }
 }
 
-fn parse_config_file(file: &Path, input_args: &Vec<String>) -> Vec<String> {
-    let mut args = input_args.clone();
+fn parse_config_file(file: &Path, input_args: &[String]) -> Vec<String> {
+    let mut args = input_args.to_owned();
 
     let mut aliases = HashMap::new();
+    // TODO you shouldn't have to do this manually
     aliases.insert("-f".to_string(), "--file".to_string());
+    aliases.insert("-b".to_string(), "--begin".to_string());
+    aliases.insert("-d".to_string(), "--depth".to_string());
+    aliases.insert("-e".to_string(), "--end".to_string());
+    aliases.insert("-X".to_string(), "--exchange".to_string());
+    aliases.insert("-p".to_string(), "--period ".to_string());
+
     let contents = read_to_string(file).unwrap();
     for line in contents.lines() {
         let option = line.trim_start();
-        match option.chars().nth(0) {
-            Some(c) => match c {
+        if let Some(c) = option.chars().next() {
+            match c {
                 '-' => {
-                    let message = format!("Bad config file {:?}\n{}", file, line);
+                    let message = format!(
+                        "Bad config file {:?}. Only long option names allowed.\n{}",
+                        file, line
+                    );
                     assert!(line.starts_with("--"), "{}", message);
                     let mut iter = line.split_whitespace();
                     let option = iter.next().unwrap();
@@ -324,10 +352,10 @@ fn parse_config_file(file: &Path, input_args: &Vec<String>) -> Vec<String> {
                         args.push(option.to_string());
                         let mut rest = String::new();
                         for arg in iter {
-                            rest.push_str(" ");
+                            rest.push(' ');
                             rest.push_str(arg);
                         }
-                        if rest.len() > 0 {
+                        if !rest.is_empty() {
                             args.push(rest.trim().to_string());
                         }
                     }
@@ -335,13 +363,15 @@ fn parse_config_file(file: &Path, input_args: &Vec<String>) -> Vec<String> {
                 ';' | '#' | '!' | '%' => (), // a comment
 
                 _ => panic!("Bad config file {:?}\n{}", file, line),
-            },
-            None => (),
+            }
         }
     }
     args
 }
-fn execute_command(opt: Opt, maybe_ledger: Option<Ledger>) -> Result<(), ()> {
+fn execute_command(
+    opt: Opt,
+    maybe_ledger: Option<Ledger>,
+) -> Result<(), Box<dyn std::error::Error>> {
     // Print options
     if let Err(e) = match opt.cmd {
         Command::Balance {
@@ -359,6 +389,28 @@ fn execute_command(opt: Opt, maybe_ledger: Option<Ledger>) -> Result<(), ()> {
                 env::set_var("CLICOLOR_FORCE", "1");
             }
             register::execute(&options, maybe_ledger)
+        }
+
+        Command::ReturnOnInvestment {
+            options,
+            cash_flows,
+            assets_value,
+            period_grouping,
+            calendar,
+            no_summary,
+        } => {
+            if options.force_color {
+                env::set_var("CLICOLOR_FORCE", "1");
+            }
+            roi::execute(
+                &options,
+                maybe_ledger,
+                cash_flows,
+                assets_value,
+                Frequency::from(period_grouping),
+                calendar,
+                !no_summary,
+            )
         }
         Command::Commodities(options) => {
             if options.force_color {
@@ -390,16 +442,16 @@ fn execute_command(opt: Opt, maybe_ledger: Option<Ledger>) -> Result<(), ()> {
         }
     } {
         let err_str = format!("{}", e);
-        if err_str.len() > 0 {
+        if !err_str.is_empty() {
             eprintln!("{}", err_str);
         }
-        return Err(());
+        return Err(e);
     }
     Ok(())
 }
 
 /// A parser for date expressions
-pub fn date_parser(date: &str) -> Result<NaiveDate, Error> {
+pub fn date_parser(date: &str) -> Result<NaiveDate, Box<dyn std::error::Error>> {
     lazy_static! {
         static ref RE_MONTH: Regex = Regex::new(r"(\d{4})[/-](\d\d?)$").unwrap();
         static ref RE_DATE: Regex = Regex::new(r"(\d{4})[/-](\d\d?)[/-](\d\d?)$").unwrap();
@@ -423,12 +475,7 @@ pub fn date_parser(date: &str) -> Result<NaiveDate, Error> {
             Ok((t1, _t2, _b)) => Ok(t1.date()),
             Err(e) => {
                 eprintln!("{:?}", e);
-                Err(Error {
-                    message: vec![format!("Invalid date {}", date)
-                        .as_str()
-                        .bold()
-                        .bright_red()],
-                })
+                Err(Box::new(TimeParseError {}))
             }
         }
     }
@@ -509,7 +556,7 @@ mod tests {
     }
     #[test]
     #[should_panic(
-        expected = "Bad config file \"tests/example_files/example_bad_ledgerrc2\"\n- This does not parse either. And it shouldn't."
+        expected = "Bad config file \"tests/example_files/example_bad_ledgerrc2\". Only long option names allowed.\n- This does not parse either. And it shouldn't."
     )]
     fn other_bad_ledgerrc() {
         let args: Vec<String> = vec![
@@ -524,12 +571,12 @@ mod tests {
         let _res = run_app(args);
     }
     #[test]
-    #[should_panic]
     fn file_does_not_exist() {
         let args: Vec<String> = vec!["testing", "bal", "-f", "this_file_does_not_exist.ledger"]
             .iter()
             .map(|x| x.to_string())
             .collect();
-        let _res = run_app(args);
+        let res = run_app(args);
+        assert!(res.is_err())
     }
 }

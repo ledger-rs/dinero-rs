@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::collections::HashSet;
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -36,7 +37,7 @@ use std::cmp::Ordering;
 /// let eur = Currency::from("eur");
 /// currencies.add_alias("euro".to_string(), &eur);
 /// assert_eq!(currencies.len_alias(), 3, "Alias len should be 3");
-/// currencies.add_alias("€".to_string(), &eur);
+/// currencies.add_alias('€'.to_string(), &eur);
 /// assert_eq!(currencies.len(), 2, "List len should be 2");
 /// assert_eq!(currencies.len_alias(), 4, "Alias len should be 4");
 /// assert_eq!(currencies.get("eur").unwrap().as_ref(), &eur);
@@ -52,14 +53,21 @@ pub struct Currency {
     origin: Origin,
     note: Option<String>,
     aliases: HashSet<String>,
-    format: Option<String>,
+    pub(crate) format: Option<String>,
     default: bool,
-    precision: Option<usize>,
+    pub(crate) display_format: RefCell<CurrencyDisplayFormat>,
+}
+
+/// Definition of how to display a currency
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct CurrencyDisplayFormat {
     pub symbol_placement: CurrencySymbolPlacement,
     pub negative_amount_display: NegativeAmountDisplay,
-    decimal_separator: Separator,
-    digit_grouping: DigitGrouping,
-    thousands_separator: Separator,
+    pub decimal_separator: Separator,
+    pub digit_grouping: DigitGrouping,
+    pub thousands_separator: Option<Separator>,
+    pub precision: usize,
+    pub max_decimals: Option<usize>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -83,7 +91,7 @@ pub enum DigitGrouping {
     None,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Separator {
     Dot,
     Comma,
@@ -100,17 +108,41 @@ impl Currency {
             aliases: HashSet::new(),
             format: None,
             default: false,
-            precision: None,
-            symbol_placement: CurrencySymbolPlacement::AfterAmount,
-            negative_amount_display: NegativeAmountDisplay::BeforeSymbolAndNumber,
-            decimal_separator: Separator::Comma,
-            digit_grouping: DigitGrouping::Thousands,
-            thousands_separator: Separator::Space,
+            display_format: RefCell::new(DEFAULT_DISPLAY_FORMAT),
         }
     }
-    pub fn get_precision(&self) -> Option<usize> {
-        self.precision
+
+    pub fn set_note(&mut self, note: String) {
+        self.note = Some(note);
     }
+    pub fn set_default(&mut self) {
+        self.default = true;
+    }
+    pub fn set_aliases(&mut self, aliases: HashSet<String>) {
+        self.aliases = aliases;
+    }
+    pub fn set_precision(&self, precision: usize) {
+        self.display_format.borrow_mut().set_precision(precision);
+    }
+    pub fn get_precision(&self) -> usize {
+        self.display_format.borrow().precision
+    }
+    pub fn update_precision(&self, precision: usize) {
+        self.display_format.borrow_mut().update_precision(precision);
+    }
+    pub fn set_format(&self, format: &CurrencyDisplayFormat) {
+        let mut current_format = self.display_format.borrow_mut();
+        current_format.symbol_placement = format.symbol_placement;
+        current_format.negative_amount_display = format.negative_amount_display;
+        current_format.decimal_separator = format.decimal_separator;
+        current_format.digit_grouping = format.digit_grouping;
+        current_format.thousands_separator = format.thousands_separator;
+        current_format.precision = format.precision;
+        current_format.max_decimals = format.max_decimals;
+        // dbg!(format);
+    }
+}
+impl CurrencyDisplayFormat {
     pub fn get_decimal_separator_str(&self) -> char {
         match self.decimal_separator {
             Separator::Dot => '.',
@@ -126,20 +158,21 @@ impl Currency {
             x => Separator::Other(x),
         };
     }
-    pub fn get_thousands_separator_str(&self) -> char {
+    pub fn get_thousands_separator_str(&self) -> Option<char> {
         match self.thousands_separator {
-            Separator::Dot => '.',
-            Separator::Comma => ',',
-            Separator::Space => '\u{202f}',
-            Separator::Other(x) => x,
+            Some(Separator::Dot) => Some('.'),
+            Some(Separator::Comma) => Some(','),
+            Some(Separator::Space) => Some('\u{202f}'),
+            Some(Separator::Other(x)) => Some(x),
+            None => None,
         }
     }
     pub fn set_thousands_separator(&mut self, separator: char) {
         self.thousands_separator = match separator {
-            '.' => Separator::Dot,
-            ',' => Separator::Comma,
-            '\u{202f}' => Separator::Space,
-            x => Separator::Other(x),
+            '.' => Some(Separator::Dot),
+            ',' => Some(Separator::Comma),
+            '\u{202f}' => Some(Separator::Space),
+            x => Some(Separator::Other(x)),
         };
     }
     pub fn get_digit_grouping(&self) -> DigitGrouping {
@@ -148,21 +181,28 @@ impl Currency {
     pub fn set_digit_grouping(&mut self, grouping: DigitGrouping) {
         self.digit_grouping = grouping
     }
+    pub fn update_precision(&mut self, precision: usize) {
+        if precision > self.precision {
+            self.precision = precision;
+        }
+    }
     pub fn set_precision(&mut self, precision: usize) {
-        self.precision = Some(precision);
+        self.max_decimals = Some(precision);
     }
-    pub fn set_note(&mut self, note: String) {
-        self.note = Some(note);
+    pub fn get_precision(&self) -> usize {
+        match self.max_decimals {
+            Some(precision) => precision,
+            None => self.precision,
+        }
     }
-    pub fn set_default(&mut self) {
-        self.default = true;
-    }
-    pub fn set_aliases(&mut self, aliases: HashSet<String>) {
-        self.aliases = aliases;
-    }
+}
+
+impl From<&str> for CurrencyDisplayFormat {
     /// Sets the format of the currency representation
-    pub fn set_format(&mut self, format: String) {
-        let mut parsed = GrammarParser::parse(Rule::currency_format, format.as_str())
+    fn from(format: &str) -> Self {
+        // dbg!(&format);
+        let mut display_format = DEFAULT_DISPLAY_FORMAT;
+        let mut parsed = GrammarParser::parse(Rule::currency_format, format)
             .unwrap()
             .next()
             .unwrap()
@@ -172,9 +212,9 @@ impl Currency {
         let integer_format;
 
         if first.as_rule() == Rule::currency_format_positive {
-            self.negative_amount_display = NegativeAmountDisplay::BeforeSymbolAndNumber;
-            if first.as_str().starts_with("(") {
-                self.negative_amount_display = NegativeAmountDisplay::Parentheses;
+            display_format.negative_amount_display = NegativeAmountDisplay::BeforeSymbolAndNumber;
+            if first.as_str().starts_with('(') {
+                display_format.negative_amount_display = NegativeAmountDisplay::Parentheses;
             }
             parsed = first.into_inner();
             first = parsed.next().unwrap();
@@ -194,8 +234,9 @@ impl Currency {
                     rule = parsed.next().unwrap();
                 }
                 integer_format = Some(rule);
-                self.symbol_placement = CurrencySymbolPlacement::BeforeAmount;
-                self.negative_amount_display = NegativeAmountDisplay::BeforeSymbolAndNumber;
+                display_format.symbol_placement = CurrencySymbolPlacement::BeforeAmount;
+                display_format.negative_amount_display =
+                    NegativeAmountDisplay::BeforeSymbolAndNumber;
             }
             other => {
                 panic!("Other: {:?}", other);
@@ -205,36 +246,36 @@ impl Currency {
         // Get thousands separator and type of separation
         match integer_format {
             Some(x) => {
-                let start = x.as_span().start();
                 let mut separators = vec![];
-                let num_chars = x.as_str().len();
+                let num_str = x.as_str();
                 for sep in x.into_inner() {
-                    separators.push((sep.as_str().chars().nth(0).unwrap(), sep.as_span().start()));
+                    separators.push((sep.as_str().chars().next().unwrap(), sep.as_span().start()));
                 }
                 let len = separators.len();
+                display_format.thousands_separator = None;
                 if len == 0 {
-                    self.set_precision(0);
-                    self.digit_grouping = DigitGrouping::None;
+                    display_format.digit_grouping = DigitGrouping::None;
                 } else {
-                    self.set_precision(num_chars - separators[len - 1].1 + start - 1);
-                    self.set_decimal_separator(separators[len - 1].0);
+                    display_format.set_decimal_separator(separators[len - 1].0);
+                    // Get the precision
+                    display_format.max_decimals =
+                        Some(num_str.split(separators[len - 1].0).last().unwrap().len());
                 }
                 if len > 1 {
-                    self.set_thousands_separator(separators[len - 2].0);
+                    display_format.set_thousands_separator(separators[len - 2].0);
                 }
                 if len > 2 {
                     let n = separators[len - 2].1 - separators[len - 3].1;
                     match n {
-                        2 => self.digit_grouping = DigitGrouping::Indian,
-                        3 => self.digit_grouping = DigitGrouping::Thousands,
+                        2 => display_format.digit_grouping = DigitGrouping::Indian,
+                        3 => display_format.digit_grouping = DigitGrouping::Thousands,
                         _ => eprintln!("Wrong number format: {}", &format),
                     }
                 }
             }
-            None => self.digit_grouping = DigitGrouping::None,
+            None => display_format.digit_grouping = DigitGrouping::None,
         }
-
-        self.format = Some(format);
+        display_format
     }
 }
 
@@ -264,10 +305,7 @@ impl<'a> From<&'a str> for Currency {
 
 impl FromDirective for Currency {
     fn is_from_directive(&self) -> bool {
-        match self.origin {
-            Origin::FromDirective => true,
-            _ => false,
-        }
+        matches!(self.origin, Origin::FromDirective)
     }
 }
 
@@ -295,44 +333,70 @@ impl PartialOrd for Currency {
     }
 }
 
+const DEFAULT_DISPLAY_FORMAT: CurrencyDisplayFormat = CurrencyDisplayFormat {
+    symbol_placement: CurrencySymbolPlacement::AfterAmount,
+    negative_amount_display: NegativeAmountDisplay::BeforeSymbolAndNumber,
+    decimal_separator: Separator::Dot,
+    digit_grouping: DigitGrouping::Thousands,
+    thousands_separator: Some(Separator::Comma),
+    precision: 0,
+    max_decimals: None,
+};
+
 #[cfg(test)]
 mod tests {
     use super::*;
     #[test]
     fn format_1() {
-        let format = "-1.234,00 €";
-        let mut currency = Currency::from_directive(format.to_string());
-        currency.set_format(format.to_string());
+        let format_str = "-1.234,00 €";
+        let format = CurrencyDisplayFormat::from(format_str);
 
-        assert_eq!(currency.get_precision(), Some(2));
-        assert_eq!(currency.get_thousands_separator_str(), '.');
-        assert_eq!(currency.get_decimal_separator_str(), ',');
-        assert_eq!(currency.get_digit_grouping(), DigitGrouping::Thousands);
+        assert_eq!(format.get_precision(), 2);
+        assert_eq!(format.get_thousands_separator_str(), Some('.'));
+        assert_eq!(format.get_decimal_separator_str(), ',');
+        assert_eq!(format.get_digit_grouping(), DigitGrouping::Thousands);
         assert_eq!(
-            currency.symbol_placement,
+            format.symbol_placement,
             CurrencySymbolPlacement::AfterAmount
         );
         assert_eq!(
-            currency.negative_amount_display,
+            format.negative_amount_display,
             NegativeAmountDisplay::BeforeSymbolAndNumber
         );
     }
     #[test]
     fn format_2() {
-        let format = "($1,234.00)";
-        let mut currency = Currency::from_directive(format.to_string());
-        currency.set_format(format.to_string());
+        let format_str = "($1,234.00)";
+        let format = CurrencyDisplayFormat::from(format_str);
 
-        assert_eq!(currency.get_precision(), Some(2));
-        assert_eq!(currency.get_thousands_separator_str(), ',');
-        assert_eq!(currency.get_decimal_separator_str(), '.');
-        assert_eq!(currency.get_digit_grouping(), DigitGrouping::Thousands);
+        assert_eq!(format.get_precision(), 2);
+        assert_eq!(format.get_thousands_separator_str(), Some(','));
+        assert_eq!(format.get_decimal_separator_str(), '.');
+        assert_eq!(format.get_digit_grouping(), DigitGrouping::Thousands);
         assert_eq!(
-            currency.symbol_placement,
+            format.symbol_placement,
             CurrencySymbolPlacement::BeforeAmount
         );
         assert_eq!(
-            currency.negative_amount_display,
+            format.negative_amount_display,
+            NegativeAmountDisplay::BeforeSymbolAndNumber
+        );
+    }
+    #[test]
+    fn format_3() {
+        let format_str = "-1234,00 €";
+        let format = CurrencyDisplayFormat::from(format_str);
+
+        assert_eq!(format.get_precision(), 2);
+        assert_eq!(format.get_thousands_separator_str(), None);
+        assert_eq!(format.get_decimal_separator_str(), ',');
+        // assert_eq!(format.get_digit_grouping(), DigitGrouping::Thousands);
+        assert_eq!(
+            format.symbol_placement,
+            CurrencySymbolPlacement::AfterAmount
+        );
+        assert_eq!(
+            format.negative_amount_display,
             NegativeAmountDisplay::BeforeSymbolAndNumber
         );
     }

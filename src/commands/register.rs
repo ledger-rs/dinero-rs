@@ -1,7 +1,6 @@
 use crate::models::{conversion, HasName, Ledger, Posting, PostingType};
 use crate::models::{Balance, Money};
 use crate::parser::value_expr::build_root_node_from_expression;
-use crate::Error;
 use crate::{filter, CommonOpts};
 use colored::Colorize;
 use std::collections::HashMap;
@@ -10,7 +9,10 @@ use std::rc::Rc;
 use terminal_size::{terminal_size, Width};
 
 /// Register report
-pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(), Error> {
+pub fn execute(
+    options: &CommonOpts,
+    maybe_ledger: Option<Ledger>,
+) -> Result<(), Box<dyn std::error::Error>> {
     // Get options from options
     let _no_balance_check: bool = options.no_balance_check;
     // Now work
@@ -40,7 +42,7 @@ pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(),
 
     // Build a cache of abstract value trees, it takes time to parse expressions, so better do it only once
     let mut regexes = HashMap::new();
-    let query = filter::preprocess_query(&options.query);
+    let query = filter::preprocess_query(&options.query, &options.related);
     let node = if query.len() > 2 {
         Some(build_root_node_from_expression(
             query.as_str(),
@@ -57,16 +59,17 @@ pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(),
             .borrow()
             .iter()
             .filter(|p| {
-                filter::filter(&options, &node, t, p.to_owned(), &ledger.commodities).unwrap()
+                filter::filter(options, &node, t, p.to_owned(), &ledger.commodities).unwrap()
             })
-            .map(|p| p.clone())
+            .cloned()
             .collect::<Vec<Posting>>();
 
         // If the exchange option is active, change the amount of every posting to the desired currency. The balance will follow.
         if let Some(currency_string) = &options.exchange {
             if let Ok(currency) = ledger.commodities.get(currency_string) {
-                for index in 0..postings_vec.len() {
-                    let p = &postings_vec[index];
+                // for index in 0..postings_vec.len() {
+                for p in postings_vec.iter_mut() {
+                    // let p = &postings_vec[index];
                     let multipliers = conversion(currency.clone(), p.date, &ledger.prices);
                     if let Some(mult) = multipliers
                         .get(p.amount.as_ref().unwrap().get_commodity().unwrap().as_ref())
@@ -77,13 +80,14 @@ pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(),
                         };
                         let mut new_posting = p.clone();
                         new_posting.set_amount(new_amount);
-                        postings_vec[index] = new_posting;
+                        // postings_vec[index] = new_posting;
+                        *p = new_posting;
                     }
                 }
             }
         }
 
-        if options.collapse && (postings_vec.len() > 0) {
+        if options.collapse && (!postings_vec.is_empty()) {
             // Sort ...
             postings_vec.sort_by(|a, b| {
                 (&format!(
@@ -112,12 +116,12 @@ pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(),
             // ... and collapse
             let mut collapsed = vec![postings_vec[0].clone()];
             let mut ind = 0;
-            for i in 1..postings_vec.len() {
-                if (postings_vec[i].account == collapsed[ind].account)
-                    & (postings_vec[i].amount.as_ref().unwrap().get_commodity()
+            for p in postings_vec.iter().skip(1) {
+                if (p.account == collapsed[ind].account)
+                    & (p.amount.as_ref().unwrap().get_commodity()
                         == collapsed[ind].amount.as_ref().unwrap().get_commodity())
                 {
-                    let mut new_posting = postings_vec[i].clone();
+                    let mut new_posting = p.clone();
                     new_posting.set_amount(
                         (new_posting.amount.clone().unwrap()
                             + collapsed[ind].amount.clone().unwrap())
@@ -127,7 +131,7 @@ pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(),
                     collapsed[ind] = new_posting;
                 } else {
                     ind += 1;
-                    collapsed.push(postings_vec[i].clone())
+                    collapsed.push(p.clone())
                 }
             }
             postings_vec = collapsed;
@@ -138,14 +142,14 @@ pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(),
                 match t.get_payee(&ledger.payees) {
                     Some(payee) => print!(
                         "{:w1$}{:width$}",
-                        format!("{}", t.date.unwrap()),
+                        format!("{}", t.date.unwrap().format(&options.date_format)).green(),
                         clip(&format!("{} ", payee), w_description),
                         width = w_description,
                         w1 = w_date
                     ),
                     None => print!(
                         "{:w1$}{:width$}",
-                        format!("{}", t.date.unwrap()),
+                        format!("{}", t.date.unwrap().format(&options.date_format)).green(),
                         clip(&format!("{} ", ""), w_description),
                         width = w_description,
                         w1 = w_date
@@ -211,7 +215,7 @@ pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(),
     Ok(())
 }
 
-fn clip(string: &String, width: usize) -> String {
+fn clip(string: &str, width: usize) -> String {
     if string.len() < width - 3 {
         string.to_string()
     } else {

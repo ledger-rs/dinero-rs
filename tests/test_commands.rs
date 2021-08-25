@@ -392,9 +392,134 @@ fn reg_exchange() {
         match i {
             0 => assert!(String::from(line).contains("100")),
             1 => assert!(String::from(line).contains("133")),
-            _ => assert!(false),
+            _ => unreachable!(),
         }
     }
 
     test_args(args);
+}
+
+#[test]
+/// Check the exchange option in the register report
+fn roi() {
+    let args = &[
+        "roi",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
+        "-f",
+        "tests/example_files/hledger_roi.ledger",
+        "--cash-flows",
+        "cash",
+        "--assets-value",
+        "snake",
+        "-Q",
+    ];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+
+    for (i, line) in output.lines().into_iter().enumerate() {
+        match i {
+            3 => assert!(String::from(line).contains("2.50%")),
+            5 => assert!(String::from(line).contains("2.38%")),
+            _ => (),
+        }
+    }
+
+    test_args(args);
+}
+#[test]
+fn roi_calendar() {
+    let args = &[
+        "roi",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
+        "-f",
+        "tests/example_files/hledger_roi.ledger",
+        "--cash-flows",
+        "cash",
+        "--assets-value",
+        "snake",
+        "-Q",
+        "--calendar",
+    ];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+
+    for (i, line) in output.lines().into_iter().enumerate() {
+        if let 3 = i {
+            assert!(String::from(line).contains("2.50%"));
+            assert!(String::from(line).contains("2.38%"));
+        }
+    }
+
+    test_args(args);
+}
+
+/// It should be equivalent to pass the args-only to passing an empty ledgerrc
+#[test]
+fn args_only() {
+    let args_1 = &[
+        "bal",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
+        "-f",
+        "tests/example_files/hledger_roi.ledger",
+    ];
+    let args_2 = &[
+        "bal",
+        "--args-only",
+        "-f",
+        "tests/example_files/hledger_roi.ledger",
+    ];
+
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args_1).assert();
+    let output_1 = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    let assert_2 = Command::cargo_bin("dinero").unwrap().args(args_2).assert();
+    let output_2 = String::from_utf8(assert_2.get_output().to_owned().stdout).unwrap();
+
+    println!("{}", &output_1);
+    println!("{}", &output_2);
+    assert_eq!(output_1, output_2);
+
+    test_args(args_1);
+    test_args(args_2);
+}
+
+#[test]
+/// Check the collapse option
+fn related() {
+    let args = &[
+        "reg",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
+        "-f",
+        "tests/example_files/collapse_demo.ledger",
+        "--related",
+        "travel",
+    ];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+
+    for (i, line) in output.lines().into_iter().enumerate() {
+        match i {
+            0 => assert!(String::from(line).contains("Checking account")),
+            _ => unreachable!(),
+        }
+    }
+
+    test_args(args);
+}
+#[test]
+fn empty_file() {
+    let args = &[
+        "reg",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
+        "-f",
+        "tests/example_files/empty_ledgerrc",
+    ];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+
+    test_err(args);
 }

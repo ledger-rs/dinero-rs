@@ -16,7 +16,7 @@ impl<'a> Tokenizer<'a> {
         let mut check = vec![];
         let mut assert = vec![];
 
-        while let Some(part) = parsed.next() {
+        for part in parsed {
             match part.as_rule() {
                 Rule::commodity_property => {
                     let mut property = part.into_inner();
@@ -42,13 +42,15 @@ impl<'a> Tokenizer<'a> {
 
 #[cfg(test)]
 mod tests {
+    use structopt::StructOpt;
+
     use super::*;
     use crate::{models::HasName, CommonOpts};
 
     #[test]
     fn test_spaces_in_tag_names() {
         let mut tokenizer = Tokenizer::from("tag   A tag name with spaces   ".to_string());
-        let items = tokenizer.tokenize(&CommonOpts::new());
+        let items = tokenizer.tokenize(&CommonOpts::from_iter(["", "-f", ""].iter()));
         let tag = &items.tags[0];
         assert_eq!(tag.get_name(), "A tag name with spaces");
     }

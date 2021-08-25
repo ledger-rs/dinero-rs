@@ -8,8 +8,7 @@ use std::{
 pub use account::Account;
 pub use balance::Balance;
 pub use comment::Comment;
-pub use currency::{Currency, DigitGrouping};
-pub use models::{ParsedPrice, Tag};
+pub use currency::{Currency, CurrencyDisplayFormat, DigitGrouping};
 pub use money::Money;
 pub use payee::Payee;
 pub use price::conversion;
@@ -19,11 +18,11 @@ pub use transaction::{
 };
 
 use crate::parser::value_expr::build_root_node_from_expression;
-use crate::parser::ParsedLedger;
 use crate::parser::{tokenizers, value_expr};
+use crate::{error::EmptyLedgerFileError, parser::ParsedLedger};
 use crate::{filter::filter_expression, CommonOpts};
 use crate::{models::transaction::Cost, parser::Tokenizer};
-use crate::{Error, List};
+use crate::{GenericError, List};
 use num::BigInt;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -32,7 +31,6 @@ mod account;
 mod balance;
 mod comment;
 mod currency;
-mod models;
 mod money;
 mod payee;
 mod price;
@@ -49,14 +47,18 @@ pub struct Ledger {
 }
 
 impl TryFrom<&CommonOpts> for Ledger {
-    type Error = Error;
+    type Error = Box<dyn std::error::Error>;
     fn try_from(options: &CommonOpts) -> Result<Self, Self::Error> {
         // Get the options
         let path: PathBuf = options.input_file.clone();
-        let mut tokenizer: Tokenizer = Tokenizer::from(&path);
+        let mut tokenizer: Tokenizer = Tokenizer::try_from(&path)?;
         let items = tokenizer.tokenize(options);
-        let ledger = items.to_ledger(options)?;
-        Ok(ledger)
+        if items.is_empty() {
+            Err(Box::new(EmptyLedgerFileError))
+        } else {
+            let ledger = items.to_ledger(options)?;
+            Ok(ledger)
+        }
     }
 }
 
@@ -78,8 +80,8 @@ impl ParsedLedger {
     /// 4. Create automated transactions
     /// 5. Checks whether transactions are balanced again
     ///
-    /// There my be room for optimisation here
-    pub fn to_ledger(mut self, options: &CommonOpts) -> Result<Ledger, Error> {
+    /// There may be room for optimization here
+    pub fn to_ledger(mut self, options: &CommonOpts) -> Result<Ledger, GenericError> {
         let mut commodity_strs = HashSet::<String>::new();
         let mut account_strs = HashSet::<String>::new();
         let mut payee_strs = HashSet::<String>::new();
@@ -189,10 +191,11 @@ impl ParsedLedger {
         let mut automated_transactions = Vec::new();
 
         for parsed in self.transactions.iter() {
-            let (mut t, mut auto, mut new_prices) = self._transaction_to_ledger(parsed)?;
-            transactions.append(&mut t);
-            automated_transactions.append(&mut auto);
-            prices.append(&mut new_prices);
+            let mut transformer = self._transaction_to_ledger(parsed)?;
+            // (mut t, mut auto, mut new_prices)
+            transactions.append(&mut transformer.ledger_transactions);
+            automated_transactions.append(&mut transformer.raw_transactions);
+            prices.append(&mut transformer.prices);
         }
 
         // Now sort the transactions vector by date
@@ -206,7 +209,7 @@ impl ParsedLedger {
 
         // Balance the transactions
         for t in transactions.iter_mut() {
-            let date = t.date.unwrap().clone();
+            let date = t.date.unwrap();
             // output_balances(&balances);
             let balance = match t.balance(&mut balances, options.no_balance_check) {
                 Ok(balance) => balance,
@@ -229,7 +232,7 @@ impl ParsedLedger {
         }
 
         // 5. Go over the transactions again and see if there is something we need to do with them
-        if automated_transactions.len() > 0 {
+        if !automated_transactions.is_empty() {
             // Build a cache of abstract value trees, it takes time to parse expressions, so better do it only once
             let mut root_nodes = HashMap::new();
             let mut regexes = HashMap::new();
@@ -252,7 +255,7 @@ impl ParsedLedger {
                             node.unwrap(), // automated.get_filter_query().as_str(),
                             p,
                             t,
-                            &mut self.commodities,
+                            &self.commodities,
                             &mut regexes,
                         )? {
                             for comment in automated.comments.iter() {
@@ -268,13 +271,13 @@ impl ParsedLedger {
                                     }
                                 }
                                 let payee = if let Some(payee_alias) = &auto_posting.payee {
-                                    match self.payees.get(&payee_alias) {
+                                    match self.payees.get(payee_alias) {
                                         Ok(_) => {} // do nothing
                                         Err(_) => {
                                             self.payees.insert(Payee::from(payee_alias.as_str()))
                                         }
                                     }
-                                    Some(self.payees.get(&payee_alias).unwrap().clone())
+                                    Some(self.payees.get(payee_alias).unwrap().clone())
                                 } else {
                                     p.payee.clone()
                                 };
@@ -288,14 +291,14 @@ impl ParsedLedger {
                                         &mut regexes,
                                     )),
                                     Some(alias) => {
-                                        if alias == "" {
+                                        if alias.is_empty() {
                                             Some(Money::from((
                                                 p.amount.clone().unwrap().get_commodity().unwrap(),
                                                 p.amount.clone().unwrap().get_amount()
                                                     * auto_posting.money_amount.clone().unwrap(),
                                             )))
                                         } else {
-                                            match self.commodities.get(&alias) {
+                                            match self.commodities.get(alias) {
                                                 Ok(_) => {} // do nothing
                                                 Err(_) => self
                                                     .commodities
@@ -311,7 +314,7 @@ impl ParsedLedger {
 
                                 let posting = Posting {
                                     account: account.clone(),
-                                    date: p.date.clone(),
+                                    date: p.date,
                                     amount: money,
                                     balance: None,
                                     cost: None,
@@ -341,7 +344,7 @@ impl ParsedLedger {
 
             // Balance the transactions
             for t in transactions.iter_mut() {
-                let date = t.date.unwrap().clone();
+                let date = t.date.unwrap();
                 // output_balances(&balances);
                 let balance = match t.balance(&mut balances, options.no_balance_check) {
                     Ok(balance) => balance,
@@ -376,14 +379,7 @@ impl ParsedLedger {
     fn _transaction_to_ledger(
         &self,
         parsed: &Transaction<tokenizers::transaction::RawPosting>,
-    ) -> Result<
-        (
-            Vec<Transaction<Posting>>,
-            Vec<Transaction<tokenizers::transaction::RawPosting>>,
-            Vec<Price>,
-        ),
-        Error,
-    > {
+    ) -> Result<TransactionTransformer, GenericError> {
         let mut automated_transactions = vec![];
         let mut prices = vec![];
         let mut transactions = vec![];
@@ -439,14 +435,14 @@ impl ParsedLedger {
                     // Modify posting with amounts
                     if let Some(c) = &p.money_currency {
                         posting.amount = Some(Money::from((
-                            self.commodities.get(&c.as_str()).unwrap().clone(),
+                            self.commodities.get(c.as_str()).unwrap().clone(),
                             p.money_amount.clone().unwrap(),
                         )));
                     }
                     if let Some(c) = &p.cost_currency {
                         let posting_currency = self
                             .commodities
-                            .get(&p.money_currency.as_ref().unwrap().as_str())
+                            .get(p.money_currency.as_ref().unwrap().as_str())
                             .unwrap();
                         let amount = Money::from((
                             self.commodities.get(c.as_str()).unwrap().clone(),
@@ -483,11 +479,8 @@ impl ParsedLedger {
                     }
                     transaction.postings.borrow_mut().push(posting.to_owned());
                 }
-                match transaction.clone().is_balanced() {
-                    true => {
-                        transaction.status = TransactionStatus::InternallyBalanced;
-                    }
-                    false => {}
+                if transaction.is_balanced() {
+                    transaction.status = TransactionStatus::InternallyBalanced;
                 }
                 transactions.push(transaction);
             }
@@ -500,7 +493,11 @@ impl ParsedLedger {
                 eprintln!("Found periodic transaction. Skipping.");
             }
         }
-        Ok((transactions, automated_transactions, prices))
+        Ok(TransactionTransformer {
+            ledger_transactions: transactions,
+            raw_transactions: automated_transactions,
+            prices,
+        })
     }
 }
 
@@ -525,7 +522,8 @@ pub trait FromDirective {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use structopt::StructOpt;
+
     use crate::{parser::Tokenizer, CommonOpts};
 
     #[test]
@@ -537,17 +535,43 @@ mod tests {
             "
             .to_string(),
         );
-        let options = CommonOpts::new();
+        let options = CommonOpts::from_iter(["", "-f", ""].iter());
 
         let items = tokenizer.tokenize(&options);
-        dbg!(&items.transactions[0].payee);
         let ledger = items.to_ledger(&options).unwrap();
         let t = &ledger.transactions[0];
         let payee = t.get_payee(&ledger.payees);
         assert!(&ledger.payees.get("EstateGuru").is_ok());
-        dbg!(&payee);
-        dbg!(&t.payee);
-        dbg!(&ledger.payees);
         assert!(payee.is_some());
     }
+}
+
+use chrono::NaiveDate;
+
+#[derive(Debug, Clone)]
+pub struct ParsedPrice {
+    pub(crate) date: NaiveDate,
+    pub(crate) commodity: String,
+    pub(crate) other_commodity: String,
+    pub(crate) other_quantity: BigRational,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Tag {
+    pub name: String,
+    pub check: Vec<String>,
+    pub assert: Vec<String>,
+    pub value: Option<String>,
+}
+
+impl HasName for Tag {
+    fn get_name(&self) -> &str {
+        self.name.as_str()
+    }
+}
+
+struct TransactionTransformer {
+    ledger_transactions: Vec<Transaction<Posting>>,
+    raw_transactions: Vec<Transaction<tokenizers::transaction::RawPosting>>,
+    prices: Vec<Price>,
 }

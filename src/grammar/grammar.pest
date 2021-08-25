@@ -55,7 +55,7 @@ account_dir = { "account" ~ ws+ ~ account ~ ws* ~ comment? ~ end ~
         )?
     ~end)*
     }
-commodity_property = { (alias | note | format | isin) ~ ws+ ~ property_value }
+commodity_property = { (alias | note | format | isin ) ~ ws+ ~ property_value }
 payee_property = { (alias | note) ~ ws+ ~ property_value }
 account_property = { (alias | payee_subdirective | check | assert | note | iban | country ) ~ ws+ ~ property_value }
 tag_property = { (check | assert) ~ ws+ ~ property_value }
@@ -159,7 +159,7 @@ primary = {
     }
 
 term = _{ variable | money | number | regex | string }
-money = { (number ~ ws* ~ currency) | (currency ~ ws* ~ number) | ("0" ~ &(ws | sep | end ))}
+money = { (number ~ ws* ~ currency) | ("-"? ~ currency ~ ws* ~ number) | ("0" ~ &(ws | sep | end ))}
 currency = { string | unquoted_no_number }
 regex = { "/" ~ (!"/" ~ ANY)* ~ "/"}
 string = {

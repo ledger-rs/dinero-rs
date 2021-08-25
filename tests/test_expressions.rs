@@ -107,7 +107,7 @@ fn test_equality() {
         "-f",
         "tests/example_files/demo.ledger",
         "expr",
-        "any(abs(amount) == (2 * 1))",
+        "any((2 * 1) == abs(amount) )",
     ];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args_1).assert();
     let output_1 = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();

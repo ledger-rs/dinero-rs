@@ -3,17 +3,15 @@ use std::fmt::{Display, Formatter};
 use std::ops::{Add, Div, Mul, Neg, Sub};
 use std::rc::Rc;
 
-use num;
 use num::rational::BigRational;
+use num::{self, ToPrimitive};
 use num::{BigInt, Signed, Zero};
 
 use crate::models::balance::Balance;
 use crate::models::currency::{CurrencySymbolPlacement, DigitGrouping, NegativeAmountDisplay};
 use crate::models::{Currency, HasName};
-use num::traits::Inv;
 use std::borrow::Borrow;
 use std::cmp::Ordering;
-use std::str::FromStr;
 
 /// Money representation: an amount and a currency
 ///
@@ -35,30 +33,20 @@ use std::str::FromStr;
 /// let m1 = Money::from((eur.clone(), BigRational::from(BigInt::from(100))));
 /// let m2 = Money::from((eur.clone(), BigRational::from(BigInt::from(200))));
 /// # let m3 = Money::from((eur.clone(), BigRational::from(BigInt::from(300))));
-/// let b1 = m1.clone() + m2; // 300 euros
+/// let b1 = m1.clone() + m2.clone(); // 300 euros
 /// # assert_eq!(*b1.balance.get(&Some(eur.clone())).unwrap(), m3);
 ///
-/// // Multicurrency works as well
+/// // Multi-currency works as well
 /// let d1 = Money::from((usd.clone(), BigRational::from(BigInt::from(50))));
 /// let b2 = d1.clone() + m1.clone(); // 100 euros and 50 usd
-/// # assert_eq!(b2.balance.len(), 2);
-/// # assert_eq!(*b2.balance.get(&Some(eur.clone())).unwrap(), m1);
-/// # assert_eq!(*b2.balance.get(&Some(usd.clone())).unwrap(), d1);
+/// assert_eq!(b2.balance.len(), 2);
+/// assert_eq!(*b2.balance.get(&Some(eur.clone())).unwrap(), m1);
+/// assert_eq!(*b2.balance.get(&Some(usd.clone())).unwrap(), d1);
 ///
-/// // There are various display formats
-/// // -4_285_714.28571... EUR
-/// let mut euro = Currency::from("eur");
-/// euro.set_decimal_separator(',');
-/// euro.set_thousands_separator('.');
-/// euro.set_digit_grouping(DigitGrouping::Indian);
-/// let rc_euro = Rc::new(euro);
-/// let money = Money::from((rc_euro, BigRational::new(BigInt::from(-30000000), BigInt::from(7))));
-/// assert_eq!(format!("{}", &money), "-42.85.714,29 eur");
-/// assert_ne!(format!("{}", &money), "-4285714,29 eur");
-///
-///
+/// let b3 = b1 - Balance::from(m2.clone()) + Balance::from(Money::new());
+/// assert_eq!(b3.to_money().unwrap(), m1);
 /// ```
-#[derive(Clone, Debug, PartialOrd)]
+#[derive(Clone, Debug)]
 pub enum Money {
     Zero,
     Money {
@@ -66,7 +54,11 @@ pub enum Money {
         currency: Rc<Currency>,
     },
 }
-
+impl Default for Money {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl Money {
     pub fn new() -> Self {
         Money::Zero
@@ -133,20 +125,32 @@ impl PartialEq for Money {
 
 impl Ord for Money {
     fn cmp(&self, other: &Self) -> Ordering {
+        match self.partial_cmp(other) {
+            Some(c) => c,
+            None => {
+                let self_commodity = self.get_commodity().unwrap();
+                let other_commodity = other.get_commodity().unwrap();
+                panic!(
+                    "Can't compare different currencies. {} and {}.",
+                    self_commodity, other_commodity
+                );
+            }
+        }
+    }
+}
+impl PartialOrd for Money {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         let self_amount = self.get_amount();
         let other_amount = other.get_amount();
         match self.get_commodity() {
-            None => self_amount.cmp(other_amount.borrow()),
+            None => self_amount.partial_cmp(other_amount.borrow()),
             Some(self_currency) => match other.get_commodity() {
-                None => self_amount.cmp(other_amount.borrow()),
+                None => self_amount.partial_cmp(other_amount.borrow()),
                 Some(other_currency) => {
                     if self_currency == other_currency {
-                        self_amount.cmp(other_amount.borrow())
+                        self_amount.partial_cmp(other_amount.borrow())
                     } else {
-                        panic!(
-                            "Can't compare different currencies. {} and {}.",
-                            self_currency, other_currency
-                        );
+                        None
                     }
                 }
             },
@@ -169,7 +173,10 @@ impl Div<BigRational> for Money {
     type Output = Money;
 
     fn div(self, rhs: BigRational) -> Self::Output {
-        self * rhs.inv()
+        match self {
+            Money::Zero => Money::new(),
+            Money::Money { amount, currency } => Money::from((currency, amount / rhs)),
+        }
     }
 }
 
@@ -228,87 +235,75 @@ impl Display for Money {
 
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Money::Zero => write!(f, "{}", "0"),
+            Money::Zero => write!(f, "0"),
             Money::Money { amount, currency } => {
                 // Suppose: -1.234.567,000358 EUR
-                // num = trunc + fract
-                let base: i32 = 10;
-                let mut integer_part = amount.trunc(); // -1.234.567
-
-                // Read decimals from format, two as default
-                let decimals = match currency.get_precision() {
-                    Some(p) => p,
-                    None => {
-                        if amount.fract().is_zero() {
-                            0
-                        } else {
-                            2
-                        }
-                    }
+                // Get the format
+                let format = currency.display_format.borrow();
+                // Read number of decimals from format
+                let decimals = match format.max_decimals {
+                    Some(d) => d,
+                    None => format.precision,
                 };
-                let decimal_part = (amount.fract() * BigInt::from(base.pow(decimals as u32 + 2)))
-                    .abs()
-                    .trunc();
+
+                // num = trunc + fract
+                let integer_part = amount.trunc().abs().to_i128().unwrap(); // -1.234.567
+
+                let decimal_part = amount.fract().to_f64().unwrap();
+
+                // decimal_str holds the decimal part without the dot (decimal separator)
                 let mut decimal_str = if decimals == 0 {
                     String::new()
                 } else {
-                    format!("{:0width$}", decimal_part.numer(), width = decimals + 2)
+                    format!("{:.*}", decimals, &decimal_part)
+                        .split('.')
+                        .last()
+                        .unwrap()
+                        .into()
                 };
+                // now add the dot
                 if decimals > 0 {
-                    decimal_str.truncate(decimals + 1);
-
-                    let mut decimal = if u64::from_str(&decimal_str).unwrap() % 10 >= 5 {
-                        u64::from_str(&decimal_str).unwrap() / 10 + 1
-                    } else {
-                        u64::from_str(&decimal_str).unwrap() / 10
-                    };
-                    let len = format!("{}", decimal).len();
-                    if len == decimals + 1 {
-                        decimal = 0;
-                        if integer_part.is_positive() {
-                            integer_part += BigInt::from(1);
-                        } else {
-                            integer_part -= BigInt::from(1);
-                        }
-                    }
-                    let decimal_separator = currency.get_decimal_separator_str();
-                    decimal_str =
-                        format!("{}{:0width$}", decimal_separator, decimal, width = decimals);
+                    decimal_str = format!("{}{}", format.get_decimal_separator_str(), decimal_str);
                 }
 
                 let integer_str = {
-                    match currency.get_digit_grouping() {
-                        DigitGrouping::None => integer_part.numer().abs().to_string(), // Do nothing
+                    match format.get_digit_grouping() {
+                        DigitGrouping::None => integer_part.to_string(), // Do nothing
                         grouping => {
                             let mut group_size = 3;
                             let mut counter = 0;
                             let mut reversed = vec![];
-                            let thousands_separator = currency.get_thousands_separator_str();
-                            for c in integer_part.to_string().chars().rev() {
-                                if c == '-' {
-                                    continue;
-                                }
+                            match format.get_thousands_separator_str() {
+                                Some(character) => {
+                                    let thousands_separator = character;
+                                    for c in integer_part.to_string().chars().rev() {
+                                        if c == '-' {
+                                            continue;
+                                        }
 
-                                if counter == group_size {
-                                    reversed.push(thousands_separator);
-                                    if grouping == DigitGrouping::Indian {
-                                        group_size = 2;
+                                        if counter == group_size {
+                                            reversed.push(thousands_separator);
+                                            if grouping == DigitGrouping::Indian {
+                                                group_size = 2;
+                                            }
+                                            counter = 0;
+                                        }
+                                        reversed.push(c);
+                                        counter += 1;
                                     }
-                                    counter = 0;
+                                    reversed.iter().rev().collect()
                                 }
-                                reversed.push(c);
-                                counter += 1;
+                                None => integer_part.to_string(),
                             }
-                            reversed.iter().rev().collect()
                         }
                     }
                 };
 
                 let amount_str = format!("{}{}", integer_str, decimal_str);
-                match currency.symbol_placement {
+                match format.symbol_placement {
                     CurrencySymbolPlacement::BeforeAmount => {
                         if amount.is_negative() {
-                            match currency.negative_amount_display {
+                            match format.negative_amount_display {
                                 NegativeAmountDisplay::BeforeSymbolAndNumber => {
                                     write!(f, "-{}{}", currency.get_name(), amount_str)
                                 }
@@ -328,7 +323,7 @@ impl Display for Money {
                     }
                     CurrencySymbolPlacement::AfterAmount => {
                         if amount.is_negative() {
-                            match currency.negative_amount_display {
+                            match format.negative_amount_display {
                                 NegativeAmountDisplay::BeforeSymbolAndNumber
                                 | NegativeAmountDisplay::BeforeNumberBehindCurrency => {
                                     write!(f, "-{} {}", amount_str, currency.get_name())

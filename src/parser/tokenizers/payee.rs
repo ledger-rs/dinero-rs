@@ -18,7 +18,7 @@ impl<'a> Tokenizer<'a> {
         let mut note: Option<String> = None;
         let mut alias = HashSet::new();
 
-        while let Some(part) = parsed.next() {
+        for part in parsed {
             match part.as_rule() {
                 Rule::comment => {}
                 Rule::payee_property => {
@@ -39,36 +39,32 @@ impl<'a> Tokenizer<'a> {
             .iter()
             .map(|x| Regex::new(x.clone().as_str()).unwrap())
             .collect();
-        let payee = Payee::new(name, note, alias, alias_regex, Origin::FromDirective);
-        payee
+        Payee::new(name, note, alias, alias_regex, Origin::FromDirective)
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::{CommonOpts, models::HasName};
+    use structopt::StructOpt;
 
-    
+    use super::*;
+    use crate::{models::HasName, CommonOpts};
+
     #[test]
     //#[should_panic(expected = "Can't compare different currencies. € and USD.")]
     fn parse_ko() {
-        
         let input = "payee ACME  ; From the Looney Tunes\n\tWrong Acme, Inc.\n".to_string();
         let mut tokenizer = Tokenizer::from(input);
-        let items = tokenizer.tokenize(&CommonOpts::new());
-        dbg!(&items);
+        let items = tokenizer.tokenize(&CommonOpts::from_iter(["", "-f", ""].iter()));
         assert_eq!(items.payees.len(), 0);
     }
-    
 
     #[test]
     fn parse_ok() {
         let input = "payee ACME\n\talias Acme, Inc.\n".to_string();
         let mut tokenizer = Tokenizer::from(input);
 
-        let items = tokenizer.tokenize(&CommonOpts::new());
+        let items = tokenizer.tokenize(&CommonOpts::from_iter(["", "-f", ""].iter()));
         assert_eq!(items.payees.len(), 1);
 
         assert!(items.payees.get("acme, inc.").is_ok());
@@ -76,4 +72,3 @@ mod tests {
         assert_eq!(payee.get_name(), "ACME");
     }
 }
-

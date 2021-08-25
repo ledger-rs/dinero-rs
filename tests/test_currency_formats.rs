@@ -1,8 +1,12 @@
+use std::rc::Rc;
+
 use chrono::Utc;
+use dinero::models::{Currency, CurrencyDisplayFormat, Money};
 use dinero::parser::Tokenizer;
 use dinero::{models::conversion, CommonOpts};
 use num::traits::Inv;
 use num::{BigInt, BigRational};
+use structopt::StructOpt;
 
 #[test]
 fn currency_formats() {
@@ -36,7 +40,7 @@ commodity ACME
         "
         .to_string(),
     );
-    let options = CommonOpts::new();
+    let options = CommonOpts::from_iter(["", "-f", ""].iter());
     let items = tokenizer.tokenize(&options);
     let ledger = items.to_ledger(&options).unwrap();
     let eur = ledger.get_commodities().get("eur").unwrap();
@@ -62,4 +66,24 @@ commodity ACME
             "1 ACME = 1500 USD"
         );
     }
+}
+
+#[test]
+fn display_currencies() {
+    let format_1 = CurrencyDisplayFormat::from("-1.234,00 €");
+    let format_2 = CurrencyDisplayFormat::from("(1.234,00 €)");
+    let format_3 = CurrencyDisplayFormat::from("-€1.234,00 €");
+
+    let currency = Rc::new(Currency::from("€"));
+    let money = Money::from((currency.clone(), BigRational::from_float(-12.3).unwrap()));
+
+    currency.set_format(&format_1);
+    assert_eq!(format!("{}", money), "-12,30 €");
+
+    // TODO Fix this test
+    // currency.set_format(&format_2);
+    // assert_eq!(format!("{}", money), "(12,30 €)");
+
+    currency.set_format(&format_3);
+    assert_eq!(format!("{}", money), "-€12,30");
 }

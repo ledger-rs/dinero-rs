@@ -5,7 +5,6 @@ use colored::Colorize;
 
 use crate::models::{conversion, Account, Balance, Currency, HasName, Ledger, Money};
 use crate::parser::value_expr::build_root_node_from_expression;
-use crate::Error;
 use crate::{filter, CommonOpts};
 use chrono::Utc;
 use num::rational::BigRational;
@@ -18,8 +17,8 @@ pub fn execute(
     maybe_ledger: Option<Ledger>,
     flat: bool,
     show_total: bool,
-) -> Result<(), Error> {
-    let mut ledger = match maybe_ledger {
+) -> Result<(), Box<dyn std::error::Error>> {
+    let ledger = match maybe_ledger {
         Some(ledger) => ledger,
         None => Ledger::try_from(options)?,
     };
@@ -29,7 +28,7 @@ pub fn execute(
 
     // Build a cache of abstract value trees, it takes time to parse expressions, so better do it only once
     let mut regexes = HashMap::new();
-    let query = filter::preprocess_query(&options.query);
+    let query = filter::preprocess_query(&options.query, &options.related);
     let node = if query.len() > 2 {
         Some(build_root_node_from_expression(
             query.as_str(),
@@ -41,7 +40,7 @@ pub fn execute(
 
     for t in ledger.transactions.iter() {
         for p in t.postings.borrow().iter() {
-            if !filter::filter(&options, &node, t, p, &mut ledger.commodities)? {
+            if !filter::filter(options, &node, t, p, &ledger.commodities)? {
                 continue;
             }
             let mut cur_bal = balances
@@ -63,9 +62,9 @@ pub fn execute(
     if !flat {
         for (acc, bal) in balances.iter() {
             let mut pattern = "".to_string();
-            for part in acc.get_name().split(":") {
-                if pattern.len() > 0 {
-                    pattern.push_str(":");
+            for part in acc.get_name().split(':') {
+                if !pattern.is_empty() {
+                    pattern.push(':');
                 }
                 pattern.push_str(part);
                 accounts.insert(pattern.clone());
@@ -74,8 +73,8 @@ pub fn execute(
         }
 
         // Sort by depth
-        vec = accounts.iter().map(|x| x.clone()).collect();
-        vec.sort_by(|a, b| a.matches(":").count().cmp(&b.matches(":").count()));
+        vec = accounts.iter().cloned().collect();
+        vec.sort_by_key(|a| a.matches(':').count());
 
         for account in vec.iter() {
             let mut prefix = account.clone();
@@ -84,12 +83,12 @@ pub fn execute(
                 .iter()
                 .filter(|x| (x.0 == account) | x.0.starts_with(&prefix))
                 .fold(Balance::new(), |acc, new| acc + new.1.clone());
-            new_balances.insert(account.as_str().clone(), balance);
+            new_balances.insert(account.as_str(), balance);
         }
         vec_balances = new_balances
             .iter()
             .filter(|x| !x.1.is_zero())
-            .map(|x| (x.0.clone(), x.1.clone()))
+            .map(|x| (*x.0, x.1.clone()))
             .collect()
     } else {
         match depth {
@@ -100,7 +99,7 @@ pub fn execute(
                     .map(|x| {
                         (
                             x.0.get_name()
-                                .split(":")
+                                .split(':')
                                 .collect::<Vec<&str>>()
                                 .iter()
                                 .map(|x| x.to_string())
@@ -114,12 +113,12 @@ pub fn execute(
                 temp.sort_by(|a, b| a.0.cmp(&b.0));
                 let mut account = String::new();
                 for (acc, value) in temp.iter() {
-                    if acc.to_string() != account {
+                    if *acc != account {
                         vec_balances.push((acc.as_str(), value.clone()));
                     } else {
                         let n = vec_balances.len();
                         vec_balances[n - 1] =
-                            (&acc.as_str(), vec_balances[n - 1].clone().1 + value.clone());
+                            (acc.as_str(), vec_balances[n - 1].clone().1 + value.clone());
                     }
 
                     account = acc.to_string();
@@ -147,10 +146,7 @@ pub fn execute(
             multipliers = conversion(currency.clone(), date, &ledger.prices);
             let mut updated_balances = Vec::new();
             for (acc, balance) in vec_balances.iter() {
-                updated_balances.push((
-                    acc.clone(),
-                    convert_balance(balance, &multipliers, currency),
-                ));
+                updated_balances.push((*acc, convert_balance(balance, &multipliers, currency)));
             }
             vec_balances = updated_balances;
         }
@@ -163,7 +159,7 @@ pub fn execute(
     while index < num_bal {
         let (account, bal) = &vec_balances[index];
         if let Some(depth) = depth {
-            if account.split(":").count() > depth {
+            if account.split(':').count() > depth {
                 index += 1;
                 continue;
             }
@@ -192,27 +188,28 @@ pub fn execute(
         if flat {
             println!("  {}", account.blue());
         } else {
-            let mut n = account.split(":").count();
+            let mut n = account.split(':').count();
             for _ in 0..n {
                 print!("  ");
             }
             // start by getting the account name
-            let mut text = account.split(":").last().unwrap().to_string();
+            let mut text = account.split(':').last().unwrap().to_string();
             // This is where it gets tricky, we need to collapse while we can
             let mut collapse = true;
             loop {
                 if (index + 1) >= num_bal {
                     break;
                 }
-                if vec_balances[index + 1].0.split(":").count() != (n + 1) {
+                if vec_balances[index + 1].0.split(':').count() != (n + 1) {
                     break;
                 }
-                for j in (index + 2)..num_bal {
-                    let name = vec_balances[j].0.clone();
+                //for j in (index + 2)..num_bal {
+                for (name, _) in vec_balances.iter().take(num_bal).skip(index + 2) {
+                    // let name = vec_balances[j].0;
                     if !name.starts_with(account) {
                         break;
                     }
-                    let this_depth = name.split(":").count();
+                    let this_depth = name.split(':').count();
                     if this_depth == n + 1 {
                         collapse = false;
                         break;
@@ -220,9 +217,9 @@ pub fn execute(
                 }
                 if collapse {
                     text.push(':');
-                    text.push_str(&vec_balances[index + 1].0.split(":").last().unwrap());
-                    n = n + 1;
-                    index = index + 1;
+                    text.push_str(vec_balances[index + 1].0.split(':').last().unwrap());
+                    n += 1;
+                    index += 1;
                 } else {
                     break;
                 }
@@ -238,8 +235,8 @@ pub fn execute(
         let mut total_balance = balances
             .iter()
             .fold(Balance::new(), |acc, x| acc + x.1.to_owned());
-        print!("{}", "--------------------");
-        if multipliers.len() > 0 {
+        print!("--------------------");
+        if !multipliers.is_empty() {
             total_balance = convert_balance(
                 &total_balance,
                 &multipliers,
@@ -266,7 +263,7 @@ pub fn execute(
     Ok(())
 }
 
-fn convert_balance(
+pub(crate) fn convert_balance(
     balance: &Balance,
     multipliers: &HashMap<Rc<Currency>, BigRational>,
     currency: &Currency,

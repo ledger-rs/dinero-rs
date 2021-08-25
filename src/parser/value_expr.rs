@@ -118,15 +118,15 @@ impl PartialOrd for EvalResult {
             },
             EvalResult::Money(left) => match other {
                 EvalResult::Number(right) => Some(left.get_amount().cmp(right)),
-                EvalResult::Money(right) => Some(left.cmp(&right)),
+                EvalResult::Money(right) => Some(left.cmp(right)),
                 _ => None,
             },
             EvalResult::String(left) => match other {
-                EvalResult::String(right) => Some(left.cmp(&right)),
+                EvalResult::String(right) => Some(left.cmp(right)),
                 _ => None,
             },
             EvalResult::Date(left) => match other {
-                EvalResult::Date(right) => Some(left.cmp(&right)),
+                EvalResult::Date(right) => Some(left.cmp(right)),
                 _ => None,
             },
             _ => None,
@@ -177,18 +177,18 @@ pub fn eval(
         Node::Account => EvalResult::Account(posting.account.clone()),
         Node::Payee => EvalResult::Payee(posting.payee.clone().unwrap()),
         Node::Note => EvalResult::Note,
-        Node::Date => EvalResult::Date(posting.date.clone()),
+        Node::Date => EvalResult::Date(posting.date),
         Node::Regex(r) => EvalResult::Regex(r.clone()),
         Node::String(r) => EvalResult::String(Some(r.clone())),
         Node::Number(n) => EvalResult::Number(n.clone()),
         Node::Money { currency, amount } => {
-            let cur = match commodities.get(&currency) {
+            let cur = match commodities.get(currency) {
                 Ok(c) => c.clone(),
                 Err(_) => {
                     panic!("Can't find commodity {:?}", currency);
                 }
             };
-            EvalResult::Money(Money::from((cur.clone(), amount.clone())))
+            EvalResult::Money(Money::from((cur, amount.clone())))
         }
         Node::UnaryExpr { op, child } => {
             let res = eval(child, posting, transaction, commodities, regexes);
@@ -461,10 +461,19 @@ fn build_ast_from_expr(
                             currency: money.next().unwrap().as_str().to_string(),
                             amount: parse_rational(child),
                         },
-                        Rule::currency => Node::Money {
-                            currency: child.as_str().to_string(),
-                            amount: parse_rational(money.next().unwrap()),
-                        },
+                        Rule::currency => {
+                            if child.as_str().starts_with('-') {
+                                Node::Money {
+                                    currency: child.as_str().to_string(),
+                                    amount: -parse_rational(money.next().unwrap()),
+                                }
+                            } else {
+                                Node::Money {
+                                    currency: child.as_str().to_string(),
+                                    amount: parse_rational(money.next().unwrap()),
+                                }
+                            }
+                        }
                         unknown => panic!("Unknown rule: {:?}", unknown),
                     }
                 }

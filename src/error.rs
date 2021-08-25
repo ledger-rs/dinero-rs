@@ -1,6 +1,44 @@
-use colored::ColoredString;
+use colored::{ColoredString, Colorize};
+use std::error::Error;
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use std::path::PathBuf;
+
+#[derive(Debug)]
+pub struct EmptyLedgerFileError;
+impl Error for EmptyLedgerFileError {}
+impl Display for EmptyLedgerFileError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "The file does not have any information")
+    }
+}
+
+#[derive(Debug)]
+pub enum MissingFileError {
+    ConfigFileDoesNotExistError(PathBuf),
+    JournalFileDoesNotExistError(PathBuf),
+}
+impl Error for MissingFileError {}
+impl Display for MissingFileError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let (title, file) = match self {
+            MissingFileError::ConfigFileDoesNotExistError(x) => {
+                ("Configuration", x.to_str().unwrap())
+            }
+            MissingFileError::JournalFileDoesNotExistError(x) => ("Journal", x.to_str().unwrap()),
+        };
+        write!(f, "{} file does not exist: {}", title, file.red().bold())
+    }
+}
+
+#[derive(Debug)]
+pub struct TimeParseError;
+impl Error for TimeParseError {}
+impl Display for TimeParseError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "Couldn't parse time.")
+    }
+}
 
 #[derive(Debug)]
 pub enum LedgerError {
@@ -11,21 +49,23 @@ pub enum LedgerError {
 }
 
 #[derive(Debug)]
-pub struct Error {
+pub struct GenericError {
     pub message: Vec<ColoredString>,
 }
 
-impl Display for Error {
+impl Error for GenericError {}
+
+impl Display for GenericError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", ColoredStrings(&self.message))
     }
 }
 
-impl From<LedgerError> for Error {
+impl From<LedgerError> for GenericError {
     fn from(error: LedgerError) -> Self {
         eprintln!("{:?}", error);
         // TODO prettier error conversion
-        Error { message: vec![] }
+        GenericError { message: vec![] }
     }
 }
 

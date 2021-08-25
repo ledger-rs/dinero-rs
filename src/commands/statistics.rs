@@ -1,12 +1,15 @@
 use std::convert::TryFrom;
 
 use crate::models::Ledger;
-use crate::{error::Error, CommonOpts};
+use crate::CommonOpts;
 
 /// Statistics command
 ///
 /// Prints summary statistics from the ledger
-pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(), Error> {
+pub fn execute(
+    options: &CommonOpts,
+    maybe_ledger: Option<Ledger>,
+) -> Result<(), Box<dyn std::error::Error>> {
     let ledger = match maybe_ledger {
         Some(ledger) => ledger,
         None => Ledger::try_from(options)?,
@@ -28,28 +31,34 @@ pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(),
         }
     }
 
-    let first_transaction_date = &ledger.transactions.iter().nth(0).unwrap().date.unwrap();
+    let first_transaction_date = &ledger.transactions.get(0).unwrap().date.unwrap();
     let last_transaction_date = &ledger
         .transactions
         .iter()
         .rev()
-        .nth(0)
+        .next()
         .unwrap()
         .date
         .unwrap();
     let num_days = 1 + last_transaction_date
-        .signed_duration_since(first_transaction_date.clone())
+        .signed_duration_since(*first_transaction_date)
         .num_days();
     // Print the stats
     println!("{} postings", num_postings);
     println!("{} transactions", &ledger.transactions.len());
 
-    println!("First transaction: {}", first_transaction_date);
-    println!("Last transaction: {}", last_transaction_date);
+    println!(
+        "First transaction: {}",
+        first_transaction_date.format(&options.date_format)
+    );
+    println!(
+        "Last transaction: {}",
+        last_transaction_date.format(&options.date_format)
+    );
     println!("{} days between first and last transaction", num_days);
     println!(
         "{:.2} transactions per day (average)",
-        (*&ledger.transactions.len() as f64) / (num_days as f64)
+        (ledger.transactions.len() as f64) / (num_days as f64)
     );
     println!(
         "{:.2} postings per day (average)",
@@ -60,7 +69,6 @@ pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(),
     println!("{} different accounts", &ledger.accounts.len());
     println!("{} different payees", &ledger.payees.len());
     println!("{} different commodities", &ledger.commodities.len());
-    println!("{:?}", options);
 
     Ok(())
 }

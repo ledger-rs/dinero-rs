@@ -7,10 +7,13 @@
 //! - Directive commodity
 
 use std::collections::HashSet;
+use std::convert::TryFrom;
 use std::fs::read_to_string;
 use std::path::PathBuf;
 
-use crate::models::{Account, Comment, Currency, Payee, Transaction};
+use crate::error::MissingFileError;
+use crate::models::{Account, Comment, Currency, HasName, Payee, Transaction};
+use crate::parser::utils::count_decimals;
 use crate::{models, CommonOpts, List};
 use pest::Parser;
 
@@ -38,6 +41,11 @@ pub struct ParsedLedger {
     pub files: Vec<PathBuf>,
 }
 
+impl Default for ParsedLedger {
+    fn default() -> Self {
+        ParsedLedger::new()
+    }
+}
 impl ParsedLedger {
     pub fn new() -> Self {
         ParsedLedger {
@@ -71,6 +79,9 @@ impl ParsedLedger {
             + self.comments.len()
             + self.tags.len()
     }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 /// A struct for holding data about the string being parsed
@@ -81,21 +92,25 @@ pub struct Tokenizer<'a> {
     seen_files: HashSet<&'a PathBuf>,
 }
 
-impl<'a> From<&'a PathBuf> for Tokenizer<'a> {
-    fn from(file: &'a PathBuf) -> Self {
+impl<'a> TryFrom<&'a PathBuf> for Tokenizer<'a> {
+    type Error = Box<dyn std::error::Error>;
+    fn try_from(file: &'a PathBuf) -> Result<Self, Self::Error> {
         match read_to_string(file) {
             Ok(content) => {
                 let mut seen_files: HashSet<&PathBuf> = HashSet::new();
                 seen_files.insert(file);
-                Tokenizer {
+                Ok(Tokenizer {
                     file: Some(file),
                     content,
                     seen_files,
-                }
+                })
             }
-            Err(err) => {
-                panic!("{:?}", err);
-            }
+            Err(err) => match err.kind() {
+                std::io::ErrorKind::NotFound => Err(Box::new(
+                    MissingFileError::JournalFileDoesNotExistError(file.to_path_buf()),
+                )),
+                _ => Err(Box::new(err)),
+            },
         }
     }
 }
@@ -122,17 +137,16 @@ impl<'a> Tokenizer<'a> {
         defined_currencies: Option<&List<Currency>>,
     ) -> ParsedLedger {
         let mut ledger: ParsedLedger = ParsedLedger::new();
-        match defined_currencies {
-            Some(x) => ledger.commodities.append(x),
-            None => (),
+        if let Some(x) = defined_currencies {
+            ledger.commodities.append(x);
         }
         if let Some(file) = self.file {
             ledger.files.push(file.clone());
         }
         match GrammarParser::parse(Rule::journal, self.content.as_str()) {
             Ok(mut parsed) => {
-                let mut elements = parsed.next().unwrap().into_inner();
-                while let Some(element) = elements.next() {
+                let elements = parsed.next().unwrap().into_inner();
+                for element in elements {
                     match element.as_rule() {
                         Rule::directive => {
                             let inner = element.into_inner().next().unwrap();
@@ -140,7 +154,7 @@ impl<'a> Tokenizer<'a> {
                                 Rule::include => {
                                     // This is the special case
                                     let mut new_ledger =
-                                        self.include(inner, &options, &ledger.commodities);
+                                        self.include(inner, options, &ledger.commodities).unwrap();
                                     ledger.append(&mut new_ledger);
                                 }
                                 Rule::price => {
@@ -151,6 +165,11 @@ impl<'a> Tokenizer<'a> {
                                 }
                                 Rule::commodity => {
                                     let commodity = self.parse_commodity(inner);
+                                    if let Ok(old_commodity) =
+                                        ledger.commodities.get(commodity.get_name())
+                                    {
+                                        commodity.update_precision(old_commodity.get_precision());
+                                    }
                                     ledger.commodities.remove(&commodity);
                                     ledger.commodities.insert(commodity);
                                 }
@@ -173,19 +192,33 @@ impl<'a> Tokenizer<'a> {
                                 ];
                                 for (currency, format) in currencies {
                                     if let Some(c) = currency {
-                                        let found = ledger.commodities.get(c);
-                                        if found.is_err() {
-                                            if options.pedantic {
-                                                panic!("Error: commodity {} not declared.", c);
-                                            }
-                                            if options.strict {
-                                                eprintln!("Warning: commodity {} not declared.", c);
-                                            }
+                                        match ledger.commodities.get(c) {
+                                            Err(_) => {
+                                                if options.pedantic {
+                                                    panic!("Error: commodity {} not declared.", c);
+                                                }
+                                                if options.strict {
+                                                    eprintln!(
+                                                        "Warning: commodity {} not declared.",
+                                                        c
+                                                    );
+                                                }
 
-                                            let mut commodity = Currency::from(c.as_str());
-                                            commodity
-                                                .set_format(format.as_ref().unwrap().to_owned());
-                                            ledger.commodities.insert(commodity);
+                                                let commodity = Currency::from(c.as_str());
+                                                if let Some(format_string) = format {
+                                                    commodity.update_precision(count_decimals(
+                                                        format_string.as_str(),
+                                                    ));
+                                                }
+                                                ledger.commodities.insert(commodity);
+                                            }
+                                            Ok(c) => {
+                                                if let Some(format_string) = format {
+                                                    c.update_precision(count_decimals(
+                                                        format_string.as_str(),
+                                                    ));
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -205,19 +238,21 @@ impl<'a> Tokenizer<'a> {
                 eprintln!("Error found in line {}", e)
             }
         }
-        // dbg!(&ledger);
+
         ledger
     }
 }
 #[cfg(test)]
 mod tests {
+    use structopt::StructOpt;
+
     use super::*;
 
     #[test]
     fn test_empty_string() {
         let content = "".to_string();
         let mut tokenizer = Tokenizer::from(content);
-        let items = tokenizer.tokenize(&CommonOpts::new());
+        let items = tokenizer.tokenize(&CommonOpts::from_iter(["", "-f", ""].iter()));
         assert_eq!(items.len(), 0, "Should be empty");
     }
 
@@ -225,7 +260,7 @@ mod tests {
     fn test_only_spaces() {
         let content = "\n\n\n\n\n".to_string();
         let mut tokenizer = Tokenizer::from(content);
-        let items = tokenizer.tokenize(&CommonOpts::new());
+        let items = tokenizer.tokenize(&CommonOpts::from_iter(["", "-f", ""].iter()));
         assert_eq!(items.len(), 0, "Should be empty")
     }
 }
