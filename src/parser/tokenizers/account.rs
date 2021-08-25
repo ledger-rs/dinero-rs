@@ -32,11 +32,11 @@ impl<'a> Tokenizer<'a> {
                         Rule::payee_subdirective => account.payee.push(
                             Regex::new(parse_string(property.next().unwrap()).trim()).unwrap(),
                         ),
-                        x => unreachable!("Unexpected rule {:?}", x)
+                        _x => {}
                     }
                 }
                 Rule::flag => account.default = true,
-                x => unreachable!("Unexpected rule {:?}", x)
+                _x => {},
             }
         }
         account
@@ -102,7 +102,7 @@ mod tests {
         );
         let options = CommonOpts::from_iter(["", "-f", ""].iter());
         let items = tokenizer.tokenize(&options);
-        let account = items.accounts.get("Assets:MyAccount").unwrap().as_ref();
+        let account = items.accounts.get("myAccount").unwrap().as_ref();
         assert!(account.is_default(), "A default account");
         assert_eq!(account.get_name(), "Assets:MyAccount");
         assert!(!account.check.is_empty(), "It has a check");
