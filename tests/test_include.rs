@@ -1,7 +1,6 @@
 use dinero::parser::Tokenizer;
 use dinero::CommonOpts;
 
-use assert_cmd::Command;
 use std::convert::TryFrom;
 use std::path::PathBuf;
 use structopt::StructOpt;
