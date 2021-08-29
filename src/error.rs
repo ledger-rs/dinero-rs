@@ -40,7 +40,6 @@ impl Display for TimeParseError {
     }
 }
 
-
 #[derive(Debug)]
 pub enum LedgerError {
     TransactionIsNotBalanced,

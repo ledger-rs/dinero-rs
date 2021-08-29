@@ -272,9 +272,20 @@ pub fn execute(
                         let amount = money.get_amount() * mult;
 
                         match money.is_negative() {
-                        true => print!("\n{:>20}{:>20}{:>20}", format!("{}", money).red(), mult.to_f64().unwrap(), amount.to_f64().unwrap()),
-                        false => print!("\n{:>20}{:>20}{:>20}", format!("{}", money), mult.to_f64().unwrap(), amount.to_f64().unwrap()),
-                    }},
+                            true => print!(
+                                "\n{:>20}{:>20}{:>20}",
+                                format!("{}", money).red(),
+                                mult.to_f64().unwrap(),
+                                amount.to_f64().unwrap()
+                            ),
+                            false => print!(
+                                "\n{:>20}{:>20}{:>20}",
+                                format!("{}", money),
+                                mult.to_f64().unwrap(),
+                                amount.to_f64().unwrap()
+                            ),
+                        }
+                    }
                     None => match money.is_negative() {
                         true => print!("\n{:>20}", format!("{}", money).red()),
                         false => print!("\n{:>20}", format!("{}", money)),

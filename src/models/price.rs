@@ -293,7 +293,7 @@ impl Graph {
         for edge in self.edges.iter() {
             if edge.from.as_ref() == node {
                 edges.push(edge.clone());
-            } 
+            }
         }
         edges
     }
@@ -302,7 +302,7 @@ impl Graph {
         for edge in self.edges.iter() {
             if edge.to.as_ref() == node {
                 edges.push(edge.clone());
-            } 
+            }
         }
         edges
     }
