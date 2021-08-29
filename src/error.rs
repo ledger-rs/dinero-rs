@@ -56,7 +56,9 @@ impl Display for LedgerError {
                 write!(f, "{}", "Empty posting should be last".red())
             }
             LedgerError::AliasNotInList(x) => write!(f, "Alias not found: {}", x),
-            LedgerError::TooManyEmptyPostings(_) => write!(f, "{}", "Too many empty postings".red()),
+            LedgerError::TooManyEmptyPostings(_) => {
+                write!(f, "{}", "Too many empty postings".red())
+            }
         }
     }
 }
