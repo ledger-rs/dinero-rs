@@ -1,6 +1,8 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
 ## [0.33.0] - xxx
+## Added
+- Show internal return rate with the ```roi``` command
 ## Changed
 - Nicer error messages (without Rust trace) when there is a missing file.
 ## Fixed
