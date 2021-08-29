@@ -44,7 +44,9 @@ pub enum PriceType {
 /// Convert from one currency to every other currency
 ///
 /// This uses an implementation of the [Dijkstra algorithm](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm) to find the shortest path from every
-/// currency to the desired one
+/// currency to the desired one.
+///
+/// The return value is a conversion factor to every other currency
 pub fn conversion(
     currency: Rc<Currency>,
     date: NaiveDate,
@@ -114,7 +116,6 @@ pub fn conversion(
     let mut multipliers = HashMap::new();
     let mut inserted = HashMap::new();
     for (k, v) in paths.iter() {
-        // println!("{} {} ~{:?}", k.currency.get_name(), k.date, v.len());
         let mut mult = BigRational::new(BigInt::from(1), BigInt::from(1));
         let mut currency = k.currency.clone();
         match inserted.get(&k.currency) {
@@ -170,22 +171,33 @@ impl Edge {
 }
 
 #[derive(Debug, Clone)]
+struct NodeEdge {
+    node: Rc<Node>,
+    edge: Rc<Edge>,
+}
+/// A graph
+#[derive(Debug, Clone)]
 struct Graph {
     nodes: Vec<Rc<Node>>,
     edges: Vec<Rc<Edge>>,
-    _neighbours: HashMap<Rc<Node>, Vec<(Rc<Node>, Rc<Edge>)>>,
 }
 
 impl Graph {
+    /// Build the graph from prices
+    /// every price is a potential connection between two currencies,
+    /// so the prices are actually the edges of the graph
     fn from_prices(prices: &[Price], source: Node) -> Self {
         let mut nodes = HashMap::new();
         let mut edges = Vec::new();
+
+        // keep the dates for which there is a price
         let mut currency_dates = HashSet::new();
         currency_dates.insert((source.currency.clone(), source.date));
         // Remove redundant prices and create the nodes
         let mut prices_nodup = HashMap::new();
         for p in prices.iter() {
-            if p.date > source.date {
+            // Do not use prices from the future
+            if p.date >= source.date {
                 continue;
             };
             let commodities =
@@ -261,26 +273,38 @@ impl Graph {
         Graph {
             nodes: nodes.iter().map(|x| x.1.clone()).collect(),
             edges,
-            _neighbours: HashMap::new(),
         }
     }
+
     fn get_neighbours(&mut self, node: &Node) -> Vec<(Rc<Node>, Rc<Edge>)> {
-        match self._neighbours.get(node) {
-            None => {
-                let mut neighbours = Vec::new();
-                for edge in self.edges.iter() {
-                    if edge.from.as_ref() == node {
-                        neighbours.push((edge.to.clone(), edge.clone()));
-                    } else if edge.to.as_ref() == node {
-                        neighbours.push((edge.from.clone(), edge.clone()));
-                    }
-                }
-                self._neighbours
-                    .insert(Rc::new(node.clone()), neighbours.clone());
-                neighbours
+        let mut neighbours = Vec::new();
+        for edge in self.edges.iter() {
+            if edge.from.as_ref() == node {
+                neighbours.push((edge.to.clone(), edge.clone()));
+            } else if edge.to.as_ref() == node {
+                neighbours.push((edge.from.clone(), edge.clone()));
             }
-            Some(x) => x.clone(),
         }
+        neighbours
+    }
+
+    fn get_outgoing_edges(&mut self, node: &Node) -> Vec<Rc<Edge>> {
+        let mut edges = Vec::new();
+        for edge in self.edges.iter() {
+            if edge.from.as_ref() == node {
+                edges.push(edge.clone());
+            }
+        }
+        edges
+    }
+    fn get_incoming_edges(&mut self, node: &Node) -> Vec<Rc<Edge>> {
+        let mut edges = Vec::new();
+        for edge in self.edges.iter() {
+            if edge.to.as_ref() == node {
+                edges.push(edge.clone());
+            }
+        }
+        edges
     }
 }
 

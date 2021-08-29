@@ -246,8 +246,17 @@ impl Display for Money {
                     None => format.precision,
                 };
 
+                let full_str = format!("{:.*}", decimals, amount.to_f64().unwrap());
+
                 // num = trunc + fract
-                let integer_part = amount.trunc().abs().to_i128().unwrap(); // -1.234.567
+                let integer_part: String = full_str
+                    .split('.')
+                    .next()
+                    .unwrap()
+                    .split('-')
+                    .last()
+                    .unwrap()
+                    .into(); // -1.234.567
 
                 let decimal_part = amount.fract().to_f64().unwrap();
 
@@ -268,7 +277,7 @@ impl Display for Money {
 
                 let integer_str = {
                     match format.get_digit_grouping() {
-                        DigitGrouping::None => integer_part.to_string(), // Do nothing
+                        DigitGrouping::None => integer_part, // Do nothing
                         grouping => {
                             let mut group_size = 3;
                             let mut counter = 0;
@@ -276,7 +285,7 @@ impl Display for Money {
                             match format.get_thousands_separator_str() {
                                 Some(character) => {
                                     let thousands_separator = character;
-                                    for c in integer_part.to_string().chars().rev() {
+                                    for c in integer_part.chars().rev() {
                                         if c == '-' {
                                             continue;
                                         }
@@ -293,7 +302,7 @@ impl Display for Money {
                                     }
                                     reversed.iter().rev().collect()
                                 }
-                                None => integer_part.to_string(),
+                                None => integer_part,
                             }
                         }
                     }
@@ -342,5 +351,32 @@ impl Display for Money {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::rc::Rc;
+
+    use num::BigRational;
+
+    use crate::models::{Currency, CurrencyDisplayFormat};
+
+    use super::Money;
+
+    #[test]
+    fn rounding() {
+        let one_decimal_format = CurrencyDisplayFormat::from("-1234.5 EUR");
+        let no_decimal_format = CurrencyDisplayFormat::from("-1234 EUR");
+        let eur = Rc::new(Currency::from("EUR"));
+
+        // Money amount
+        let m1 = Money::from((eur.clone(), BigRational::from_float(-17.77).unwrap()));
+
+        eur.set_format(&one_decimal_format);
+        assert_eq!(format!("{}", &m1), "-17.8 EUR");
+
+        eur.set_format(&no_decimal_format);
+        assert_eq!(format!("{}", &m1), "-18 EUR");
     }
 }
