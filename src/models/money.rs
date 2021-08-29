@@ -277,7 +277,7 @@ impl Display for Money {
 
                 let integer_str = {
                     match format.get_digit_grouping() {
-                        DigitGrouping::None => integer_part.to_string(), // Do nothing
+                        DigitGrouping::None => integer_part, // Do nothing
                         grouping => {
                             let mut group_size = 3;
                             let mut counter = 0;
@@ -285,7 +285,7 @@ impl Display for Money {
                             match format.get_thousands_separator_str() {
                                 Some(character) => {
                                     let thousands_separator = character;
-                                    for c in integer_part.to_string().chars().rev() {
+                                    for c in integer_part.chars().rev() {
                                         if c == '-' {
                                             continue;
                                         }
@@ -302,7 +302,7 @@ impl Display for Money {
                                     }
                                     reversed.iter().rev().collect()
                                 }
-                                None => integer_part.to_string(),
+                                None => integer_part,
                             }
                         }
                     }

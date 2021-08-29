@@ -134,7 +134,11 @@ pub struct CommonOpts {
     #[structopt(long = "--exchange", short = "-X")]
     pub exchange: Option<String>,
 
-    /// TODO Date format
+    /// Display the report in the selected currency
+    #[structopt(long = "--convert")]
+    pub convert: Option<String>,
+
+    /// Date format
     #[structopt(long = "--date-format", default_value = "%y-%b-%d")]
     pub date_format: String,
 

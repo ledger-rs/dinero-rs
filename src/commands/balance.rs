@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 
 use colored::Colorize;
+use num::ToPrimitive;
 
 use crate::models::{conversion, Account, Balance, Currency, HasName, Ledger, Money};
 use crate::parser::value_expr::build_root_node_from_expression;
@@ -18,6 +19,11 @@ pub fn execute(
     flat: bool,
     show_total: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    assert_eq!(
+        options.convert.is_some() & options.exchange.is_some(),
+        false,
+        "Incompatible arguments --convert and --exchange"
+    );
     let ledger = match maybe_ledger {
         Some(ledger) => ledger,
         None => Ledger::try_from(options)?,
@@ -136,6 +142,16 @@ pub fn execute(
 
     // Print the balances by account
     let mut multipliers = HashMap::new();
+    if let Some(currency_string) = &options.convert {
+        let date = if let Some(date) = &options.end {
+            *date
+        } else {
+            Utc::now().naive_local().date()
+        };
+        if let Ok(currency) = ledger.commodities.get(currency_string) {
+            multipliers = conversion(currency.clone(), date, &ledger.prices);
+        }
+    }
     if let Some(currency_string) = &options.exchange {
         let date = if let Some(date) = &options.end {
             *date
@@ -236,7 +252,7 @@ pub fn execute(
             .iter()
             .fold(Balance::new(), |acc, x| acc + x.1.to_owned());
         print!("--------------------");
-        if !multipliers.is_empty() {
+        if !multipliers.is_empty() & options.exchange.is_some() {
             total_balance = convert_balance(
                 &total_balance,
                 &multipliers,
@@ -249,10 +265,20 @@ pub fn execute(
         if total_balance.is_zero() {
             print!("\n{:>20}", "0");
         } else {
-            for (_, money) in total_balance.balance.iter() {
-                match money.is_negative() {
-                    true => print!("\n{:>20}", format!("{}", money).red()),
-                    false => print!("\n{:>20}", format!("{}", money)),
+            for (currency, money) in total_balance.balance.iter() {
+                match &options.convert {
+                    Some(cur_str) => {
+                        let mult = multipliers.get(currency.as_ref().unwrap()).unwrap();
+                        let amount = money.get_amount() * mult;
+
+                        match money.is_negative() {
+                        true => print!("\n{:>20}{:>20}{:>20}", format!("{}", money).red(), mult.to_f64().unwrap(), amount.to_f64().unwrap()),
+                        false => print!("\n{:>20}{:>20}{:>20}", format!("{}", money), mult.to_f64().unwrap(), amount.to_f64().unwrap()),
+                    }},
+                    None => match money.is_negative() {
+                        true => print!("\n{:>20}", format!("{}", money).red()),
+                        false => print!("\n{:>20}", format!("{}", money)),
+                    },
                 }
             }
         }
