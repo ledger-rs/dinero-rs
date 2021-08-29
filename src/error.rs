@@ -4,6 +4,8 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
+use crate::models::Balance;
+
 #[derive(Debug)]
 pub struct EmptyLedgerFileError;
 impl Error for EmptyLedgerFileError {}
@@ -42,12 +44,47 @@ impl Display for TimeParseError {
 
 #[derive(Debug)]
 pub enum LedgerError {
-    TransactionIsNotBalanced,
     EmptyPostingShouldBeLast,
     AliasNotInList(String),
     TooManyEmptyPostings(usize),
 }
+impl Error for LedgerError {}
+impl Display for LedgerError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            LedgerError::EmptyPostingShouldBeLast => {
+                write!(f, "{}", "Empty posting should be last".red())
+            }
+            LedgerError::AliasNotInList(x) => write!(f, "Alias not found: {}", x),
+            LedgerError::TooManyEmptyPostings(_) => write!(f, "{}", "Too many empty postings".red()),
+        }
+    }
+}
+#[derive(Debug)]
+pub enum BalanceError {
+    TransactionIsNotBalanced,
+    TooManyCurrencies(Balance),
+}
+impl Error for BalanceError {}
 
+impl Display for BalanceError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            BalanceError::TransactionIsNotBalanced => {
+                write!(f, "{}", "Transaction is not balanced".red())
+            }
+
+            BalanceError::TooManyCurrencies(bal) => write!(
+                f,
+                "Too many currencies, probably a price is missing: {}",
+                bal.iter()
+                    .map(|x| x.1.to_string())
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            ),
+        }
+    }
+}
 #[derive(Debug)]
 pub struct GenericError {
     pub message: Vec<ColoredString>,

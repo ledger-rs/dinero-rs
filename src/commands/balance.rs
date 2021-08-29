@@ -19,9 +19,8 @@ pub fn execute(
     flat: bool,
     show_total: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    assert_eq!(
-        options.convert.is_some() & options.exchange.is_some(),
-        false,
+    assert!(
+        !(options.convert.is_some() && options.exchange.is_some()),
         "Incompatible arguments --convert and --exchange"
     );
     let ledger = match maybe_ledger {

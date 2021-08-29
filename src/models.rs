@@ -81,7 +81,7 @@ impl ParsedLedger {
     /// 5. Checks whether transactions are balanced again
     ///
     /// There may be room for optimization here
-    pub fn to_ledger(mut self, options: &CommonOpts) -> Result<Ledger, GenericError> {
+    pub fn to_ledger(mut self, options: &CommonOpts) -> Result<Ledger, Box<dyn std::error::Error>> {
         let mut commodity_strs = HashSet::<String>::new();
         let mut account_strs = HashSet::<String>::new();
         let mut payee_strs = HashSet::<String>::new();
@@ -211,13 +211,7 @@ impl ParsedLedger {
         for t in transactions.iter_mut() {
             let date = t.date.unwrap();
             // output_balances(&balances);
-            let balance = match t.balance(&mut balances, options.no_balance_check) {
-                Ok(balance) => balance,
-                Err(e) => {
-                    eprintln!("{}", t);
-                    return Err(e.into());
-                }
-            };
+            let balance = t.balance(&mut balances, options.no_balance_check)?;
             if balance.len() == 2 {
                 let vec = balance.iter().map(|(_, x)| x.abs()).collect::<Vec<Money>>();
 
@@ -350,7 +344,7 @@ impl ParsedLedger {
                     Ok(balance) => balance,
                     Err(e) => {
                         eprintln!("{}", t);
-                        return Err(e.into());
+                        return Err(e);
                     }
                 };
                 if balance.len() == 2 {

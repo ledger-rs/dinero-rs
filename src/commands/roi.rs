@@ -158,8 +158,7 @@ pub fn execute(
             let multipliers = conversion(currency.as_ref().unwrap().clone(), p.end, &ledger.prices);
             p.final_money = Some(
                 convert_balance(&p.final_balance, &multipliers, currency.as_ref().unwrap())
-                    .to_money()
-                    .unwrap(),
+                    .to_money()?,
             );
         }
         if p.initial_money.is_none() {

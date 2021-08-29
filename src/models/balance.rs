@@ -1,4 +1,4 @@
-use crate::error::LedgerError;
+use crate::error::BalanceError;
 use crate::models::{Currency, Money};
 use std::collections::hash_map::Iter;
 use std::collections::HashMap;
@@ -26,7 +26,7 @@ impl Balance {
 
     /// Automatic conversion from balance to regular money
     /// it can only be done if the balance has only one currency
-    pub fn to_money(&self) -> Result<Money, LedgerError> {
+    pub fn to_money(&self) -> Result<Money, BalanceError> {
         let vec = self
             .balance
             .values()
@@ -35,7 +35,7 @@ impl Balance {
         match vec.len() {
             0 => Ok(Money::Zero),
             1 => Ok(vec[0].clone()),
-            _ => Err(LedgerError::TransactionIsNotBalanced),
+            _ => Err(BalanceError::TooManyCurrencies(self.clone())),
         }
     }
     pub fn is_zero(&self) -> bool {

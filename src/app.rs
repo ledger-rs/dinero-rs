@@ -445,10 +445,6 @@ fn execute_command(
             statistics::execute(&options, maybe_ledger)
         }
     } {
-        let err_str = format!("{}", e);
-        if !err_str.is_empty() {
-            eprintln!("{}", err_str);
-        }
         return Err(e);
     }
     Ok(())
