@@ -8,7 +8,6 @@ use crate::app::PeriodGroup;
 use crate::commands::balance::convert_balance;
 use crate::models::{conversion, Balance, Ledger, Money};
 use crate::parser::value_expr::build_root_node_from_expression;
-use crate::Error;
 use crate::{filter, CommonOpts};
 use chrono::{Datelike, Duration, NaiveDate};
 use num::{BigInt, BigRational, Zero};
@@ -24,7 +23,7 @@ pub fn execute(
     frequency: Frequency,
     calendar: bool,
     summary: bool,
-) -> Result<(), Error> {
+) -> Result<(), Box<dyn std::error::Error>> {
     let ledger = match maybe_ledger {
         Some(ledger) => ledger,
         None => Ledger::try_from(options)?,
@@ -63,7 +62,9 @@ pub fn execute(
 
     // Get a currency
     let mut currency = None;
-
+    if let Some(c) = &options.exchange {
+        currency = Some(ledger.commodities.get(c).unwrap().clone());
+    }
     let mut first_date = None;
     let mut last_date = None;
 
@@ -146,7 +147,6 @@ pub fn execute(
 
     let mut prev_final_balance = Balance::new();
     let mut prev_final_money = None;
-
     for (i, p) in periods.iter_mut().enumerate() {
         if i > 0 {
             p.initial_balance = prev_final_balance;
@@ -194,6 +194,7 @@ pub fn execute(
         total_twr -= 1.0;
         let num_days = ((last_date.unwrap() - first_date.unwrap()).num_days() + 1) as f64;
         let twr_annualized = (1.0 + total_twr).powf(365.25 / num_days) - 1.0;
+        println!("Currency used for calculations: {}", currency.unwrap());
         println!("Total TWR: {:.2}%", total_twr * 100.0);
         println!("Period: {:.2} years", num_days / 365.25);
         println!("Annualized TWR: {:.2}%", twr_annualized * 100.0);

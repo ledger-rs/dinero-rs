@@ -1,6 +1,6 @@
 use crate::models::{Currency, Posting, PostingType, Transaction};
 use crate::parser::value_expr::{eval, EvalResult, Node};
-use crate::{CommonOpts, Error, List};
+use crate::{CommonOpts, GenericError, List};
 use colored::Colorize;
 use regex::Regex;
 use std::collections::HashMap;
@@ -12,7 +12,7 @@ pub fn filter(
     transaction: &Transaction<Posting>,
     posting: &Posting,
     commodities: &List<Currency>,
-) -> Result<bool, Error> {
+) -> Result<bool, GenericError> {
     // Get what's needed
     let real = options.real;
 
@@ -47,11 +47,11 @@ pub fn filter_expression(
     transaction: &Transaction<Posting>,
     commodities: &List<Currency>,
     regexes: &mut HashMap<String, Regex>,
-) -> Result<bool, Error> {
+) -> Result<bool, GenericError> {
     let result = eval(predicate, posting, transaction, commodities, regexes);
     match result {
         EvalResult::Boolean(b) => Ok(b),
-        _ => Err(Error {
+        _ => Err(GenericError {
             message: vec![
                 format!("{:?}", predicate).red().bold(),
                 "should return a boolean".normal(),

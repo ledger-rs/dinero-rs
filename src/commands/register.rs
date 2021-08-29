@@ -1,7 +1,6 @@
 use crate::models::{conversion, HasName, Ledger, Posting, PostingType};
 use crate::models::{Balance, Money};
 use crate::parser::value_expr::build_root_node_from_expression;
-use crate::Error;
 use crate::{filter, CommonOpts};
 use colored::Colorize;
 use std::collections::HashMap;
@@ -10,7 +9,10 @@ use std::rc::Rc;
 use terminal_size::{terminal_size, Width};
 
 /// Register report
-pub fn execute(options: &CommonOpts, maybe_ledger: Option<Ledger>) -> Result<(), Error> {
+pub fn execute(
+    options: &CommonOpts,
+    maybe_ledger: Option<Ledger>,
+) -> Result<(), Box<dyn std::error::Error>> {
     // Get options from options
     let _no_balance_check: bool = options.no_balance_check;
     // Now work

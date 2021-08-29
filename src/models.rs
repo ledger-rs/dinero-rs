@@ -17,12 +17,12 @@ pub use transaction::{
     Cleared, Posting, PostingOrigin, PostingType, Transaction, TransactionStatus, TransactionType,
 };
 
-use crate::parser::ParsedLedger;
+use crate::parser::value_expr::build_root_node_from_expression;
 use crate::parser::{tokenizers, value_expr};
-use crate::{error::LedgerError, parser::value_expr::build_root_node_from_expression};
+use crate::{error::EmptyLedgerFileError, parser::ParsedLedger};
 use crate::{filter::filter_expression, CommonOpts};
 use crate::{models::transaction::Cost, parser::Tokenizer};
-use crate::{Error, List};
+use crate::{GenericError, List};
 use num::BigInt;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -47,14 +47,14 @@ pub struct Ledger {
 }
 
 impl TryFrom<&CommonOpts> for Ledger {
-    type Error = Error;
+    type Error = Box<dyn std::error::Error>;
     fn try_from(options: &CommonOpts) -> Result<Self, Self::Error> {
         // Get the options
         let path: PathBuf = options.input_file.clone();
-        let mut tokenizer: Tokenizer = Tokenizer::from(&path);
+        let mut tokenizer: Tokenizer = Tokenizer::try_from(&path)?;
         let items = tokenizer.tokenize(options);
         if items.is_empty() {
-            Err(LedgerError::EmptyLedgerFile.into())
+            Err(Box::new(EmptyLedgerFileError))
         } else {
             let ledger = items.to_ledger(options)?;
             Ok(ledger)
@@ -81,7 +81,7 @@ impl ParsedLedger {
     /// 5. Checks whether transactions are balanced again
     ///
     /// There may be room for optimization here
-    pub fn to_ledger(mut self, options: &CommonOpts) -> Result<Ledger, Error> {
+    pub fn to_ledger(mut self, options: &CommonOpts) -> Result<Ledger, GenericError> {
         let mut commodity_strs = HashSet::<String>::new();
         let mut account_strs = HashSet::<String>::new();
         let mut payee_strs = HashSet::<String>::new();
@@ -379,7 +379,7 @@ impl ParsedLedger {
     fn _transaction_to_ledger(
         &self,
         parsed: &Transaction<tokenizers::transaction::RawPosting>,
-    ) -> Result<TransactionTransformer, Error> {
+    ) -> Result<TransactionTransformer, GenericError> {
         let mut automated_transactions = vec![];
         let mut prices = vec![];
         let mut transactions = vec![];

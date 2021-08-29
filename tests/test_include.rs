@@ -1,14 +1,14 @@
 use dinero::parser::Tokenizer;
 use dinero::CommonOpts;
 
-use assert_cmd::Command;
+use std::convert::TryFrom;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
 #[test]
 fn test_include() {
     let p1 = PathBuf::from("tests/example_files/include.ledger".to_string());
-    let mut tokenizer: Tokenizer = Tokenizer::from(&p1);
+    let mut tokenizer: Tokenizer = Tokenizer::try_from(&p1).unwrap();
     let _res = tokenizer.tokenize(&CommonOpts::from_iter(["", "-f", ""].iter()));
     // simply that it does not panic
     // todo change for something meaningful
@@ -18,7 +18,7 @@ fn test_include() {
 #[test]
 fn test_build_ledger_from_demo() {
     let p1 = PathBuf::from("tests/example_files/demo.ledger".to_string());
-    let mut tokenizer: Tokenizer = Tokenizer::from(&p1);
+    let mut tokenizer: Tokenizer = Tokenizer::try_from(&p1).unwrap();
     let options = CommonOpts::from_iter(["", "-f", ""].iter());
     let items = tokenizer.tokenize(&options);
     let ledger = items.to_ledger(&options);
