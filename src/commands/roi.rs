@@ -206,7 +206,7 @@ pub fn execute(
         // Period: 5.41 years.
         // Annualized TWR: 10.12%
         let mut total_twr = 1.0;
-        let mut irr = irr(&cash_flows);
+        let irr = irr(&cash_flows);
         for p in periods.iter() {
             total_twr *= 1.0 + p.twr().to_f64().unwrap();
             // dbg!(&total_twr);
