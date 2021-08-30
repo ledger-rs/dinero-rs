@@ -69,6 +69,7 @@ pub fn execute(
     let mut last_date = None;
 
     let mut periods: Vec<Period> = vec![];
+    let mut cash_flows: Vec<Cashflow> = vec![];
 
     for t in ledger.transactions.iter() {
         // cash_flows
@@ -84,16 +85,17 @@ pub fn execute(
             }
             last_date = Some(p.date);
 
-            match currency.as_ref() {
-                Some(_) => (),
-                None => {
-                    currency = Some(p.amount.as_ref().unwrap().get_commodity().unwrap().clone())
-                }
+            if currency.as_ref().is_none() {
+                currency = Some(p.amount.as_ref().unwrap().get_commodity().unwrap().clone())
             }
             if p.amount.as_ref().unwrap().get_commodity().unwrap()
                 == currency.as_ref().unwrap().clone()
             {
                 period.add_cash(p.amount.as_ref().unwrap().to_owned());
+                cash_flows.push(Cashflow {
+                    date: p.date,
+                    value: p.amount.as_ref().unwrap().get_amount().to_f64().unwrap(),
+                });
             } else {
                 let multipliers =
                     conversion(currency.as_ref().unwrap().clone(), p.date, &ledger.prices);
@@ -104,7 +106,11 @@ pub fn execute(
                     amount: p.amount.as_ref().unwrap().get_amount() * mult.clone(),
                     currency: currency.as_ref().unwrap().clone(),
                 };
-                period.add_cash(new_amount);
+                period.add_cash(new_amount.clone());
+                cash_flows.push(Cashflow {
+                    date: p.date,
+                    value: new_amount.get_amount().to_f64().unwrap(),
+                });
             }
         } // cash flows
 
@@ -174,6 +180,21 @@ pub fn execute(
         prev_final_balance = p.final_balance.clone();
         prev_final_money = p.final_money.clone();
     }
+
+    cash_flows.push(Cashflow {
+        date: periods.iter().last().unwrap().end,
+        value: periods
+            .iter()
+            .last()
+            .unwrap()
+            .final_money
+            .as_ref()
+            .unwrap()
+            .get_amount()
+            .to_f64()
+            .unwrap(),
+    });
+
     match calendar {
         false => print_normal(&periods, options),
         true => print_calendar(&periods, &frequency),
@@ -185,6 +206,7 @@ pub fn execute(
         // Period: 5.41 years.
         // Annualized TWR: 10.12%
         let mut total_twr = 1.0;
+        let irr = irr(&cash_flows);
         for p in periods.iter() {
             total_twr *= 1.0 + p.twr().to_f64().unwrap();
             // dbg!(&total_twr);
@@ -197,10 +219,54 @@ pub fn execute(
         println!("Total TWR: {:.2}%", total_twr * 100.0);
         println!("Period: {:.2} years", num_days / 365.25);
         println!("Annualized TWR: {:.2}%", twr_annualized * 100.0);
+        println!("Annualized IRR: {:.2}%", irr * 100.0);
     }
     Ok(())
 }
 
+/// A cashflow, it does not need full precision and does not need a currency
+#[derive(Debug)]
+struct Cashflow {
+    date: NaiveDate,
+    value: f64,
+}
+
+fn irr(cash_flows: &[Cashflow]) -> f64 {
+    let tol = 1e-6;
+    let mut dif: f64 = &tol * 10.0;
+    let mut rate = 0.0;
+    let max_iters = 50;
+    let mut iters = 0;
+    while iters < max_iters && tol < dif.abs() {
+        iters += 1;
+        let f = npv(cash_flows, rate);
+        let df = npv_derivative(cash_flows, rate);
+        dif = f / df;
+        rate -= dif;
+    }
+    rate
+}
+fn npv(movements: &[Cashflow], rate: f64) -> f64 {
+    let mut npv = 0.0;
+    let first_date = movements[0].date;
+    for movement in movements.iter() {
+        let period = (movement.date - first_date).num_days().to_f64().unwrap() / 365.25;
+        npv += movement.value / (1.0 + rate).powf(period);
+    }
+    npv
+}
+
+fn npv_derivative(movements: &[Cashflow], rate: f64) -> f64 {
+    let mut npv = 0.0;
+    let first_date = movements[0].date;
+    for movement in movements.iter() {
+        let period = (movement.date - first_date).num_days().to_f64().unwrap() / 365.25;
+        let num = -movement.value * period * (1.0 + rate).powf(period - 1.0);
+        let den = (1.0 + rate).powf(period).powf(2.0);
+        npv += num / den;
+    }
+    npv
+}
 fn print_calendar(periods: &[Period], frequency: &Frequency) {
     let mut table = Table::new();
     table.set_format(*format::consts::FORMAT_NO_LINESEP_WITH_TITLE);

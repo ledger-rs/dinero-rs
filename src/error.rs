@@ -44,7 +44,6 @@ impl Display for TimeParseError {
 
 #[derive(Debug)]
 pub enum LedgerError {
-    EmptyPostingShouldBeLast,
     AliasNotInList(String),
     TooManyEmptyPostings(usize),
 }
@@ -52,11 +51,10 @@ impl Error for LedgerError {}
 impl Display for LedgerError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            LedgerError::EmptyPostingShouldBeLast => {
-                write!(f, "{}", "Empty posting should be last".red())
-            }
             LedgerError::AliasNotInList(x) => write!(f, "Alias not found: {}", x),
-            LedgerError::TooManyEmptyPostings(_) => write!(f, "{}", "Too many empty postings".red()),
+            LedgerError::TooManyEmptyPostings(x) => {
+                write!(f, "{} {}", "Too many empty postings:".red(), x)
+            }
         }
     }
 }
@@ -114,5 +112,42 @@ impl<'a> fmt::Display for ColoredStrings<'a> {
         self.0.iter().fold(Ok(()), |result, partial| {
             result.and_then(|_| write!(f, "{}", partial))
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use colored::Colorize;
+    use structopt::StructOpt;
+
+    use super::LedgerError;
+    use crate::{parser::Tokenizer, CommonOpts};
+
+    #[test]
+    fn error_empty_posting_last() {
+        let mut tokenizer = Tokenizer::from(
+            "2021-06-05 Flight
+        Assets:Checking
+        Expenses:Comissions
+        Expenses:Travel      200 EUR"
+                .to_string(),
+        );
+        let options = CommonOpts::from_iter(["", "-f", ""].iter());
+        let parsed = tokenizer.tokenize(&options);
+        let ledger = parsed.to_ledger(&options);
+        assert!(ledger.is_err());
+        let mut output: String = String::new();
+        if let Err(err) = ledger {
+            let ledger_error = err.downcast_ref::<LedgerError>().unwrap();
+            match ledger_error {
+                LedgerError::TooManyEmptyPostings(x) => assert_eq!(*x, 2),
+                other => {
+                    dbg!(other);
+                    panic!("Too many empty postings");
+                }
+            }
+            output = err.to_string();
+        }
+        assert_eq!(output, format!("{} 2", "Too many empty postings:".red()));
     }
 }

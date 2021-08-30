@@ -1,6 +1,4 @@
 use assert_cmd::Command;
-use dinero::{parser::Tokenizer, CommonOpts};
-use structopt::StructOpt;
 mod common;
 use common::test_args;
 
@@ -30,10 +28,10 @@ fn bitcoin_balances() {
         let output = String::from_utf8(assert.get_output().to_owned().stdout).unwrap();
         for (i, line) in output.lines().into_iter().enumerate() {
             match i {
-                0 => assert!(
-                    String::from(line).contains(amount),
-                    format!("Should be {}", amount)
-                ),
+                0 => {
+                    println!("Should be {}", amount);
+                    assert!(String::from(line).contains(amount))
+                }
                 _ => unreachable!(),
             }
         }
