@@ -52,8 +52,8 @@ impl Display for LedgerError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             LedgerError::AliasNotInList(x) => write!(f, "Alias not found: {}", x),
-            LedgerError::TooManyEmptyPostings(_) => {
-                write!(f, "{}", "Too many empty postings".red())
+            LedgerError::TooManyEmptyPostings(x) => {
+                write!(f, "{} {}", "Too many empty postings:".red(), x)
             }
         }
     }
@@ -117,6 +117,7 @@ impl<'a> fmt::Display for ColoredStrings<'a> {
 
 #[cfg(test)]
 mod tests {
+    use colored::Colorize;
     use structopt::StructOpt;
 
     use super::LedgerError;
@@ -135,15 +136,18 @@ mod tests {
         let parsed = tokenizer.tokenize(&options);
         let ledger = parsed.to_ledger(&options);
         assert!(ledger.is_err());
+        let mut output: String = String::new();
         if let Err(err) = ledger {
             let ledger_error = err.downcast_ref::<LedgerError>().unwrap();
             match ledger_error {
-                LedgerError::TooManyEmptyPostings(x) => (),
+                LedgerError::TooManyEmptyPostings(x) => assert_eq!(*x, 2),
                 other => {
                     dbg!(other);
                     panic!("Too many empty postings");
                 }
             }
+            output = err.to_string();
         }
+        assert_eq!(output, format!("{} 2", "Too many empty postings:".red()));
     }
 }
