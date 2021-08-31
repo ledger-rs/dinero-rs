@@ -120,7 +120,7 @@ mod tests {
     use colored::Colorize;
     use structopt::StructOpt;
 
-    use super::LedgerError;
+    use super::{EmptyLedgerFileError, LedgerError};
     use crate::{parser::Tokenizer, CommonOpts};
 
     #[test]
@@ -149,5 +149,15 @@ mod tests {
             output = err.to_string();
         }
         assert_eq!(output, format!("{} 2", "Too many empty postings:".red()));
+    }
+
+    #[test]
+    fn empty_file() {
+        let an_error = EmptyLedgerFileError{};
+
+        assert_eq!(
+            format!("{}", an_error),
+            "The journal file does not have any information"
+        );
     }
 }
