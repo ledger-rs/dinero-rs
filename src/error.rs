@@ -153,7 +153,7 @@ mod tests {
 
     #[test]
     fn empty_file() {
-        let an_error = EmptyLedgerFileError{};
+        let an_error = EmptyLedgerFileError {};
 
         assert_eq!(
             format!("{}", an_error),

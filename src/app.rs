@@ -245,7 +245,7 @@ pub fn run_app(input_args: Vec<String>) -> Result<(), Box<dyn std::error::Error>
         input_args
     };
 
-    match Opt::from_iter_safe(args.iter()) {
+    let result = match Opt::from_iter_safe(args.iter()) {
         Err(error) => match Repl::from_iter_safe(args.iter()) {
             Ok(opt) => {
                 if !opt.options.query.is_empty() {
@@ -322,7 +322,15 @@ pub fn run_app(input_args: Vec<String>) -> Result<(), Box<dyn std::error::Error>
             Err(_) => error.exit(),
         },
         Ok(opt) => execute_command(opt, None),
+    };
+
+    if let Err(ref err) = result {
+        let message = format!("{}", err);
+        if !message.is_empty() {
+            eprintln!("{}", message);
+        }
     }
+    result
 }
 
 fn parse_config_file(file: &Path, input_args: &[String]) -> Vec<String> {

@@ -256,7 +256,7 @@ fn automated_fail() {
     ];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
     let output_err = String::from_utf8(assert_1.get_output().to_owned().stderr).unwrap();
-    assert_eq!(output_err.lines().into_iter().count(), 5);
+    assert_eq!(output_err.lines().into_iter().count(), 6);
 
     test_err(args);
 }
@@ -497,7 +497,8 @@ fn empty_file() {
     for (i, line) in output.lines().enumerate() {
         match i {
             0 => assert_eq!(line, "The journal file does not have any information"),
-            _ => unreachable!("The output should have only one line"),
+            1 => (),
+            _ => unreachable!("The output should have only two lines"),
         }
     }
 
