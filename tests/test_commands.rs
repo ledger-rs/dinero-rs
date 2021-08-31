@@ -482,6 +482,7 @@ fn related() {
 
     test_args(args);
 }
+
 #[test]
 fn empty_file() {
     let args = &[
@@ -492,7 +493,13 @@ fn empty_file() {
         "tests/example_files/empty_ledgerrc",
     ];
     let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
-    let output = String::from_utf8(assert_1.get_output().to_owned().stdout).unwrap();
+    let output = String::from_utf8(assert_1.get_output().to_owned().stderr).unwrap();
+    for (i, line) in output.lines().enumerate() {
+        match i {
+            0 => assert_eq!(line, "The journal file does not have any information"),
+            _ => unreachable!("The output should have only one line"),
+        }
+    }
 
     test_err(args);
 }

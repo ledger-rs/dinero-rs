@@ -11,7 +11,7 @@ pub struct EmptyLedgerFileError;
 impl Error for EmptyLedgerFileError {}
 impl Display for EmptyLedgerFileError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "The file does not have any information")
+        write!(f, "The journal file does not have any information")
     }
 }
 
