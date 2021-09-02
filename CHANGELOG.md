@@ -7,6 +7,8 @@ Changelog file for dinero-rs project, a command line application for managing fi
 - Nicer error messages (without Rust trace) when there is a missing file.
 ## Fixed
 - [Rounding](https://github.com/frosklis/dinero-rs/issues/142)
+- Dates from the future are shown in green
+
 ## [0.32.3] - 2021-08-24
 - The last one was a bad release
 ## [0.32.2] - 2021-08-24 
