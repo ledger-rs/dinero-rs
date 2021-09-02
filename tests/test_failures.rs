@@ -17,9 +17,6 @@ fn not_money() {
     );
     let parsed = tokenizer.tokenize(&CommonOpts::from_iter(["", "-f", ""].iter()));
 
-    // It parses -- it has not panicked
-    assert!(true);
-
     // But to a wrong ledger -- panics!
     let _ledger = parsed.to_ledger(&CommonOpts::from_iter(["", "-f", ""].iter()));
     unreachable!("This has panicked")

@@ -287,25 +287,6 @@ impl Graph {
         }
         neighbours
     }
-
-    fn get_outgoing_edges(&mut self, node: &Node) -> Vec<Rc<Edge>> {
-        let mut edges = Vec::new();
-        for edge in self.edges.iter() {
-            if edge.from.as_ref() == node {
-                edges.push(edge.clone());
-            }
-        }
-        edges
-    }
-    fn get_incoming_edges(&mut self, node: &Node) -> Vec<Rc<Edge>> {
-        let mut edges = Vec::new();
-        for edge in self.edges.iter() {
-            if edge.to.as_ref() == node {
-                edges.push(edge.clone());
-            }
-        }
-        edges
-    }
 }
 
 fn cmp(this: &Option<Duration>, other: &Option<Duration>) -> Ordering {

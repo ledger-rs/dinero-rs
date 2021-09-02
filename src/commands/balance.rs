@@ -266,7 +266,7 @@ pub fn execute(
         } else {
             for (currency, money) in total_balance.balance.iter() {
                 match &options.convert {
-                    Some(cur_str) => {
+                    Some(_) => {
                         let mult = multipliers.get(currency.as_ref().unwrap()).unwrap();
                         let amount = money.get_amount() * mult;
 
