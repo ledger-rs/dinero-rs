@@ -1,10 +1,8 @@
-use crate::models::{
-    conversion, Cleared, HasName, Ledger, Posting, PostingType, TransactionStatus,
-};
+use crate::models::{conversion, Cleared, HasName, Ledger, Posting, PostingType};
 use crate::models::{Balance, Money};
 use crate::parser::value_expr::build_root_node_from_expression;
 use crate::{filter, CommonOpts};
-use chrono::{DateTime, NaiveDate, Utc};
+use chrono::Utc;
 use colored::Colorize;
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -153,6 +151,7 @@ pub fn execute(
                     None => clip(&format!("{} ", ""), w_description),
                 }
                 .normal();
+
                 if t.cleared == Cleared::NotCleared {
                     payee_str = payee_str.bold();
                 }
@@ -161,8 +160,8 @@ pub fn execute(
                     "{:w1$}{:width$}",
                     date_str,
                     payee_str,
-                    width = w_description,
-                    w1 = w_date
+                    w1 = w_date,
+                    width = w_description
                 );
             }
             if counter > 1 {

@@ -386,6 +386,7 @@ impl ParsedLedger {
                 transaction.date = parsed.date;
                 transaction.effective_date = parsed.effective_date;
                 transaction.payee = parsed.payee.clone();
+                transaction.cleared = parsed.cleared;
 
                 for comment in parsed.comments.iter() {
                     transaction.tags.append(&mut comment.get_tags());

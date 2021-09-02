@@ -8,6 +8,7 @@ Changelog file for dinero-rs project, a command line application for managing fi
 ## Fixed
 - [Rounding](https://github.com/frosklis/dinero-rs/issues/142)
 - Dates from the future are shown in green
+- [Transaction cleared status is now correctly processed](https://github.com/frosklis/dinero-rs/issues/146)
 
 ## [0.32.3] - 2021-08-24
 - The last one was a bad release
