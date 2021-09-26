@@ -48,6 +48,20 @@ pub enum LedgerError {
     TooManyEmptyPostings(usize),
 }
 
+impl Error for LedgerError {}
+impl Display for LedgerError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            LedgerError::TransactionIsNotBalanced => write!(f, "This transaction is not balanced."),
+            LedgerError::EmptyPostingShouldBeLast => {
+                write!(f, "The empty posting should be the last posting.")
+            }
+            LedgerError::AliasNotInList(alias) => write!(f, "Alias not found: {}", alias),
+            LedgerError::TooManyEmptyPostings(n) => write!(f, "Found {} empty postings.", n),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct GenericError {
     pub message: Vec<ColoredString>,

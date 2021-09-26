@@ -6,9 +6,10 @@ use std::rc::{Rc, Weak};
 use chrono::NaiveDate;
 use num::rational::BigRational;
 
+use crate::error::LedgerError;
 use crate::models::balance::Balance;
 use crate::models::{Account, Comment, HasName, Money, Payee};
-use crate::{LedgerError, List};
+use crate::List;
 use num::BigInt;
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -274,14 +275,14 @@ impl Transaction<Posting> {
         &mut self,
         balances: &mut HashMap<Rc<Account>, Balance>,
         skip_balance_check: bool,
-    ) -> Result<Balance, LedgerError> {
+    ) -> Result<Balance, Box<dyn std::error::Error>> {
         let mut transaction_balance = Balance::new();
 
         // 1. Check the virtual postings
         match total_balance(&*self.postings.borrow(), PostingType::VirtualMustBalance).can_be_zero()
         {
             true => {}
-            false => return Err(LedgerError::TransactionIsNotBalanced),
+            false => return Err(Box::new(LedgerError::TransactionIsNotBalanced)),
         }
 
         // 1. Iterate over postings
@@ -307,7 +308,7 @@ impl Transaction<Posting> {
                                 "Difference:  {}",
                                 expected_balance - Balance::from(balance.clone())
                             );
-                            return Err(LedgerError::TransactionIsNotBalanced);
+                            return Err(Box::new(LedgerError::TransactionIsNotBalanced));
                         }
                     }
                 }
@@ -403,7 +404,7 @@ impl Transaction<Posting> {
             .count()
             - postings.len();
         if empties > 1 {
-            Err(LedgerError::TooManyEmptyPostings(empties))
+            Err(Box::new(LedgerError::TooManyEmptyPostings(empties)))
         } else if empties == 0 {
             match transaction_balance.can_be_zero() {
                 true => {
@@ -420,7 +421,7 @@ impl Transaction<Posting> {
                     self.postings.replace(postings);
                     Ok(transaction_balance)
                 }
-                false => Err(LedgerError::TransactionIsNotBalanced),
+                false => Err(Box::new(LedgerError::TransactionIsNotBalanced)),
             }
         } else {
             // Fill the empty posting

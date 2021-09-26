@@ -19,10 +19,10 @@ pub use transaction::{
 
 use crate::parser::value_expr::build_root_node_from_expression;
 use crate::parser::{tokenizers, value_expr};
+use crate::List;
 use crate::{error::EmptyLedgerFileError, parser::ParsedLedger};
 use crate::{filter::filter_expression, CommonOpts};
 use crate::{models::transaction::Cost, parser::Tokenizer};
-use crate::{GenericError, List};
 use num::BigInt;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -81,7 +81,7 @@ impl ParsedLedger {
     /// 5. Checks whether transactions are balanced again
     ///
     /// There may be room for optimization here
-    pub fn to_ledger(mut self, options: &CommonOpts) -> Result<Ledger, GenericError> {
+    pub fn to_ledger(mut self, options: &CommonOpts) -> Result<Ledger, Box<dyn std::error::Error>> {
         let mut commodity_strs = HashSet::<String>::new();
         let mut account_strs = HashSet::<String>::new();
         let mut payee_strs = HashSet::<String>::new();
@@ -215,7 +215,7 @@ impl ParsedLedger {
                 Ok(balance) => balance,
                 Err(e) => {
                     eprintln!("{}", t);
-                    return Err(e.into());
+                    return Err(e);
                 }
             };
             if balance.len() == 2 {
@@ -350,7 +350,7 @@ impl ParsedLedger {
                     Ok(balance) => balance,
                     Err(e) => {
                         eprintln!("{}", t);
-                        return Err(e.into());
+                        return Err(e);
                     }
                 };
                 if balance.len() == 2 {
@@ -379,7 +379,7 @@ impl ParsedLedger {
     fn _transaction_to_ledger(
         &self,
         parsed: &Transaction<tokenizers::transaction::RawPosting>,
-    ) -> Result<TransactionTransformer, GenericError> {
+    ) -> Result<TransactionTransformer, Box<dyn std::error::Error>> {
         let mut automated_transactions = vec![];
         let mut prices = vec![];
         let mut transactions = vec![];
