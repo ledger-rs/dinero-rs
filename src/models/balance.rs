@@ -2,6 +2,7 @@ use crate::error::BalanceError;
 use crate::models::{Currency, Money};
 use std::collections::hash_map::Iter;
 use std::collections::HashMap;
+use std::error::Error;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::ops::{Add, Neg, Sub};
@@ -17,6 +18,22 @@ impl Default for Balance {
         Self::new()
     }
 }
+
+#[derive(Debug)]
+pub struct TooManyCurrenciesError {
+    pub num_currencies: usize,
+}
+impl Error for TooManyCurrenciesError {}
+impl Display for TooManyCurrenciesError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} currencies found, expecting only one.",
+            self.num_currencies
+        )
+    }
+}
+
 impl Balance {
     pub fn new() -> Balance {
         Balance {

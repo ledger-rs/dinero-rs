@@ -195,6 +195,26 @@ pub fn execute(
                 true => print!("{:>20}", format!("{}", money).red()),
                 false => print!("{:>20}", format!("{}", money)),
             }
+
+            if let Some(currency_string) = &options.convert {
+                let date = if let Some(date) = &options.end {
+                    *date
+                } else {
+                    Utc::now().naive_local().date()
+                };
+                if let Ok(currency) = ledger.commodities.get(currency_string) {
+                    multipliers = conversion(currency.clone(), date, &ledger.prices);
+
+                    let other_money =
+                        convert_balance(&(money.clone() + Money::Zero), &multipliers, currency)
+                            .to_money()?;
+
+                    match money.is_negative() {
+                        true => print!("{:>20}", format!("{}", other_money).red()),
+                        false => print!("{:>20}", format!("{}", other_money)),
+                    }
+                }
+            }
         }
         if first {
             // This means the balance was empty

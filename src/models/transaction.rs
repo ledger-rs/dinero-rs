@@ -6,10 +6,10 @@ use std::rc::{Rc, Weak};
 use chrono::NaiveDate;
 use num::rational::BigRational;
 
-use crate::error::BalanceError;
+use crate::error::{BalanceError, LedgerError};
 use crate::models::balance::Balance;
 use crate::models::{Account, Comment, HasName, Money, Payee};
-use crate::{LedgerError, List};
+use crate::List;
 use num::BigInt;
 use std::fmt;
 use std::fmt::{Display, Formatter};

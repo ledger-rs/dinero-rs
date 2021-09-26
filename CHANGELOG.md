@@ -1,8 +1,14 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
-## [0.33.0] - xxx
+
+## [0.34.0] - xxx
+## Changed
+- Nicer error messages (without Rust trace) when there is a missing file.
+## [0.33.1] - 2021-09-26
+
 ## Added
-- Show internal return rate with the ```roi``` command
+- [Convert option](https://github.com/frosklis/dinero-rs/issues/147) for ```balance``` command
+
 ## Changed
 - Nicer error messages (without Rust trace) when there is a missing file.
 ## Fixed

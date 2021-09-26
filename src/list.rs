@@ -5,8 +5,9 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::rc::Rc;
 
+use crate::error::LedgerError;
 use crate::models::{FromDirective, HasAliases, HasName};
-use crate::LedgerError;
+
 /// A generic container with some search capabilities
 ///
 /// This structure is used to hold master elements of the ledger than can be aliases such as

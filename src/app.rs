@@ -134,8 +134,8 @@ pub struct CommonOpts {
     #[structopt(long = "--exchange", short = "-X")]
     pub exchange: Option<String>,
 
-    /// Display the report in the selected currency
-    #[structopt(long = "--convert")]
+    /// Add a conversion to the selected currency in the output
+    #[structopt(long = "--convert", short = "-C")]
     pub convert: Option<String>,
 
     /// Date format
@@ -453,9 +453,10 @@ fn execute_command(
             statistics::execute(&options, maybe_ledger)
         }
     } {
-        return Err(e);
+        Err(e)
+    } else {
+        Ok(())
     }
-    Ok(())
 }
 
 /// A parser for date expressions

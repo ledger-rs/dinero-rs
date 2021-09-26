@@ -58,7 +58,6 @@ pub mod models;
 pub mod parser;
 
 pub use app::{run_app, CommonOpts};
-pub(crate) use error::{GenericError, LedgerError};
 pub use list::List;
 #[macro_use]
 extern crate prettytable;
