@@ -1,7 +1,7 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
-## [0.34.0] - xxx
-## [0.33.0] - 2021-09-26
+
+## [0.33.1] - 2021-09-26
 
 ## Added
 - [Convert option](https://github.com/frosklis/dinero-rs/issues/147) for ```balance``` command
