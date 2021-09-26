@@ -1,6 +1,10 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
 ## [0.33.0] - 2021-09-26
+
+## Added
+- [Convert option](https://github.com/frosklis/dinero-rs/issues/147) for ```balance``` command
+>>>>>>> ef6362b1de674f1df173e9303351dc81f6a53bc0
 ## Changed
 - Nicer error messages (without Rust trace) when there is a missing file.
 ## Fixed
