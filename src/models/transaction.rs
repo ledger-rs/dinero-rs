@@ -6,7 +6,7 @@ use std::rc::{Rc, Weak};
 use chrono::NaiveDate;
 use num::rational::BigRational;
 
-use crate::error::LedgerError;
+use crate::error::{BalanceError, LedgerError};
 use crate::models::balance::Balance;
 use crate::models::{Account, Comment, HasName, Money, Payee};
 use crate::List;
@@ -282,7 +282,7 @@ impl Transaction<Posting> {
         match total_balance(&*self.postings.borrow(), PostingType::VirtualMustBalance).can_be_zero()
         {
             true => {}
-            false => return Err(Box::new(LedgerError::TransactionIsNotBalanced)),
+            false => return Err(Box::new(BalanceError::TransactionIsNotBalanced)),
         }
 
         // 1. Iterate over postings
@@ -308,7 +308,7 @@ impl Transaction<Posting> {
                                 "Difference:  {}",
                                 expected_balance - Balance::from(balance.clone())
                             );
-                            return Err(Box::new(LedgerError::TransactionIsNotBalanced));
+                            return Err(Box::new(BalanceError::TransactionIsNotBalanced));
                         }
                     }
                 }
@@ -421,7 +421,7 @@ impl Transaction<Posting> {
                     self.postings.replace(postings);
                     Ok(transaction_balance)
                 }
-                false => Err(Box::new(LedgerError::TransactionIsNotBalanced)),
+                false => Err(Box::new(BalanceError::TransactionIsNotBalanced)),
             }
         } else {
             // Fill the empty posting

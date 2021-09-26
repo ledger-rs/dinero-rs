@@ -4,12 +4,14 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
+use crate::models::Balance;
+
 #[derive(Debug)]
 pub struct EmptyLedgerFileError;
 impl Error for EmptyLedgerFileError {}
 impl Display for EmptyLedgerFileError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "The file does not have any information")
+        write!(f, "The journal file does not have any information")
     }
 }
 
@@ -42,26 +44,45 @@ impl Display for TimeParseError {
 
 #[derive(Debug)]
 pub enum LedgerError {
-    TransactionIsNotBalanced,
-    EmptyPostingShouldBeLast,
     AliasNotInList(String),
     TooManyEmptyPostings(usize),
 }
-
 impl Error for LedgerError {}
 impl Display for LedgerError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            LedgerError::TransactionIsNotBalanced => write!(f, "This transaction is not balanced."),
-            LedgerError::EmptyPostingShouldBeLast => {
-                write!(f, "The empty posting should be the last posting.")
+            LedgerError::AliasNotInList(x) => write!(f, "Alias not found: {}", x),
+            LedgerError::TooManyEmptyPostings(x) => {
+                write!(f, "{} {}", "Too many empty postings:".red(), x)
             }
-            LedgerError::AliasNotInList(alias) => write!(f, "Alias not found: {}", alias),
-            LedgerError::TooManyEmptyPostings(n) => write!(f, "Found {} empty postings.", n),
         }
     }
 }
+#[derive(Debug)]
+pub enum BalanceError {
+    TransactionIsNotBalanced,
+    TooManyCurrencies(Balance),
+}
+impl Error for BalanceError {}
 
+impl Display for BalanceError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            BalanceError::TransactionIsNotBalanced => {
+                write!(f, "{}", "Transaction is not balanced".red())
+            }
+
+            BalanceError::TooManyCurrencies(bal) => write!(
+                f,
+                "Too many currencies, probably a price is missing: {}",
+                bal.iter()
+                    .map(|x| x.1.to_string())
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            ),
+        }
+    }
+}
 #[derive(Debug)]
 pub struct GenericError {
     pub message: Vec<ColoredString>,
@@ -91,5 +112,52 @@ impl<'a> fmt::Display for ColoredStrings<'a> {
         self.0.iter().fold(Ok(()), |result, partial| {
             result.and_then(|_| write!(f, "{}", partial))
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use colored::Colorize;
+    use structopt::StructOpt;
+
+    use super::{EmptyLedgerFileError, LedgerError};
+    use crate::{parser::Tokenizer, CommonOpts};
+
+    #[test]
+    fn error_empty_posting_last() {
+        let mut tokenizer = Tokenizer::from(
+            "2021-06-05 Flight
+        Assets:Checking
+        Expenses:Comissions
+        Expenses:Travel      200 EUR"
+                .to_string(),
+        );
+        let options = CommonOpts::from_iter(["", "-f", ""].iter());
+        let parsed = tokenizer.tokenize(&options);
+        let ledger = parsed.to_ledger(&options);
+        assert!(ledger.is_err());
+        let mut output: String = String::new();
+        if let Err(err) = ledger {
+            let ledger_error = err.downcast_ref::<LedgerError>().unwrap();
+            match ledger_error {
+                LedgerError::TooManyEmptyPostings(x) => assert_eq!(*x, 2),
+                other => {
+                    dbg!(other);
+                    panic!("Too many empty postings");
+                }
+            }
+            output = err.to_string();
+        }
+        assert_eq!(output, format!("{} 2", "Too many empty postings:".red()));
+    }
+
+    #[test]
+    fn empty_file() {
+        let an_error = EmptyLedgerFileError {};
+
+        assert_eq!(
+            format!("{}", an_error),
+            "The journal file does not have any information"
+        );
     }
 }

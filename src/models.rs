@@ -211,13 +211,7 @@ impl ParsedLedger {
         for t in transactions.iter_mut() {
             let date = t.date.unwrap();
             // output_balances(&balances);
-            let balance = match t.balance(&mut balances, options.no_balance_check) {
-                Ok(balance) => balance,
-                Err(e) => {
-                    eprintln!("{}", t);
-                    return Err(e);
-                }
-            };
+            let balance = t.balance(&mut balances, options.no_balance_check)?;
             if balance.len() == 2 {
                 let vec = balance.iter().map(|(_, x)| x.abs()).collect::<Vec<Money>>();
 
@@ -392,6 +386,7 @@ impl ParsedLedger {
                 transaction.date = parsed.date;
                 transaction.effective_date = parsed.effective_date;
                 transaction.payee = parsed.payee.clone();
+                transaction.cleared = parsed.cleared;
 
                 for comment in parsed.comments.iter() {
                     transaction.tags.append(&mut comment.get_tags());

@@ -1,7 +1,8 @@
-use crate::models::{conversion, HasName, Ledger, Posting, PostingType};
+use crate::models::{conversion, Cleared, HasName, Ledger, Posting, PostingType};
 use crate::models::{Balance, Money};
 use crate::parser::value_expr::build_root_node_from_expression;
 use crate::{filter, CommonOpts};
+use chrono::Utc;
 use colored::Colorize;
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -22,7 +23,7 @@ pub fn execute(
     };
 
     let mut balance = Balance::new();
-
+    let today = Utc::now().naive_local().date();
     let size = terminal_size();
     let mut width: usize = 80;
     if let Some((Width(w), _)) = size {
@@ -139,22 +140,29 @@ pub fn execute(
         for p in postings_vec.iter() {
             counter += 1;
             if counter == 1 {
-                match t.get_payee(&ledger.payees) {
-                    Some(payee) => print!(
-                        "{:w1$}{:width$}",
-                        format!("{}", t.date.unwrap().format(&options.date_format)).green(),
-                        clip(&format!("{} ", payee), w_description),
-                        width = w_description,
-                        w1 = w_date
-                    ),
-                    None => print!(
-                        "{:w1$}{:width$}",
-                        format!("{}", t.date.unwrap().format(&options.date_format)).green(),
-                        clip(&format!("{} ", ""), w_description),
-                        width = w_description,
-                        w1 = w_date
-                    ),
+                let mut date_str =
+                    format!("{}", t.date.unwrap().format(&options.date_format)).normal();
+                if t.date.unwrap() > today {
+                    date_str = date_str.green();
                 }
+
+                let mut payee_str = match t.get_payee(&ledger.payees) {
+                    Some(payee) => clip(&format!("{} ", payee), w_description),
+                    None => clip(&format!("{} ", ""), w_description),
+                }
+                .normal();
+
+                if t.cleared == Cleared::NotCleared {
+                    payee_str = payee_str.bold();
+                }
+
+                print!(
+                    "{:w1$}{:width$}",
+                    date_str,
+                    payee_str,
+                    w1 = w_date,
+                    width = w_description
+                );
             }
             if counter > 1 {
                 print!("{:width$}", "", width = w_description + 11);

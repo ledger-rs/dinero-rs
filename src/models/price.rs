@@ -116,7 +116,6 @@ pub fn conversion(
     let mut multipliers = HashMap::new();
     let mut inserted = HashMap::new();
     for (k, v) in paths.iter() {
-        // println!("{} {} ~{:?}", k.currency.get_name(), k.date, v.len());
         let mut mult = BigRational::new(BigInt::from(1), BigInt::from(1));
         let mut currency = k.currency.clone();
         match inserted.get(&k.currency) {
@@ -171,12 +170,16 @@ impl Edge {
     }
 }
 
+#[derive(Debug, Clone)]
+struct NodeEdge {
+    node: Rc<Node>,
+    edge: Rc<Edge>,
+}
 /// A graph
 #[derive(Debug, Clone)]
 struct Graph {
     nodes: Vec<Rc<Node>>,
     edges: Vec<Rc<Edge>>,
-    _neighbours: HashMap<Rc<Node>, Vec<(Rc<Node>, Rc<Edge>)>>,
 }
 
 impl Graph {
@@ -270,26 +273,19 @@ impl Graph {
         Graph {
             nodes: nodes.iter().map(|x| x.1.clone()).collect(),
             edges,
-            _neighbours: HashMap::new(),
         }
     }
+
     fn get_neighbours(&mut self, node: &Node) -> Vec<(Rc<Node>, Rc<Edge>)> {
-        match self._neighbours.get(node) {
-            None => {
-                let mut neighbours = Vec::new();
-                for edge in self.edges.iter() {
-                    if edge.from.as_ref() == node {
-                        neighbours.push((edge.to.clone(), edge.clone()));
-                    } else if edge.to.as_ref() == node {
-                        neighbours.push((edge.from.clone(), edge.clone()));
-                    }
-                }
-                self._neighbours
-                    .insert(Rc::new(node.clone()), neighbours.clone());
-                neighbours
+        let mut neighbours = Vec::new();
+        for edge in self.edges.iter() {
+            if edge.from.as_ref() == node {
+                neighbours.push((edge.to.clone(), edge.clone()));
+            } else if edge.to.as_ref() == node {
+                neighbours.push((edge.from.clone(), edge.clone()));
             }
-            Some(x) => x.clone(),
         }
+        neighbours
     }
 }
 

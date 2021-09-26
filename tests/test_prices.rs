@@ -1,6 +1,4 @@
 use assert_cmd::Command;
-use dinero::{parser::Tokenizer, CommonOpts};
-use structopt::StructOpt;
 mod common;
 use common::test_args;
 
@@ -65,10 +63,7 @@ fn bitcoin_balances_convert() {
             match i {
                 0 => {
                     assert!(String::from(line).contains(amount), "Should be {}", amount);
-                    assert!(
-                        String::from(line).contains("BTC"),
-                        "Should contain 1 BTC"
-                    );
+                    assert!(String::from(line).contains("BTC"), "Should contain 1 BTC");
                 }
                 _ => unreachable!(),
             }
