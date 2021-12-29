@@ -210,9 +210,11 @@ fn init_paths(args: Vec<String>) -> Result<Vec<String>, Box<dyn std::error::Erro
         } else if args[i] == INIT_FILE_FLAG {
             let file = Path::new(&args[i + 1]);
             if !file.exists() {
-                return Err(Box::new(MissingFileError::ConfigFileDoesNotExistError(
+                let failed = MissingFileError::ConfigFileDoesNotExistError(
                     file.to_path_buf(),
-                )));
+                );
+                eprintln!("{}", &failed);
+                return Err(Box::new(failed));
             }
             possible_paths.push(args[i + 1].clone());
             continue;
