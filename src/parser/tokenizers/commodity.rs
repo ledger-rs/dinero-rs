@@ -34,7 +34,8 @@ impl<'a> Tokenizer<'a> {
                     }
                 }
                 Rule::flag => default = true,
-                Rule::EOI => {}
+                Rule::end => {}
+                Rule::blank_line => {}
                 x => panic!("{:?} not expected", x),
             }
         }

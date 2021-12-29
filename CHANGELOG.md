@@ -1,7 +1,10 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
 
-## [0.34.0] - xxx
+## [0.33.2] - xxx
+## Fixed
+- Weird error when parsing one commodity directive
+- Better help texts (just so slightly)
 ## Changed
 - Nicer error messages (without Rust trace) when there is a missing file.
 ## [0.33.1] - 2021-09-26
