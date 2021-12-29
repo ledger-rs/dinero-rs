@@ -47,10 +47,11 @@ enum Command {
     /// List commodities
     #[structopt(alias = "currencies")]
     Commodities(CommonOpts),
-    /// List commodities
+    /// Show statistics about your ledger
     #[structopt(alias = "stats")]
     Statistics(CommonOpts),
 
+    /// Profitability calculations
     #[structopt(alias = "roi")]
     ReturnOnInvestment {
         #[structopt(flatten)]
