@@ -504,3 +504,25 @@ fn empty_file() {
 
     test_err(args);
 }
+
+#[test]
+/// If this fails it means that it created an extra posting
+fn roi_conversion_fail() {
+    let args = &[
+        "roi",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
+        "-f",
+        "tests/example_files/roi_fail_currencies.ledger",
+        "--cash-flows",
+        "cash",
+        "--assets-value",
+        "snake",
+        "-Q",
+    ];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output_err = String::from_utf8(assert_1.get_output().to_owned().stderr).unwrap();
+    assert_eq!(output_err.lines().into_iter().count(), 1);
+
+    test_err(args);
+}
