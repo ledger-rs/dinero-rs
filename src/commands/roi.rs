@@ -6,6 +6,7 @@ use prettytable::Table;
 
 use crate::app::PeriodGroup;
 use crate::commands::balance::convert_balance;
+use crate::error::ReportError::CurrencyConversionError;
 use crate::models::{conversion, Balance, Ledger, Money};
 use crate::parser::value_expr::build_root_node_from_expression;
 use crate::{filter, CommonOpts};
@@ -13,7 +14,6 @@ use chrono::{Datelike, Duration, NaiveDate};
 use num::{BigInt, BigRational, Zero};
 use std::collections::HashMap;
 use std::convert::TryFrom;
-
 /// ROI (return on investment) report
 pub fn execute(
     options: &CommonOpts,
@@ -99,18 +99,24 @@ pub fn execute(
             } else {
                 let multipliers =
                     conversion(currency.as_ref().unwrap().clone(), p.date, &ledger.prices);
-                let mult = multipliers
-                    .get(p.amount.as_ref().unwrap().get_commodity().unwrap().as_ref())
-                    .unwrap();
-                let new_amount = Money::Money {
-                    amount: p.amount.as_ref().unwrap().get_amount() * mult.clone(),
-                    currency: currency.as_ref().unwrap().clone(),
-                };
-                period.add_cash(new_amount.clone());
-                cash_flows.push(Cashflow {
-                    date: p.date,
-                    value: new_amount.get_amount().to_f64().unwrap(),
-                });
+                if let Some(mult) =
+                    multipliers.get(p.amount.as_ref().unwrap().get_commodity().unwrap().as_ref())
+                {
+                    let new_amount = Money::Money {
+                        amount: p.amount.as_ref().unwrap().get_amount() * mult.clone(),
+                        currency: currency.as_ref().unwrap().clone(),
+                    };
+                    period.add_cash(new_amount.clone());
+                    cash_flows.push(Cashflow {
+                        date: p.date,
+                        value: new_amount.get_amount().to_f64().unwrap(),
+                    });
+                } else {
+                    return Err(Box::new(CurrencyConversionError(
+                        p.amount.as_ref().unwrap().get_commodity().unwrap().as_ref().clone(),
+                        currency.as_ref().unwrap().as_ref().clone(),
+                    )));
+                }
             }
         } // cash flows
 

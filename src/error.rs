@@ -4,7 +4,7 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
-use crate::models::Balance;
+use crate::models::{Balance, Currency};
 
 #[derive(Debug)]
 pub struct EmptyLedgerFileError;
@@ -41,7 +41,20 @@ impl Display for TimeParseError {
         write!(f, "Couldn't parse time.")
     }
 }
-
+#[derive(Debug)]
+pub enum ReportError {
+    CurrencyConversionError(Currency, Currency),
+}
+impl Error for ReportError {}
+impl Display for ReportError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            ReportError::CurrencyConversionError(from, to) => {
+                write!(f, "Can't convert from {} to {}", from, to)
+            }
+        }
+    }
+}
 #[derive(Debug)]
 pub enum LedgerError {
     AliasNotInList(String),
