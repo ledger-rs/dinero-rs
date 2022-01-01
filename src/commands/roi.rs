@@ -113,7 +113,13 @@ pub fn execute(
                     });
                 } else {
                     return Err(Box::new(CurrencyConversionError(
-                        p.amount.as_ref().unwrap().get_commodity().unwrap().as_ref().clone(),
+                        p.amount
+                            .as_ref()
+                            .unwrap()
+                            .get_commodity()
+                            .unwrap()
+                            .as_ref()
+                            .clone(),
                         currency.as_ref().unwrap().as_ref().clone(),
                     )));
                 }
