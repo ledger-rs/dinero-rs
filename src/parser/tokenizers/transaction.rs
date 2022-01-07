@@ -239,14 +239,13 @@ mod tests {
     use crate::{parser::Tokenizer, CommonOpts};
 
     #[test]
-
     fn difficult_transaction_head() {
         let mut tokenizer = Tokenizer::from(
-            "2022-05-13 ! (8760) Intereses | EstateGuru
+            "2022-05-13 ! (8760) Interests | EstateGuru
             ; a transaction comment
             EstateGuru               1.06 EUR
             ; a posting comment
-            Ingresos:Rendimientos
+            Income:Earnings
             "
             .to_string(),
         );
@@ -257,7 +256,7 @@ mod tests {
         assert_eq!(transaction.status, TransactionStatus::NotChecked);
         assert_eq!(transaction.code, Some(String::from("8760")));
         assert_eq!(transaction.payee, Some(String::from("EstateGuru")));
-        assert_eq!(transaction.description, String::from("Intereses"));
+        assert_eq!(transaction.description, String::from("Interests"));
         for p in transaction.postings.borrow().iter() {
             assert_eq!(p.kind, PostingType::Real);
         }
