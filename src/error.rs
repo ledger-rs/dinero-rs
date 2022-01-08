@@ -4,7 +4,7 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
-use crate::models::{Balance, Currency};
+use crate::models::{Balance, Currency, Transaction, Posting};
 
 #[derive(Debug)]
 pub struct EmptyLedgerFileError;
@@ -73,7 +73,7 @@ impl Display for LedgerError {
 }
 #[derive(Debug)]
 pub enum BalanceError {
-    TransactionIsNotBalanced,
+    TransactionIsNotBalanced(Transaction<Posting>),
     TooManyCurrencies(Balance),
 }
 impl Error for BalanceError {}
@@ -81,8 +81,8 @@ impl Error for BalanceError {}
 impl Display for BalanceError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            BalanceError::TransactionIsNotBalanced => {
-                write!(f, "{}", "Transaction is not balanced".red())
+            BalanceError::TransactionIsNotBalanced(t) => {
+                write!(f, "{}\n{:?}", "Transaction is not balanced".red(), t)
             }
 
             BalanceError::TooManyCurrencies(bal) => write!(
@@ -192,7 +192,7 @@ mod tests {
         if let Err(err) = ledger {
             let ledger_error = err.downcast_ref::<BalanceError>().unwrap();
             match ledger_error {
-                &BalanceError::TransactionIsNotBalanced => (),
+                BalanceError::TransactionIsNotBalanced(_t) => (),
                 other => {
                     dbg!(other);
                     panic!("Not balanced");

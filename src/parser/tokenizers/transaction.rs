@@ -9,6 +9,7 @@ use pest::iterators::Pair;
 impl<'a> Tokenizer<'a> {
     /// Parses a transaction
     pub(crate) fn parse_transaction(&self, element: Pair<Rule>) -> Transaction<RawPosting> {
+        
         let mut transaction = Transaction::<RawPosting>::new(match element.as_rule() {
             Rule::transaction => TransactionType::Real,
             Rule::automated_transaction => TransactionType::Automated,
