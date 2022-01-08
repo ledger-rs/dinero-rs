@@ -535,7 +535,7 @@ fn balance_conversion_fail() {
         "--init-file",
         "tests/example_files/empty_ledgerrc",
         "-f",
-        "tests/example_files/roi_fail_currencies.ledger",
+        "tests/example_files/balance_fail_currencies.ledger",
         "-X",
         "€",
     ];
