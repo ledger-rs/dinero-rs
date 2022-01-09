@@ -545,3 +545,24 @@ fn balance_conversion_fail() {
 
     test_err(args);
 }
+
+#[test]
+fn balance_convert() {
+    let mut outputs = Vec::new();
+    for _ in 0..10 {
+        let args = &[
+            "bal",
+            "-f",
+            "tests/example_files/demo.ledger",
+            "-C",
+            "EUR",
+            "--force-color",
+        ];
+        let assert = Command::cargo_bin("dinero").unwrap().args(args).assert();
+        outputs.push(String::from_utf8(assert.get_output().to_owned().stdout).unwrap());
+        test_args(args);
+    }
+    for i in 1..100 {
+        assert_eq!(outputs[i], outputs[0], "output mismatch");
+    }
+}
