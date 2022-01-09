@@ -4,7 +4,7 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
-use crate::models::{Balance, Currency};
+use crate::models::{Balance, Currency, Transaction, Posting};
 
 #[derive(Debug)]
 pub struct EmptyLedgerFileError;
@@ -73,7 +73,7 @@ impl Display for LedgerError {
 }
 #[derive(Debug)]
 pub enum BalanceError {
-    TransactionIsNotBalanced,
+    TransactionIsNotBalanced(Transaction<Posting>),
     TooManyCurrencies(Balance),
 }
 impl Error for BalanceError {}
@@ -81,8 +81,8 @@ impl Error for BalanceError {}
 impl Display for BalanceError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            BalanceError::TransactionIsNotBalanced => {
-                write!(f, "{}", "Transaction is not balanced".red())
+            BalanceError::TransactionIsNotBalanced(t) => {
+                write!(f, "{}\n{:?}", "Transaction is not balanced".red(), t)
             }
 
             BalanceError::TooManyCurrencies(bal) => write!(
@@ -134,14 +134,14 @@ mod tests {
     use structopt::StructOpt;
 
     use super::{EmptyLedgerFileError, LedgerError};
-    use crate::{parser::Tokenizer, CommonOpts};
+    use crate::{error::BalanceError, parser::Tokenizer, CommonOpts};
 
     #[test]
     fn error_empty_posting_last() {
         let mut tokenizer = Tokenizer::from(
             "2021-06-05 Flight
         Assets:Checking
-        Expenses:Comissions
+        Expenses:Commissions
         Expenses:Travel      200 EUR"
                 .to_string(),
         );
@@ -172,5 +172,37 @@ mod tests {
             format!("{}", an_error),
             "The journal file does not have any information"
         );
+    }
+
+    #[test]
+    fn not_balanced() {
+        let mut tokenizer = Tokenizer::from(
+            "2022-05-13 ! We know this is wrong
+            Income:Salary      -2000 EUR
+            Assets:Checking     1000 EUR
+            "
+            .to_string(),
+        );
+
+        let options = CommonOpts::from_iter(["", "-f", ""].iter());
+        let parsed = tokenizer.tokenize(&options);
+        let ledger = parsed.to_ledger(&options);
+        assert!(ledger.is_err());
+        let mut output: String = String::new();
+        if let Err(err) = ledger {
+            let ledger_error = err.downcast_ref::<BalanceError>().unwrap();
+            match ledger_error {
+                BalanceError::TransactionIsNotBalanced(_t) => (),
+                other => {
+                    dbg!(other);
+                    panic!("Not balanced");
+                }
+            }
+            output = err.to_string();
+        }
+
+        // "Transaction is not balanced".red()
+        assert!(output.starts_with("\u{1b}[31mTransaction is not balanced\u{1b}[0m"));
+        assert!(output.lines().into_iter().count() > 1);
     }
 }

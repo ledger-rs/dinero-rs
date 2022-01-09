@@ -282,7 +282,7 @@ impl Transaction<Posting> {
         match total_balance(&*self.postings.borrow(), PostingType::VirtualMustBalance).can_be_zero()
         {
             true => {}
-            false => return Err(Box::new(BalanceError::TransactionIsNotBalanced)),
+            false => return Err(Box::new(BalanceError::TransactionIsNotBalanced(self.clone()))),
         }
 
         // 1. Iterate over postings
@@ -308,7 +308,7 @@ impl Transaction<Posting> {
                                 "Difference:  {}",
                                 expected_balance - Balance::from(balance.clone())
                             );
-                            return Err(Box::new(BalanceError::TransactionIsNotBalanced));
+                            return Err(Box::new(BalanceError::TransactionIsNotBalanced(self.clone())));
                         }
                     }
                 }
@@ -421,7 +421,7 @@ impl Transaction<Posting> {
                     self.postings.replace(postings);
                     Ok(transaction_balance)
                 }
-                false => Err(Box::new(BalanceError::TransactionIsNotBalanced)),
+                false => Err(Box::new(BalanceError::TransactionIsNotBalanced(self.clone()))),
             }
         } else {
             // Fill the empty posting
