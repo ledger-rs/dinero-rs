@@ -506,7 +506,7 @@ fn empty_file() {
 }
 
 #[test]
-/// If this fails it means that it created an extra posting
+/// This fails because it can't convert form $ to €
 fn roi_conversion_fail() {
     let args = &[
         "roi",
@@ -525,4 +525,39 @@ fn roi_conversion_fail() {
     assert_eq!(output_err.lines().into_iter().count(), 1);
 
     test_err(args);
+}
+
+#[test]
+/// This fails because it can't convert form $ to €
+fn balance_conversion_fail() {
+    let args = &[
+        "bal",
+        "--init-file",
+        "tests/example_files/empty_ledgerrc",
+        "-f",
+        "tests/example_files/balance_fail_currencies.ledger",
+        "-X",
+        "€",
+    ];
+    let assert_1 = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output_err = String::from_utf8(assert_1.get_output().to_owned().stderr).unwrap();
+    assert_eq!(output_err.lines().into_iter().count(), 1);
+
+    test_err(args);
+}
+
+#[test]
+fn balance_convert() {
+    let args = &[
+        "bal",
+        "-f",
+        "tests/example_files/demo.ledger",
+        "-C",
+        "EUR",
+        "--force-color",
+    ];
+    let assert = Command::cargo_bin("dinero").unwrap().args(args).assert();
+    let output = String::from_utf8(assert.get_output().to_owned().stdout).unwrap();
+    assert!(output.lines().into_iter().count() > 10);
+    test_args(args);
 }

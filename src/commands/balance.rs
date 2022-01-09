@@ -4,6 +4,7 @@ use std::convert::TryFrom;
 use colored::Colorize;
 use num::ToPrimitive;
 
+use crate::error::ReportError::CurrencyConversionError;
 use crate::models::{conversion, Account, Balance, Currency, HasName, Ledger, Money};
 use crate::parser::value_expr::build_root_node_from_expression;
 use crate::{filter, CommonOpts};
@@ -161,7 +162,7 @@ pub fn execute(
             multipliers = conversion(currency.clone(), date, &ledger.prices);
             let mut updated_balances = Vec::new();
             for (acc, balance) in vec_balances.iter() {
-                updated_balances.push((*acc, convert_balance(balance, &multipliers, currency)));
+                updated_balances.push((*acc, convert_balance(balance, &multipliers, currency)?));
             }
             vec_balances = updated_balances;
         }
@@ -206,7 +207,7 @@ pub fn execute(
                     multipliers = conversion(currency.clone(), date, &ledger.prices);
 
                     let other_money =
-                        convert_balance(&(money.clone() + Money::Zero), &multipliers, currency)
+                        convert_balance(&(money.clone() + Money::Zero), &multipliers, currency)?
                             .to_money()?;
 
                     match money.is_negative() {
@@ -279,32 +280,39 @@ pub fn execute(
                     .commodities
                     .get(options.exchange.as_ref().unwrap().as_str())
                     .unwrap(),
-            );
+            )?;
         }
         if total_balance.is_zero() {
             print!("\n{:>20}", "0");
         } else {
             for (currency, money) in total_balance.balance.iter() {
                 match &options.convert {
-                    Some(_) => {
-                        let mult = multipliers.get(currency.as_ref().unwrap()).unwrap();
-                        let amount = money.get_amount() * mult;
+                    Some(_) => match multipliers.get(currency.as_ref().unwrap()) {
+                        Some(mult) => {
+                            let amount = money.get_amount() * mult;
 
-                        match money.is_negative() {
-                            true => print!(
-                                "\n{:>20}{:>20}{:>20}",
-                                format!("{}", money).red(),
-                                mult.to_f64().unwrap(),
-                                amount.to_f64().unwrap()
-                            ),
-                            false => print!(
-                                "\n{:>20}{:>20}{:>20}",
-                                format!("{}", money),
-                                mult.to_f64().unwrap(),
-                                amount.to_f64().unwrap()
-                            ),
+                            match money.is_negative() {
+                                true => print!(
+                                    "\n{:>20}{:>20}{:>20}",
+                                    format!("{}", money).red(),
+                                    mult.to_f64().unwrap(),
+                                    amount.to_f64().unwrap()
+                                ),
+                                false => print!(
+                                    "\n{:>20}{:>20}{:>20}",
+                                    format!("{}", money),
+                                    mult.to_f64().unwrap(),
+                                    amount.to_f64().unwrap()
+                                ),
+                            }
                         }
-                    }
+                        None => {
+                            return Err(Box::new(CurrencyConversionError(
+                                money.get_commodity().unwrap().as_ref().clone(),
+                                currency.as_ref().unwrap().as_ref().clone(),
+                            )))
+                        }
+                    },
                     None => match money.is_negative() {
                         true => print!("\n{:>20}", format!("{}", money).red()),
                         false => print!("\n{:>20}", format!("{}", money)),
@@ -323,7 +331,7 @@ pub(crate) fn convert_balance(
     balance: &Balance,
     multipliers: &HashMap<Rc<Currency>, BigRational>,
     currency: &Currency,
-) -> Balance {
+) -> Result<Balance, Box<dyn std::error::Error>> {
     let mut new_balance = Balance::new();
     for (curr, money) in balance.iter() {
         if let Some(mult) = multipliers.get(curr.clone().unwrap().as_ref()) {
@@ -334,8 +342,12 @@ pub(crate) fn convert_balance(
                 }
                 .into()
         } else {
-            new_balance = new_balance + money.clone().into();
+            // new_balance = new_balance + money.clone().into();
+            return Err(Box::new(CurrencyConversionError(
+                money.get_commodity().unwrap().as_ref().clone(),
+                currency.clone(),
+            )));
         }
     }
-    new_balance
+    Ok(new_balance)
 }
