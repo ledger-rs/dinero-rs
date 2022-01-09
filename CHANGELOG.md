@@ -1,12 +1,14 @@
 # Changelog
 Changelog file for dinero-rs project, a command line application for managing finances.
-## [0.34.0] - xxx
-## [0.33.3] - xxx
+## [0.33.4] - 2022-01-02
+## Fixed
+- Handle conversion error in `balance` command
+
+## [0.33.3] - 2021-12-30
 ## Fixed
 - Handle conversion error in `roi` command
 
-
-## [0.33.2] - xxx
+## [0.33.2] - 2021-12-29
 ## Fixed
 - Weird error when parsing one commodity directive
 - Better help texts (just so slightly)

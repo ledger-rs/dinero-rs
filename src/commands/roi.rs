@@ -113,7 +113,13 @@ pub fn execute(
                     });
                 } else {
                     return Err(Box::new(CurrencyConversionError(
-                        p.amount.as_ref().unwrap().get_commodity().unwrap().as_ref().clone(),
+                        p.amount
+                            .as_ref()
+                            .unwrap()
+                            .get_commodity()
+                            .unwrap()
+                            .as_ref()
+                            .clone(),
                         currency.as_ref().unwrap().as_ref().clone(),
                     )));
                 }
@@ -169,7 +175,7 @@ pub fn execute(
         if p.final_money.is_none() {
             let multipliers = conversion(currency.as_ref().unwrap().clone(), p.end, &ledger.prices);
             p.final_money = Some(
-                convert_balance(&p.final_balance, &multipliers, currency.as_ref().unwrap())
+                convert_balance(&p.final_balance, &multipliers, currency.as_ref().unwrap())?
                     .to_money()?,
             );
         }
@@ -177,7 +183,7 @@ pub fn execute(
             let multipliers =
                 conversion(currency.as_ref().unwrap().clone(), p.start, &ledger.prices);
             p.initial_money = Some(
-                convert_balance(&p.initial_balance, &multipliers, currency.as_ref().unwrap())
+                convert_balance(&p.initial_balance, &multipliers, currency.as_ref().unwrap())?
                     .to_money()
                     .unwrap(),
             );

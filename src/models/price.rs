@@ -144,6 +144,10 @@ pub fn conversion(
         }
         multipliers.insert(k.currency.clone(), mult);
     }
+    multipliers.insert(
+        currency.clone(),
+        BigRational::new(BigInt::from(1), BigInt::from(1)),
+    );
     multipliers
 }
 
@@ -327,6 +331,6 @@ mod tests {
             Utc::now().naive_local().date(),
             &ledger.prices,
         );
-        assert_eq!(multipliers.len(), 7);
+        assert_eq!(multipliers.len(), 8);
     }
 }
